@@ -1,0 +1,36 @@
+name: publish
+
+on:
+    push:
+        tags:
+            - "*"
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: "stable"
+
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libsqlite3-dev
+                  go get .
+
+            - name: Release and publish
+              uses: goreleaser/goreleaser-action@v4
+              with:
+                  args: release --clean
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  CGO_ENABLED: "1"

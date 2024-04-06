@@ -1,0 +1,14 @@
+builds:
+    - env:
+          - CGO_ENABLED=1
+      goos:
+          - linux
+          - darwin
+      goarch:
+          - amd64
+          - arm64
+      main: ./cmd/redka/main.go
+
+archives:
+    - files:
+          - LICENSE

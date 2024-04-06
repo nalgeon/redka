@@ -1,0 +1,160 @@
+package command
+
+import (
+	"testing"
+	"time"
+)
+
+func TestSetParse(t *testing.T) {
+	db := getDB(t)
+	defer db.Close()
+
+	tests := []struct {
+		name string
+		args [][]byte
+		want Set
+		err  error
+	}{
+		{
+			name: "set",
+			args: buildArgs("set"),
+			want: Set{},
+			err:  ErrInvalidArgNum("set"),
+		},
+		{
+			name: "set name",
+			args: buildArgs("set", "name"),
+			want: Set{},
+			err:  ErrInvalidArgNum("set"),
+		},
+		{
+			name: "set name alice",
+			args: buildArgs("set", "name", "alice"),
+			want: Set{key: "name", value: []byte("alice")},
+			err:  nil,
+		},
+		{
+			name: "set name alice nx",
+			args: buildArgs("set", "name", "alice", "nx"),
+			want: Set{key: "name", value: []byte("alice"), ifNX: true},
+			err:  nil,
+		},
+		{
+			name: "set name alice xx",
+			args: buildArgs("set", "name", "alice", "xx"),
+			want: Set{key: "name", value: []byte("alice"), ifXX: true},
+			err:  nil,
+		},
+		{
+			name: "set name alice nx xx",
+			args: buildArgs("set", "name", "alice", "nx", "xx"),
+			want: Set{},
+			// FIXME: should be ErrSyntax
+			err: ErrInvalidInt,
+		},
+		{
+			name: "set name alice ex 10",
+			args: buildArgs("set", "name", "alice", "ex", "10"),
+			want: Set{key: "name", value: []byte("alice"), ttl: 10 * time.Second},
+			err:  nil,
+		},
+		{
+			name: "set name alice px 10",
+			args: buildArgs("set", "name", "alice", "ex", "0"),
+			want: Set{},
+			err:  ErrInvalidExpireTime("set"),
+		},
+		{
+			name: "set name alice px 10",
+			args: buildArgs("set", "name", "alice", "px", "10"),
+			want: Set{key: "name", value: []byte("alice"), ttl: 10 * time.Millisecond},
+			err:  nil,
+		},
+		{
+			name: "set name alice nx ex 10",
+			args: buildArgs("set", "name", "alice", "nx", "ex", "10"),
+			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},
+			err:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cmd, err := Parse(test.args)
+			assertEqual(t, err, test.err)
+			if err == nil {
+				setCmd := cmd.(*Set)
+				assertEqual(t, setCmd.key, test.want.key)
+				assertEqual(t, setCmd.value, test.want.value)
+				assertEqual(t, setCmd.ifNX, test.want.ifNX)
+				assertEqual(t, setCmd.ifXX, test.want.ifXX)
+				assertEqual(t, setCmd.ttl, test.want.ttl)
+			}
+		})
+	}
+}
+
+func TestSetExec(t *testing.T) {
+	db := getDB(t)
+	defer db.Close()
+
+	tests := []struct {
+		name string
+		cmd  *Set
+		res  any
+		out  string
+	}{
+		{
+			name: "set",
+			cmd:  mustParse[*Set]("set name alice"),
+			res:  true,
+			out:  "OK",
+		},
+		{
+			name: "set nx conflict",
+			cmd:  mustParse[*Set]("set name alice nx"),
+			res:  false,
+			out:  "(nil)",
+		},
+		{
+			name: "set nx",
+			cmd:  mustParse[*Set]("set age alice nx"),
+			res:  true,
+			out:  "OK",
+		},
+		{
+			name: "set xx",
+			cmd:  mustParse[*Set]("set name bob xx"),
+			res:  true,
+			out:  "OK",
+		},
+		{
+			name: "set xx conflict",
+			cmd:  mustParse[*Set]("set city paris xx"),
+			res:  false,
+			out:  "(nil)",
+		},
+		{
+			name: "set ex",
+			cmd:  mustParse[*Set]("set name alice ex 10"),
+			res:  true,
+			out:  "OK",
+		},
+		{
+			name: "set nx ex",
+			cmd:  mustParse[*Set]("set color blue nx ex 10"),
+			res:  true,
+			out:  "OK",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conn := new(fakeConn)
+			res, err := test.cmd.Run(conn, db)
+			assertNoErr(t, err)
+			assertEqual(t, res, test.res)
+			assertEqual(t, conn.out(), test.out)
+		})
+	}
+}
