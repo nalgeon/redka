@@ -72,8 +72,6 @@ func Parse(args [][]byte) (Cmd, error) {
 	b := newBaseCmd(args)
 	switch name {
 	// server
-	case "config":
-		return parseConfig(b)
 	case "command":
 		return parseOK(b)
 	case "info":
