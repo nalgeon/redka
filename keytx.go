@@ -146,7 +146,6 @@ func (tx *KeyTx) Random() (string, error) {
 	if err == sql.ErrNoRows {
 		return "", nil
 	}
-	// err := tx.tx.Get(&key, sqlKeyRandom, now)
 	return key, err
 }
 
@@ -154,7 +153,6 @@ func (tx *KeyTx) Random() (string, error) {
 func (tx *KeyTx) Get(key string) (Key, error) {
 	now := time.Now().UnixMilli()
 	var k Key
-	// err := tx.tx.Get(&k, sqlKeyGet, key, now)
 	err := tx.tx.QueryRow(sqlKeyGet, key, now).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)

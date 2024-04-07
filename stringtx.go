@@ -248,7 +248,6 @@ func (tx *StringTx) SetManyNX(kvals ...KeyValue) (bool, error) {
 func (tx *StringTx) Length(key string) (int, error) {
 	now := time.Now().UnixMilli()
 	var n int
-	// err := tx.tx.Get(&n, sqlStringLen, key, now)
 	err := tx.tx.QueryRow(sqlStringLen, key, now).Scan(&n)
 	if err == sql.ErrNoRows {
 		return 0, nil
