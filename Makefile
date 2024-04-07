@@ -19,7 +19,7 @@ test:
 
 
 build:
-	@CGO_ENABLED=1 go build -ldflags "-X main.commit=$(build_rev) -X main.date=$(build_date)" -o build/redka -v cmd/redka/main.go
+	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.commit=$(build_rev) -X main.date=$(build_date)" -o build/redka -v cmd/redka/main.go
 
 run:
 	@./build/redka
