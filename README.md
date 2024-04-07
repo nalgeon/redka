@@ -100,11 +100,11 @@ Redka supports the following key management (generic) commands:
 | `DEL`       | `DB.Key().Delete`   | Deletes one or more keys.                                  |
 | `EXISTS`    | `DB.Key().Exists`   | Determines whether one or more keys exist.                 |
 | `EXPIRE`    | `DB.Key().Expire`   | Sets the expiration time of a key (in seconds).            |
-| `EXPIREAT`  | `DB.Key().ETime`    | Sets the expiration time of a key to a Unix timestamp.     |
+| `EXPIREAT`  | `DB.Key().ExpireAt` | Sets the expiration time of a key to a Unix timestamp.     |
 | `KEYS`      | `DB.Key().Search`   | Returns all key names that match a pattern.                |
 | `PERSIST`   | `DB.Key().Persist`  | Removes the expiration time of a key.                      |
 | `PEXPIRE`   | `DB.Key().Expire`   | Sets the expiration time of a key in ms.                   |
-| `PEXPIREAT` | `DB.Key().ETime`    | Sets the expiration time of a key to a Unix ms timestamp.  |
+| `PEXPIREAT` | `DB.Key().ExpireAt` | Sets the expiration time of a key to a Unix ms timestamp.  |
 | `RANDOMKEY` | `DB.Key().Random`   | Returns a random key name from the database.               |
 | `RENAME`    | `DB.Key().Rename`   | Renames a key and overwrites the destination.              |
 | `RENAMENX`  | `DB.Key().RenameNX` | Renames a key only when the target key name doesn't exist. |

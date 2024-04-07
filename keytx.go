@@ -167,11 +167,11 @@ func (tx *KeyTx) Get(key string) (Key, error) {
 // Expire sets a timeout on the key using a relative duration.
 func (tx *KeyTx) Expire(key string, ttl time.Duration) (bool, error) {
 	at := time.Now().Add(ttl)
-	return tx.ETime(key, at)
+	return tx.ExpireAt(key, at)
 }
 
-// ETime sets a timeout on the key using an absolute time.
-func (tx *KeyTx) ETime(key string, at time.Time) (bool, error) {
+// ExpireAt sets a timeout on the key using an absolute time.
+func (tx *KeyTx) ExpireAt(key string, at time.Time) (bool, error) {
 	now := time.Now().UnixMilli()
 	args := []any{
 		sql.Named("key", key),

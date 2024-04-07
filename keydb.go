@@ -15,7 +15,7 @@ type Keys interface {
 	Random() (string, error)
 	Get(key string) (Key, error)
 	Expire(key string, ttl time.Duration) (bool, error)
-	ETime(key string, at time.Time) (bool, error)
+	ExpireAt(key string, at time.Time) (bool, error)
 	Persist(key string) (bool, error)
 	Rename(key, newKey string) (bool, error)
 	RenameNX(key, newKey string) (bool, error)
@@ -91,12 +91,12 @@ func (db *KeyDB) Expire(key string, ttl time.Duration) (bool, error) {
 	return ok, err
 }
 
-// ETime sets a timeout on the key using an absolute time.
-func (db *KeyDB) ETime(key string, at time.Time) (bool, error) {
+// ExpireAt sets a timeout on the key using an absolute time.
+func (db *KeyDB) ExpireAt(key string, at time.Time) (bool, error) {
 	var ok bool
 	err := db.Update(func(tx *KeyTx) error {
 		var err error
-		ok, err = tx.ETime(key, at)
+		ok, err = tx.ExpireAt(key, at)
 		return err
 	})
 	return ok, err

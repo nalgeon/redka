@@ -209,7 +209,7 @@ func TestKeyExpireAt(t *testing.T) {
 
 	now := time.Now()
 	at := now.Add(10 * time.Second)
-	ok, err := db.ETime("name", at)
+	ok, err := db.ExpireAt("name", at)
 	assertNoErr(t, err)
 	assertEqual(t, ok, true)
 
