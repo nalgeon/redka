@@ -49,7 +49,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download all artifacts
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                   path: artifacts/
 
@@ -59,7 +59,7 @@ jobs:
                   sha256sum * > checksums.txt
 
             - name: Upload checksums file
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                   name: checksums
                   path: artifacts/checksums.txt
@@ -69,7 +69,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download artifacts
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                   path: release/
 
