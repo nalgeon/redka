@@ -36,7 +36,7 @@ jobs:
               run: GOOS=${{ matrix.goos }} make build
 
             - name: Zip the binary
-              run: zip ${{ matrix.asset_name }} redka
+              run: zip -j ${{ matrix.asset_name }} build/redka
 
             - name: Pack production binary
               uses: actions/upload-artifact@v4
