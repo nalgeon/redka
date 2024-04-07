@@ -153,11 +153,24 @@ Redka can be installed as a standalone Redis-compatible server, or as a Go modul
 
 ## Standalone server
 
-Redka server is a single-file binary. Download it from the [releases](https://github.com/nalgeon/redka/releases):
+Redka server is a single-file binary. Download it from the [releases](https://github.com/nalgeon/redka/releases).
+
+Linux (x86 CPU only):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/0.1.0/redka_0.1.0_linux_amd64.tar.gz"
-tar xvzf redka_0.1.0_linux_amd64.tar.gz
+curl -L -O "https://github.com/nalgeon/redka/releases/download/0.1.0/redka_linux_amd64.zip"
+unzip redka_linux_amd64.zip
+chmod +x redka
+```
+
+macOS (both x86 and ARM/Apple Silicon CPU):
+
+```shell
+curl -L -O "https://github.com/nalgeon/redka/releases/download/0.1.0/redka_darwin_amd64.zip"
+unzip redka_darwin_amd64.zip
+# remove the build from quarantine
+# (macOS disables unsigned binaries)
+xattr -d com.apple.quarantine redka
 chmod +x redka
 ```
 
@@ -165,7 +178,16 @@ chmod +x redka
 
 ```shell
 docker pull ghcr.io/nalgeon/redka
-docker run -p 6379:6379 ghcr.io/nalgeon/redka data.db
+```
+
+Or build from source (requires Go 1.22 and GCC):
+
+```shell
+git clone https://github.com/nalgeon/redka.git
+cd redka
+make build
+# the path to the binary after the build
+# will be ./build/redka
 ```
 
 ## Go module
