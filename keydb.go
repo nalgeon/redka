@@ -27,13 +27,6 @@ type KeyDB struct {
 	*sqlDB[*KeyTx]
 }
 
-// OpenKey creates a new database-backed key repository.
-// Creates the database schema if necessary.
-func OpenKey(db *sql.DB) (*KeyDB, error) {
-	d, err := openSQL(db, newKeyTx)
-	return &KeyDB{d}, err
-}
-
 // newKeyDB creates a new database-backed key repository.
 // Does not create the database schema.
 func newKeyDB(db *sql.DB) *KeyDB {

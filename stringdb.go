@@ -31,9 +31,9 @@ type StringDB struct {
 	*sqlDB[*StringTx]
 }
 
-// NewStringDB connects to the string repository.
+// newStringDB connects to the string repository.
 // Does not create the database schema.
-func NewStringDB(db *sql.DB) *StringDB {
+func newStringDB(db *sql.DB) *StringDB {
 	d := newSqlDB(db, newStringTx)
 	return &StringDB{d}
 }

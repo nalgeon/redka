@@ -59,7 +59,7 @@ func OpenDB(db *sql.DB) (*DB, error) {
 	rdb := &DB{
 		sqlDB:    sdb,
 		keyDB:    newKeyDB(db),
-		stringDB: NewStringDB(db),
+		stringDB: newStringDB(db),
 		log:      slog.New(new(noopHandler)),
 	}
 	rdb.bg = rdb.startBgManager()
