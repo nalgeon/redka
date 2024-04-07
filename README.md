@@ -273,11 +273,12 @@ import (
 )
 
 func main() {
-    // Open the data.db file. It will be created if it doesn't exist.
+    // Open or create the data.db file.
     db, err := redka.Open("data.db")
     if err != nil {
         log.Fatal(err)
     }
+    // Always close the database when you are finished.
     defer db.Close()
     // ...
 }
@@ -347,10 +348,11 @@ rkey
 ---
 id       integer primary key
 key      text not null
-type     integer not null
-version  integer not null
-etime    integer
-mtime    integer not null
+type     integer not null    -- 1 string, 2 list, 3 set, 4 hash
+                             -- 5 sorted set
+version  integer not null    -- incremented when the key value is updated
+etime    integer             -- expiration timestamp in unix milliseconds
+mtime    integer not null    -- modification timestamp in unix milliseconds
 
 rstring
 ---
@@ -373,7 +375,7 @@ select * from vstring;
 └────────┴──────┴───────┴────────┴───────┴─────────────────────┘
 ```
 
-Type in views is the Redis data type. Times are in UTC.
+`type` in views is the Redis data type. `etime` and `mtime` are in UTC.
 
 ## Performance
 
