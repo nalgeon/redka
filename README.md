@@ -1,3 +1,7 @@
+<p align="center">
+    <img alt="Redka" src="logo.svg" height="80" align="center">
+</p>
+
 Redka aims to reimplement the good parts of Redis with SQLite, while remaining compatible with Redis protocol.
 
 Notable features:
@@ -241,8 +245,6 @@ docker run --rm -p 6379:6379 -v /path/to/data:/data nalgeon/redka
 docker run --rm -p 6380:6380 nalgeon/redka redka -h 0.0.0.0 -p 6380
 ```
 
-Note that running in a container may result in poorer performance.
-
 Once the server is running, connect to it using `redis-cli` or an API client like `redis-py` or `go-redis` — just as you would with Redis.
 
 ```shell
@@ -417,6 +419,8 @@ GET: 56802.05 requests per second, p50=0.119 msec
 ```
 
 So while Redka is 2-6 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 23K writes/sec and 57K reads/sec, which is pretty good if you ask me.
+
+Note that running in a container may result in poorer performance.
 
 ## Roadmap
 
