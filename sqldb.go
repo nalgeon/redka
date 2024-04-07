@@ -11,13 +11,13 @@ import (
 type sqlDB[T any] struct {
 	db *sql.DB
 	// newT creates a new domain-specific transaction.
-	newT func(*sql.Tx) T
+	newT func(sqlTx) T
 	mu   sync.Mutex
 }
 
 // openSQL creates a new database-backed repository.
 // Creates the database schema if necessary.
-func openSQL[T any](db *sql.DB, newT func(*sql.Tx) T) (*sqlDB[T], error) {
+func openSQL[T any](db *sql.DB, newT func(sqlTx) T) (*sqlDB[T], error) {
 	d := newSqlDB(db, newT)
 	err := d.init()
 	return d, err
@@ -25,7 +25,7 @@ func openSQL[T any](db *sql.DB, newT func(*sql.Tx) T) (*sqlDB[T], error) {
 
 // newSqlDB creates a new database-backed repository.
 // Like openSQL, but does not create the database schema.
-func newSqlDB[T any](db *sql.DB, newT func(*sql.Tx) T) *sqlDB[T] {
+func newSqlDB[T any](db *sql.DB, newT func(sqlTx) T) *sqlDB[T] {
 	d := &sqlDB[T]{db: db, newT: newT}
 	return d
 }

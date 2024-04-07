@@ -62,12 +62,12 @@ var sqlStringUpdate = []string{
 
 // StringTx is a string repository transaction.
 type StringTx struct {
-	tx *sql.Tx
+	tx sqlTx
 }
 
 // newStringTx creates a string repository transaction
 // from a generic database transaction.
-func newStringTx(tx *sql.Tx) *StringTx {
+func newStringTx(tx sqlTx) *StringTx {
 	return &StringTx{tx}
 }
 

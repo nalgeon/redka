@@ -62,12 +62,12 @@ const scanPageSize = 10
 
 // KeyTx is a key repository transaction.
 type KeyTx struct {
-	tx *sql.Tx
+	tx sqlTx
 }
 
 // newKeyTx creates a key repository transaction
 // from a generic database transaction.
-func newKeyTx(tx *sql.Tx) *KeyTx {
+func newKeyTx(tx sqlTx) *KeyTx {
 	return &KeyTx{tx}
 }
 

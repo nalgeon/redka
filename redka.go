@@ -134,7 +134,7 @@ func (db *DB) startBgManager() *time.Ticker {
 
 // Tx is a Redis-like database transaction.
 type Tx struct {
-	tx    *sql.Tx
+	tx    sqlTx
 	keyTx *KeyTx
 	strTx *StringTx
 }
@@ -148,7 +148,7 @@ func (tx *Tx) Key() Keys {
 }
 
 // newTx creates a new database transaction.
-func newTx(tx *sql.Tx) *Tx {
+func newTx(tx sqlTx) *Tx {
 	return &Tx{tx: tx, keyTx: newKeyTx(tx), strTx: newStringTx(tx)}
 }
 

@@ -37,13 +37,20 @@ const sqlKeyDel = `
 delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
+// sqlTx is a database transaction (or a transaction-like object).
+type sqlTx interface {
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
 // rowScanner is an interface to scan rows.
 type rowScanner interface {
 	Scan(dest ...any) error
 }
 
 // txKeyGet returns the key data structure.
-func txKeyGet(tx *sql.Tx, key string) (k Key, err error) {
+func txKeyGet(tx sqlTx, key string) (k Key, err error) {
 	now := time.Now().UnixMilli()
 	row := tx.QueryRow(sqlKeyGet, key, now)
 	err = row.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
@@ -57,7 +64,7 @@ func txKeyGet(tx *sql.Tx, key string) (k Key, err error) {
 }
 
 // txKeyDelete deletes a key and its associated values.
-func txKeyDelete(tx *sql.Tx, keys ...string) (int, error) {
+func txKeyDelete(tx sqlTx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlExpandIn(sqlKeyDel, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
@@ -94,7 +101,7 @@ func sqlExpandIn[T any](query string, param string, args []T) (string, []any) {
 	return query, anyArgs
 }
 
-func sqlSelect[T any](db *sql.Tx, query string, args []any,
+func sqlSelect[T any](db sqlTx, query string, args []any,
 	scan func(rows *sql.Rows) (T, error)) ([]T, error) {
 
 	rows, err := db.Query(query, args...)
