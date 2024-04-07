@@ -50,8 +50,24 @@ func (d *sqlDB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, false, f)
 }
 
-// init creates the necessary tables.
+// init sets the connection properties and creates the necessary tables.
 func (d *sqlDB[T]) init() error {
+	// SQLite only allows one writer at a time, so concurrent writes
+	// will fail with a "database is locked" (SQLITE_BUSY) error.
+	//
+	// There are two ways to enforce the single writer rule:
+	// 1. Use a mutex for write operations (in the execTx method).
+	// 2. Set the maximum number of DB connections to 1.
+	//
+	// Intuitively, the mutex approach seems better, because it does not
+	// limit the number of concurrent read operations. The benchmarks
+	// show the following results:
+	// - GET: 2% better rps and 25% better p50 response time with mutex
+	// - SET: 2% better rps and 60% worse p50 response time with mutex
+	//
+	// Due to the significant p50 response time mutex penalty for SET,
+	// I've decided to use the max connections approach for now.
+	d.db.SetMaxOpenConns(1)
 	if _, err := d.db.Exec(sqlSettings); err != nil {
 		return err
 	}
@@ -63,11 +79,12 @@ func (d *sqlDB[T]) init() error {
 
 // execTx executes a function within a transaction.
 func (d *sqlDB[T]) execTx(ctx context.Context, writable bool, f func(tx T) error) error {
-	if writable {
-		// only one writable transaction at a time
-		d.mu.Lock()
-		defer d.mu.Unlock()
-	}
+	// See the init method for the explanation of the single writer rule.
+	// if writable {
+	// 	// only one writable transaction at a time
+	// 	d.mu.Lock()
+	// 	defer d.mu.Unlock()
+	// }
 
 	dtx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {

@@ -346,30 +346,42 @@ Type in views is the Redis data type. Times are in UTC.
 
 I've compared Redka with Redis using [redis-benchmark](https://redis.io/docs/management/optimization/benchmarks/) with the following parameters:
 
--   50 parallel connections
+-   10 parallel connections
 -   1000000 requests
 -   10000 randomized keys
 -   GET/SET commands
+
+SQLite settings:
+
+```
+pragma journal_mode = wal;
+pragma synchronous = normal;
+pragma temp_store = memory;
+pragma mmap_size = 268435456;
+pragma foreign_keys = on;
+```
+
+Hardware: Apple M1 8-core CPU, 16GB RAM
 
 Results:
 
 ```
 redis-server --appendonly no
-redis-benchmark -p 6379 -q -c 100 -n 1000000 -r 10000 -t get,set
+redis-benchmark -p 6379 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 162469.53 requests per second, p50=0.319 msec
-GET: 157183.28 requests per second, p50=0.319 msec
+SET: 133262.25 requests per second, p50=0.055 msec
+GET: 139217.59 requests per second, p50=0.055 msec
 ```
 
 ```
 ./redka -p 6380 data.db
-redis-benchmark -p 6380 -q -c 100 -n 1000000 -r 10000 -t get,set
+redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 25178.77 requests per second, p50=1.871 msec
-GET: 54875.71 requests per second, p50=0.535 msec
+SET: 22551.47 requests per second, p50=0.255 msec
+GET: 56802.05 requests per second, p50=0.119 msec
 ```
 
-So while Redka is 3-7 times slower than Redis (not surprising, since we are comparing a relational database to an in-memory data store), it can still do 25K writes/sec and 55K reads/sec, which is pretty good if you ask me.
+So while Redka is 2-6 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 23K writes/sec and 57K reads/sec, which is pretty good if you ask me.
 
 ## Roadmap
 
