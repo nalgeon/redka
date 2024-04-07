@@ -10,27 +10,73 @@ permissions:
     contents: write
 
 jobs:
-    publish:
-        runs-on: ubuntu-latest
+    build:
+        name: Build
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+                include:
+                    - os: ubuntu-latest
+                      goos: linux
+                      asset_name: redka_linux_amd64.zip
+                    - os: macos-latest
+                      goos: darwin
+                      asset_name: redka_darwin_amd64.zip
         steps:
-            - name: Checkout
+            - name: Check out code
               uses: actions/checkout@v4
 
-            - name: Setup Go
+            - name: Set up Go
               uses: actions/setup-go@v5
               with:
                   go-version: "stable"
 
-            - name: Install dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y libsqlite3-dev
-                  go get .
+            - name: Build binary
+              run: GOOS=${{ matrix.goos }} make build
 
-            - name: Release and publish
-              uses: goreleaser/goreleaser-action@v4
+            - name: Zip the binary
+              run: zip ${{ matrix.asset_name }} redka
+
+            - name: Pack production binary
+              uses: actions/upload-artifact@v4
               with:
-                  args: release --clean
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  CGO_ENABLED: "1"
+                  name: ${{ matrix.asset_name }}
+                  path: ${{ matrix.asset_name }}
+
+    checksum:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download all artifacts
+              uses: actions/download-artifact@v3
+              with:
+                  path: artifacts/
+
+            - name: Generate checksums
+              run: |
+                  cd artifacts
+                  sha256sum * > checksums.txt
+
+            - name: Upload checksums file
+              uses: actions/upload-artifact@v3
+              with:
+                  name: checksums
+                  path: artifacts/checksums.txt
+
+    release:
+        needs: checksum
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download artifacts
+              uses: actions/download-artifact@v3
+              with:
+                  path: release/
+
+            - name: Upload assets to release
+              uses: svenstaro/upload-release-action@v2
+              with:
+                  repo_token: ${{ secrets.GITHUB_TOKEN }}
+                  file: release/*
+                  file_glob: true
+                  tag: ${{ github.ref }}
