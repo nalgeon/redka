@@ -174,10 +174,10 @@ xattr -d com.apple.quarantine redka
 chmod +x redka
 ```
 
-[🚧 not implemented] Or pull with Docker as follows:
+Or pull with Docker as follows:
 
 ```shell
-docker pull ghcr.io/nalgeon/redka
+docker pull nalgeon/redka
 ```
 
 Or build from source (requires Go 1.22 and GCC):
@@ -185,7 +185,7 @@ Or build from source (requires Go 1.22 and GCC):
 ```shell
 git clone https://github.com/nalgeon/redka.git
 cd redka
-make build
+make setup build
 # the path to the binary after the build
 # will be ./build/redka
 ```
@@ -226,11 +226,22 @@ For example:
 
 Running without a DB path creates an in-memory database. The data is not persisted in this case, and will be gone when the server is stopped.
 
-[🚧 not implemented] You can also run Redka with Docker as follows:
+You can also run Redka with Docker as follows:
 
 ```shell
-docker run -p 6379:6379 ghcr.io/nalgeon/redka data.db
+# database inside the container
+# will be lost when the container stops
+docker run --rm -p 6379:6379 nalgeon/redka
+
+# persistent database
+# using the /path/to/data host directory
+docker run --rm -p 6379:6379 -v /path/to/data:/data nalgeon/redka
+
+# in-memory database, custom post
+docker run --rm -p 6380:6380 nalgeon/redka redka -h 0.0.0.0 -p 6380
 ```
+
+Note that running in a container may result in poorer performance.
 
 Once the server is running, connect to it using `redis-cli` or an API client like `redis-py` or `go-redis` — just as you would with Redis.
 
