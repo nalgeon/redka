@@ -40,24 +40,14 @@ func NewStringDB(db *sql.DB) *StringDB {
 
 // Get returns the value of the key.
 func (d *StringDB) Get(key string) (Value, error) {
-	var val Value
-	err := d.View(func(tx *StringTx) error {
-		var err error
-		val, err = tx.Get(key)
-		return err
-	})
-	return val, err
+	tx := newStringTx(d.db)
+	return tx.Get(key)
 }
 
 // GetMany returns the values of multiple keys.
 func (d *StringDB) GetMany(keys ...string) ([]Value, error) {
-	var vals []Value
-	err := d.View(func(tx *StringTx) error {
-		var err error
-		vals, err = tx.GetMany(keys...)
-		return err
-	})
-	return vals, err
+	tx := newStringTx(d.db)
+	return tx.GetMany(keys...)
 }
 
 // Set sets the key value. The key does not expire.
@@ -133,24 +123,14 @@ func (d *StringDB) SetManyNX(kvals ...KeyValue) (bool, error) {
 
 // Length returns the length of the key value.
 func (d *StringDB) Length(key string) (int, error) {
-	var n int
-	err := d.View(func(tx *StringTx) error {
-		var err error
-		n, err = tx.Length(key)
-		return err
-	})
-	return n, err
+	tx := newStringTx(d.db)
+	return tx.Length(key)
 }
 
 // GetRange returns the substring of the key value.
 func (d *StringDB) GetRange(key string, start, end int) (Value, error) {
-	var val Value
-	err := d.View(func(tx *StringTx) error {
-		var err error
-		val, err = tx.GetRange(key, start, end)
-		return err
-	})
-	return val, err
+	tx := newStringTx(d.db)
+	return tx.GetRange(key, start, end)
 }
 
 // SetRange overwrites part of the key value.

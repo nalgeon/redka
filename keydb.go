@@ -43,37 +43,22 @@ func newKeyDB(db *sql.DB) *KeyDB {
 
 // Exists returns the number of existing keys among specified.
 func (db *KeyDB) Exists(keys ...string) (int, error) {
-	var count int
-	err := db.View(func(tx *KeyTx) error {
-		var err error
-		count, err = tx.Exists(keys...)
-		return err
-	})
-	return count, err
+	tx := newKeyTx(db.db)
+	return tx.Exists(keys...)
 }
 
 // Search returns all keys matching pattern.
 func (db *KeyDB) Search(pattern string) ([]string, error) {
-	var keys []string
-	err := db.View(func(tx *KeyTx) error {
-		var err error
-		keys, err = tx.Search(pattern)
-		return err
-	})
-	return keys, err
+	tx := newKeyTx(db.db)
+	return tx.Search(pattern)
 }
 
 // Scan iterates over keys matching pattern by returning
 // the next page based on the current state of the cursor.
 // Count regulates the number of keys returned (count = 0 for default).
 func (db *KeyDB) Scan(cursor int, pattern string, count int) (ScanResult, error) {
-	var out ScanResult
-	err := db.View(func(tx *KeyTx) error {
-		var err error
-		out, err = tx.Scan(cursor, pattern, count)
-		return err
-	})
-	return out, err
+	tx := newKeyTx(db.db)
+	return tx.Scan(cursor, pattern, count)
 }
 
 // Scanner returns an iterator for keys matching pattern.
@@ -85,24 +70,14 @@ func (db *KeyDB) Scanner(pattern string, pageSize int) *keyScanner {
 
 // Random returns a random key.
 func (db *KeyDB) Random() (string, error) {
-	var key string
-	err := db.View(func(tx *KeyTx) error {
-		var err error
-		key, err = tx.Random()
-		return err
-	})
-	return key, err
+	tx := newKeyTx(db.db)
+	return tx.Random()
 }
 
 // Get returns a specific key with all associated details.
 func (db *KeyDB) Get(key string) (Key, error) {
-	var k Key
-	err := db.View(func(tx *KeyTx) error {
-		var err error
-		k, err = tx.Get(key)
-		return err
-	})
-	return k, err
+	tx := newKeyTx(db.db)
+	return tx.Get(key)
 }
 
 // Expire sets a timeout on the key using a relative duration.
