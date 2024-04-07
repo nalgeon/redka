@@ -52,6 +52,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   path: artifacts/
+                  merge-multiple: true
 
             - name: Generate checksums
               run: |
@@ -72,6 +73,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   path: release/
+                  merge-multiple: true
 
             - name: Upload assets to release
               uses: svenstaro/upload-release-action@v2
