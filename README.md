@@ -1,6 +1,4 @@
-<p align="center">
-    <img alt="Redka" src="logo.svg" height="80" align="center">
-</p>
+<img alt="Redka" src="logo.svg" height="80" align="center">
 
 Redka aims to reimplement the good parts of Redis with SQLite, while remaining compatible with Redis protocol.
 
