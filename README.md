@@ -430,12 +430,15 @@ The project is on its way to 1.0.
 
 The 1.0 release will include the following features from Redis 2.x (which I consider the "golden age" of the Redis API):
 
--   Strings, lists, sets, hashes and sorted sets.
--   Publish/subscribe.
+-   Strings.
+-   Lists.
+-   Sets.
+-   Hashes.
+-   Sorted sets.
 -   Key management.
 -   Transactions.
 
-Future versions may include data types from later Redis versions (such as streams, HyperLogLog or geo) and more commands for existing types.
+Future versions may include additional data types (such as streams, HyperLogLog or geo), features like publish/subscribe, and more commands for existing types.
 
 Features I'd rather not implement even in future versions:
 
