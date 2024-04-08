@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/nalgeon/redka"
-	"github.com/tidwall/redcon"
 )
 
 var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
@@ -33,13 +32,27 @@ type Redka interface {
 	Str() redka.Strings
 }
 
+type Writer interface {
+	WriteError(msg string)
+	WriteString(str string)
+	WriteBulk(bulk []byte)
+	WriteBulkString(bulk string)
+	WriteInt(num int)
+	WriteInt64(num int64)
+	WriteUint64(num uint64)
+	WriteArray(count int)
+	WriteNull()
+	WriteRaw(data []byte)
+	WriteAny(v any)
+}
+
 // Cmd is a Redis-compatible command.
 type Cmd interface {
 	Name() string
 	Err() error
 	String() string
 
-	Run(w redcon.Conn, red Redka) (any, error)
+	Run(w Writer, red Redka) (any, error)
 }
 
 type baseCmd struct {

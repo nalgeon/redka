@@ -3,8 +3,6 @@ package command
 import (
 	"strconv"
 	"time"
-
-	"github.com/tidwall/redcon"
 )
 
 // Set sets the string value of a key, ignoring its type.
@@ -86,7 +84,7 @@ func parseSet(b baseCmd) (*Set, error) {
 	return cmd, nil
 }
 
-func (cmd *Set) Run(w redcon.Conn, red Redka) (any, error) {
+func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 	var ok bool
 	var err error
 	if cmd.ifXX {

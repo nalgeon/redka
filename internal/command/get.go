@@ -1,9 +1,5 @@
 package command
 
-import (
-	"github.com/tidwall/redcon"
-)
-
 // Get returns the string value of a key.
 // GET key
 // https://redis.io/commands/get
@@ -21,7 +17,7 @@ func parseGet(b baseCmd) (*Get, error) {
 	return cmd, nil
 }
 
-func (cmd *Get) Run(w redcon.Conn, red Redka) (any, error) {
+func (cmd *Get) Run(w Writer, red Redka) (any, error) {
 	v, err := red.Str().Get(cmd.key)
 
 	if err != nil {
