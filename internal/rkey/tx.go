@@ -10,8 +10,8 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlKeyKeys = `
-select key from rkey
+const sqlKeySearch = `
+select id, key, type, version, etime, mtime from rkey
 where key glob :pattern and (etime is null or etime > :now)`
 
 const sqlKeyScan = `
@@ -20,7 +20,7 @@ where id > :cursor and key glob :pattern and (etime is null or etime > :now)
 limit :count`
 
 const sqlKeyRandom = `
-select key from rkey
+select id, key, type, version, etime, mtime from rkey
 where etime is null or etime > ?
 order by random() limit 1`
 
@@ -85,16 +85,16 @@ func (tx *Tx) Exists(keys ...string) (int, error) {
 }
 
 // Search returns all keys matching pattern.
-func (tx *Tx) Search(pattern string) ([]string, error) {
+func (tx *Tx) Search(pattern string) ([]core.Key, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("pattern", pattern), sql.Named("now", now)}
-	scan := func(rows *sql.Rows) (string, error) {
-		var key string
-		err := rows.Scan(&key)
-		return key, err
+	scan := func(rows *sql.Rows) (core.Key, error) {
+		var k core.Key
+		err := rows.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
+		return k, err
 	}
-	var keys []string
-	keys, err := sqlx.Select(tx.tx, sqlKeyKeys, args, scan)
+	var keys []core.Key
+	keys, err := sqlx.Select(tx.tx, sqlKeySearch, args, scan)
 	return keys, err
 }
 
@@ -142,14 +142,16 @@ func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 }
 
 // Random returns a random key.
-func (tx *Tx) Random() (string, error) {
+func (tx *Tx) Random() (core.Key, error) {
 	now := time.Now().UnixMilli()
-	var key string
-	err := tx.tx.QueryRow(sqlKeyRandom, now).Scan(&key)
+	var k core.Key
+	err := tx.tx.QueryRow(sqlKeyRandom, now).Scan(
+		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
+	)
 	if err == sql.ErrNoRows {
-		return "", nil
+		return core.Key{}, nil
 	}
-	return key, err
+	return k, err
 }
 
 // Get returns a specific key with all associated details.
@@ -247,7 +249,7 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 
 	// If the keys are the same, do nothing.
 	if key == newKey {
-		return true, nil
+		return false, nil
 	}
 
 	// Make sure the new key does not exist.

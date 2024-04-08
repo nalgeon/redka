@@ -32,10 +32,10 @@ type KeyValue = core.KeyValue
 // Keys is a key repository.
 type Keys interface {
 	Exists(keys ...string) (int, error)
-	Search(pattern string) ([]string, error)
+	Search(pattern string) ([]Key, error)
 	Scan(cursor int, pattern string, count int) (rkey.ScanResult, error)
 	Scanner(pattern string, pageSize int) *rkey.Scanner
-	Random() (string, error)
+	Random() (Key, error)
 	Get(key string) (Key, error)
 	Expire(key string, ttl time.Duration) (bool, error)
 	ExpireAt(key string, at time.Time) (bool, error)

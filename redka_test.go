@@ -156,7 +156,10 @@ func TestKeySearch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			keys, err := db.Search(tt.pattern)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, keys, tt.want)
+			for i, key := range keys {
+				name := key.Key
+				testx.AssertEqual(t, name, tt.want[i])
+			}
 		})
 	}
 }
@@ -238,8 +241,8 @@ func TestKeyRandom(t *testing.T) {
 
 	key, err := db.Random()
 	testx.AssertNoErr(t, err)
-	if key != "name" && key != "age" {
-		t.Errorf("want name or age, got %s", key)
+	if key.Key != "name" && key.Key != "age" {
+		t.Errorf("want name or age, got %s", key.Key)
 	}
 }
 
@@ -404,7 +407,7 @@ func TestKeyRenameNX(t *testing.T) {
 		_ = red.Str().Set("name", "alice")
 		ok, err := db.RenameNX("name", "name")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, true)
+		testx.AssertEqual(t, ok, false)
 		name, _ := red.Str().Get("name")
 		testx.AssertEqual(t, name.String(), "alice")
 	})

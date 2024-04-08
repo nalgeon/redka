@@ -8,10 +8,12 @@ import (
 	"github.com/nalgeon/redka"
 )
 
+var ErrInvalidCursor = errors.New("ERR invalid cursor")
 var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
+var ErrKeyNotFound = errors.New("ERR no such key")
 var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
 var ErrNotInMulti = errors.New("ERR EXEC without MULTI")
-var ErrSyntax = errors.New("ERR syntax error")
+var ErrSyntaxError = errors.New("ERR syntax error")
 
 func ErrInvalidArgNum(cmd string) error {
 	return fmt.Errorf("ERR wrong number of arguments for '%s' command", cmd)
@@ -95,14 +97,43 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseOK(b)
 	case "info":
 		return parseOK(b)
+
 	// connection
 	case "echo":
 		return parseEcho(b)
+
+	// key
+	case "del":
+		return parseDel(b)
+	case "exists":
+		return parseExists(b)
+	case "expire":
+		return parseExpire(b, 1000)
+	case "expireat":
+		return parseExpireAt(b, 1000)
+	case "keys":
+		return parseKeys(b)
+	case "persist":
+		return parsePersist(b)
+	case "pexpire":
+		return parseExpire(b, 1)
+	case "pexpireat":
+		return parseExpireAt(b, 1)
+	case "randomkey":
+		return parseRandomKey(b)
+	case "rename":
+		return parseRename(b)
+	case "renamenx":
+		return parseRenameNX(b)
+	case "scan":
+		return parseScan(b)
+
 	// string
 	case "get":
 		return parseGet(b)
 	case "set":
 		return parseSet(b)
+
 	default:
 		return parseUnknown(b)
 	}

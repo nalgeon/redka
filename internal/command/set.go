@@ -26,7 +26,7 @@ func parseSet(b baseCmd) (*Set, error) {
 		case "xx":
 			cmd.ifXX = true
 		default:
-			return ErrSyntax
+			return ErrSyntaxError
 		}
 		return nil
 	}
@@ -43,7 +43,7 @@ func parseSet(b baseCmd) (*Set, error) {
 		case "px":
 			cmd.ttl = time.Duration(valueInt) * time.Millisecond
 		default:
-			return ErrSyntax
+			return ErrSyntaxError
 		}
 
 		if cmd.ttl <= 0 {

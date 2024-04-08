@@ -28,7 +28,7 @@ func (db *DB) Exists(keys ...string) (int, error) {
 }
 
 // Search returns all keys matching pattern.
-func (db *DB) Search(pattern string) ([]string, error) {
+func (db *DB) Search(pattern string) ([]core.Key, error) {
 	tx := NewTx(db.SQL)
 	return tx.Search(pattern)
 }
@@ -49,7 +49,7 @@ func (db *DB) Scanner(pattern string, pageSize int) *Scanner {
 }
 
 // Random returns a random key.
-func (db *DB) Random() (string, error) {
+func (db *DB) Random() (core.Key, error) {
 	tx := NewTx(db.SQL)
 	return tx.Random()
 }
