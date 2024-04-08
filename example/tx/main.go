@@ -45,13 +45,13 @@ func main() {
 
 		var p person
 		err := db.View(func(tx *redka.Tx) error {
-			name, err := db.Str().Get("name")
+			name, err := tx.Str().Get("name")
 			if err != nil {
 				return err
 			}
 			p.name = name.String()
 
-			age, err := db.Str().Get("age")
+			age, err := tx.Str().Get("age")
 			if err != nil {
 				return err
 			}

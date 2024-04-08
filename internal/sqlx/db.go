@@ -82,8 +82,8 @@ func (d *DB[T]) execTx(ctx context.Context, writable bool, f func(tx T) error) e
 	// See the init method for the explanation of the single writer rule.
 	// if writable {
 	// 	// only one writable transaction at a time
-	// 	d.mu.Lock()
-	// 	defer d.mu.Unlock()
+	// 	d.Lock()
+	// 	defer d.Unlock()
 	// }
 
 	dtx, err := d.SQL.BeginTx(ctx, nil)
