@@ -27,13 +27,19 @@ func ErrUnknownSubcmd(cmd, subcmd string) error {
 	return fmt.Errorf("ERR unknown subcommand '%s %s'", cmd, subcmd)
 }
 
+// Redka is a Redis-like repository.
+type Redka interface {
+	Key() redka.Keys
+	Str() redka.Strings
+}
+
 // Cmd is a Redis-compatible command.
 type Cmd interface {
 	Name() string
 	Err() error
 	String() string
 
-	Run(w redcon.Conn, red redka.Redka) (any, error)
+	Run(w redcon.Conn, red Redka) (any, error)
 }
 
 type baseCmd struct {

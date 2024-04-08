@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
 )
 
@@ -22,7 +21,7 @@ func parseGet(b baseCmd) (*Get, error) {
 	return cmd, nil
 }
 
-func (cmd *Get) Run(w redcon.Conn, red redka.Redka) (any, error) {
+func (cmd *Get) Run(w redcon.Conn, red Redka) (any, error) {
 	v, err := red.Str().Get(cmd.key)
 
 	if err != nil {

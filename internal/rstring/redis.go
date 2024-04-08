@@ -1,5 +1,5 @@
 // Redis-specific behavior and errors.
-package redka
+package rstring
 
 import (
 	"strings"

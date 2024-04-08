@@ -3,6 +3,8 @@ package command
 import (
 	"testing"
 	"time"
+
+	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSetParse(t *testing.T) {
@@ -81,14 +83,14 @@ func TestSetParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cmd, err := Parse(test.args)
-			assertEqual(t, err, test.err)
+			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				setCmd := cmd.(*Set)
-				assertEqual(t, setCmd.key, test.want.key)
-				assertEqual(t, setCmd.value, test.want.value)
-				assertEqual(t, setCmd.ifNX, test.want.ifNX)
-				assertEqual(t, setCmd.ifXX, test.want.ifXX)
-				assertEqual(t, setCmd.ttl, test.want.ttl)
+				testx.AssertEqual(t, setCmd.key, test.want.key)
+				testx.AssertEqual(t, setCmd.value, test.want.value)
+				testx.AssertEqual(t, setCmd.ifNX, test.want.ifNX)
+				testx.AssertEqual(t, setCmd.ifXX, test.want.ifXX)
+				testx.AssertEqual(t, setCmd.ttl, test.want.ttl)
 			}
 		})
 	}
@@ -152,9 +154,9 @@ func TestSetExec(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
 			res, err := test.cmd.Run(conn, db)
-			assertNoErr(t, err)
-			assertEqual(t, res, test.res)
-			assertEqual(t, conn.out(), test.out)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, res, test.res)
+			testx.AssertEqual(t, conn.out(), test.out)
 		})
 	}
 }

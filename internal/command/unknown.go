@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
 )
 
@@ -15,7 +14,7 @@ func parseUnknown(b baseCmd) (*Unknown, error) {
 	return &Unknown{baseCmd: b}, nil
 }
 
-func (cmd *Unknown) Run(w redcon.Conn, _ redka.Redka) (any, error) {
+func (cmd *Unknown) Run(w redcon.Conn, _ Redka) (any, error) {
 	err := ErrUnknownCmd(cmd.name)
 	w.WriteError(err.Error())
 	return false, err

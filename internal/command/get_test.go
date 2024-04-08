@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestGetParse(t *testing.T) {
@@ -39,9 +40,9 @@ func TestGetParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cmd, err := Parse(test.args)
-			assertEqual(t, err, test.err)
+			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				assertEqual(t, cmd.(*Get).key, test.want)
+				testx.AssertEqual(t, cmd.(*Get).key, test.want)
 			}
 		})
 	}
@@ -77,9 +78,9 @@ func TestGetExec(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
 			res, err := test.cmd.Run(conn, db)
-			assertNoErr(t, err)
-			assertEqual(t, res, test.res)
-			assertEqual(t, conn.out(), test.out)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, res, test.res)
+			testx.AssertEqual(t, conn.out(), test.out)
 		})
 	}
 }

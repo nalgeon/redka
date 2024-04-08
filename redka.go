@@ -6,31 +6,71 @@ import (
 	"database/sql"
 	"log/slog"
 	"time"
+
+	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rkey"
+	"github.com/nalgeon/redka/internal/rstring"
+	"github.com/nalgeon/redka/internal/sqlx"
 )
 
 const driverName = "sqlite3"
-
 const memoryURI = "file:redka?mode=memory&cache=shared"
 
-const sqlDbFlush = `
-pragma writable_schema = 1;
-delete from sqlite_schema
-  where name like 'rkey%' or name like 'rstring%';
-pragma writable_schema = 0;
-vacuum;
-pragma integrity_check;`
+// Errors that can be returned by the commands.
+var ErrKeyNotFound = core.ErrKeyNotFound
+var ErrInvalidType = core.ErrInvalidType
 
-// Redka is a Redis-like repository.
-type Redka interface {
-	Key() Keys
-	Str() Strings
+// Key represents a key data structure.
+type Key = core.Key
+
+// Value represents a key value (a byte slice).
+// It can be converted to other scalar types.
+type Value = core.Value
+
+// KeyValue represents a key-value pair.
+type KeyValue = core.KeyValue
+
+// Keys is a key repository.
+type Keys interface {
+	Exists(keys ...string) (int, error)
+	Search(pattern string) ([]string, error)
+	Scan(cursor int, pattern string, count int) (rkey.ScanResult, error)
+	Scanner(pattern string, pageSize int) *rkey.Scanner
+	Random() (string, error)
+	Get(key string) (Key, error)
+	Expire(key string, ttl time.Duration) (bool, error)
+	ExpireAt(key string, at time.Time) (bool, error)
+	Persist(key string) (bool, error)
+	Rename(key, newKey string) (bool, error)
+	RenameNX(key, newKey string) (bool, error)
+	Delete(keys ...string) (int, error)
+}
+
+// Strings is a string repository.
+type Strings interface {
+	Get(key string) (Value, error)
+	GetMany(keys ...string) ([]Value, error)
+	Set(key string, value any) error
+	SetExpires(key string, value any, ttl time.Duration) error
+	SetNotExists(key string, value any, ttl time.Duration) (bool, error)
+	SetExists(key string, value any, ttl time.Duration) (bool, error)
+	GetSet(key string, value any, ttl time.Duration) (Value, error)
+	SetMany(kvals ...KeyValue) error
+	SetManyNX(kvals ...KeyValue) (bool, error)
+	Length(key string) (int, error)
+	GetRange(key string, start, end int) (Value, error)
+	SetRange(key string, offset int, value string) (int, error)
+	Append(key, value string) (int, error)
+	Incr(key string, delta int) (int, error)
+	IncrFloat(key string, delta float64) (float64, error)
+	Delete(keys ...string) (int, error)
 }
 
 // DB is a Redis-like database backed by SQLite.
 type DB struct {
-	*sqlDB[*Tx]
-	keyDB    *KeyDB
-	stringDB *StringDB
+	*sqlx.DB[*Tx]
+	keyDB    *rkey.DB
+	stringDB *rstring.DB
 	bg       *time.Ticker
 	log      *slog.Logger
 }
@@ -52,14 +92,14 @@ func Open(path string) (*DB, error) {
 // OpenDB connects to the database.
 // Creates the database schema if necessary.
 func OpenDB(db *sql.DB) (*DB, error) {
-	sdb, err := openSQL(db, newTx)
+	sdb, err := sqlx.Open(db, newTx)
 	if err != nil {
 		return nil, err
 	}
 	rdb := &DB{
-		sqlDB:    sdb,
-		keyDB:    newKeyDB(db),
-		stringDB: newStringDB(db),
+		DB:       sdb,
+		keyDB:    rkey.New(db),
+		stringDB: rstring.New(db),
 		log:      slog.New(new(noopHandler)),
 	}
 	rdb.bg = rdb.startBgManager()
@@ -79,25 +119,14 @@ func (db *DB) Key() Keys {
 // Close closes the database.
 func (db *DB) Close() error {
 	db.bg.Stop()
-	return db.db.Close()
+	return db.SQL.Close()
 }
 
 // Flush deletes all keys and values from the database.
 func (db *DB) Flush() error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	_, err := db.db.Exec(sqlDbFlush)
-	if err != nil {
-		return err
-	}
-
-	err = db.init()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	db.Lock()
+	defer db.Unlock()
+	return sqlx.Truncate(db.DB)
 }
 
 // SetLogger sets the logger for the database.
@@ -121,7 +150,7 @@ func (db *DB) startBgManager() *time.Ticker {
 	ticker := time.NewTicker(interval)
 	go func() {
 		for range ticker.C {
-			count, err := db.keyDB.deleteExpired(nKeys)
+			count, err := db.keyDB.DeleteExpired(nKeys)
 			if err != nil {
 				db.log.Error("bg: delete expired keys", "error", err)
 			} else {
@@ -134,22 +163,20 @@ func (db *DB) startBgManager() *time.Ticker {
 
 // Tx is a Redis-like database transaction.
 type Tx struct {
-	tx    sqlTx
-	keyTx *KeyTx
-	strTx *StringTx
-}
-
-func (tx *Tx) Str() Strings {
-	return tx.strTx
-}
-
-func (tx *Tx) Key() Keys {
-	return tx.keyTx
+	tx    sqlx.Tx
+	keyTx *rkey.Tx
+	strTx *rstring.Tx
 }
 
 // newTx creates a new database transaction.
-func newTx(tx sqlTx) *Tx {
-	return &Tx{tx: tx, keyTx: newKeyTx(tx), strTx: newStringTx(tx)}
+func newTx(tx sqlx.Tx) *Tx {
+	return &Tx{tx: tx, keyTx: rkey.NewTx(tx), strTx: rstring.NewTx(tx)}
+}
+func (tx *Tx) Str() Strings {
+	return tx.strTx
+}
+func (tx *Tx) Key() Keys {
+	return tx.keyTx
 }
 
 // noopHandler is a silent log handler.

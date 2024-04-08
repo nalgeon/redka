@@ -2,7 +2,6 @@ package command
 
 import (
 	"net"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,20 +37,6 @@ func buildArgs(name string, args ...string) [][]byte {
 		rargs[i+1] = []byte(arg)
 	}
 	return rargs
-}
-
-func assertEqual(tb testing.TB, got, want any) {
-	tb.Helper()
-	if !reflect.DeepEqual(got, want) {
-		tb.Errorf("want %#v, got %#v", want, got)
-	}
-}
-
-func assertNoErr(tb testing.TB, got error) {
-	tb.Helper()
-	if got != nil {
-		tb.Errorf("unexpected error %T (%v)", got, got)
-	}
 }
 
 type fakeConn struct {

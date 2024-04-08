@@ -2,6 +2,8 @@ package command
 
 import (
 	"testing"
+
+	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestEchoParse(t *testing.T) {
@@ -34,9 +36,9 @@ func TestEchoParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cmd, err := Parse(test.args)
-			assertEqual(t, err, test.err)
+			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				assertEqual(t, cmd.(*Echo).parts, test.want)
+				testx.AssertEqual(t, cmd.(*Echo).parts, test.want)
 			}
 		})
 	}
@@ -70,9 +72,9 @@ func TestEchoExec(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
 			res, err := test.cmd.Run(conn, db)
-			assertNoErr(t, err)
-			assertEqual(t, res, test.res)
-			assertEqual(t, conn.out(), test.out)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, res, test.res)
+			testx.AssertEqual(t, conn.out(), test.out)
 		})
 	}
 }

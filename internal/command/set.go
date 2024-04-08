@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
 )
 
@@ -87,7 +86,7 @@ func parseSet(b baseCmd) (*Set, error) {
 	return cmd, nil
 }
 
-func (cmd *Set) Run(w redcon.Conn, red redka.Redka) (any, error) {
+func (cmd *Set) Run(w redcon.Conn, red Redka) (any, error) {
 	var ok bool
 	var err error
 	if cmd.ifXX {

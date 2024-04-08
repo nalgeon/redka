@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
 )
 
@@ -14,7 +13,7 @@ func parseOK(b baseCmd) (*OK, error) {
 	return &OK{baseCmd: b}, nil
 }
 
-func (c *OK) Run(w redcon.Conn, _ redka.Redka) (any, error) {
+func (c *OK) Run(w redcon.Conn, _ Redka) (any, error) {
 	w.WriteString("OK")
 	return true, nil
 }

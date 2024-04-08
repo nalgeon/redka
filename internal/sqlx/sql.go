@@ -1,5 +1,5 @@
 // SQL schema and query helpers.
-package redka
+package sqlx
 
 import (
 	"database/sql"
@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/nalgeon/redka/internal/core"
 )
 
 // Database schema version.
@@ -21,38 +23,46 @@ pragma mmap_size = 268435456;
 pragma foreign_keys = on;
 `
 
-//go:embed sql/schema.sql
+//go:embed schema.sql
 var sqlSchema string
 
-const sqlKeyCount = `
+const SQLKeyCount = `
 select count(id) from rkey
 where key in (:keys) and (etime is null or etime > :now)`
 
-const sqlKeyGet = `
+const SQLKeyGet = `
 select id, key, type, version, etime, mtime
 from rkey
 where key = ? and (etime is null or etime > ?)`
 
-const sqlKeyDel = `
+const SQLKeyDel = `
 delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
-// sqlTx is a database transaction (or a transaction-like object).
-type sqlTx interface {
+const sqlTruncate = `
+pragma writable_schema = 1;
+delete from sqlite_schema
+  where name like 'rkey%' or name like 'rstring%';
+pragma writable_schema = 0;
+vacuum;
+pragma integrity_check;`
+
+// Tx is a database transaction (or a transaction-like object).
+type Tx interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
 	Exec(query string, args ...any) (sql.Result, error)
 }
 
 // rowScanner is an interface to scan rows.
-type rowScanner interface {
+type RowScanner interface {
 	Scan(dest ...any) error
 }
 
-// txKeyGet returns the key data structure.
-func txKeyGet(tx sqlTx, key string) (k Key, err error) {
+// GetKey returns the key data structure.
+func GetKey(tx Tx, key string) (k core.Key, err error) {
 	now := time.Now().UnixMilli()
-	row := tx.QueryRow(sqlKeyGet, key, now)
+	row := tx.QueryRow(SQLKeyGet, key, now)
 	err = row.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
 	if err == sql.ErrNoRows {
 		return k, nil
@@ -63,10 +73,10 @@ func txKeyGet(tx sqlTx, key string) (k Key, err error) {
 	return k, nil
 }
 
-// txKeyDelete deletes a key and its associated values.
-func txKeyDelete(tx sqlTx, keys ...string) (int, error) {
+// DeleteKey deletes a key and its associated values.
+func DeleteKey(tx Tx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlExpandIn(sqlKeyDel, ":keys", keys)
+	query, keyArgs := ExpandIn(SQLKeyDel, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
@@ -77,7 +87,7 @@ func txKeyDelete(tx sqlTx, keys ...string) (int, error) {
 }
 
 // scanValue scans a key value from the row (rows).
-func scanValue(scanner rowScanner) (key string, val Value, err error) {
+func ScanValue(scanner RowScanner) (key string, val core.Value, err error) {
 	var value []byte
 	err = scanner.Scan(&key, &value)
 	if err == sql.ErrNoRows {
@@ -86,11 +96,11 @@ func scanValue(scanner rowScanner) (key string, val Value, err error) {
 	if err != nil {
 		return "", nil, err
 	}
-	return key, Value(value), nil
+	return key, core.Value(value), nil
 }
 
-// expandIn expands the IN clause in the query for a given parameter.
-func sqlExpandIn[T any](query string, param string, args []T) (string, []any) {
+// ExpandIn expands the IN clause in the query for a given parameter.
+func ExpandIn[T any](query string, param string, args []T) (string, []any) {
 	anyArgs := make([]any, len(args))
 	pholders := make([]string, len(args))
 	for i, arg := range args {
@@ -101,7 +111,7 @@ func sqlExpandIn[T any](query string, param string, args []T) (string, []any) {
 	return query, anyArgs
 }
 
-func sqlSelect[T any](db sqlTx, query string, args []any,
+func Select[T any](db Tx, query string, args []any,
 	scan func(rows *sql.Rows) (T, error)) ([]T, error) {
 
 	rows, err := db.Query(query, args...)
@@ -123,4 +133,19 @@ func sqlSelect[T any](db sqlTx, query string, args []any,
 	}
 
 	return vals, err
+}
+
+// Truncate deletes all data from the database.
+func Truncate[T any](db *DB[T]) error {
+	_, err := db.SQL.Exec(sqlTruncate)
+	if err != nil {
+		return err
+	}
+
+	err = db.init()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,6 +1,6 @@
 <img alt="Redka" src="logo.svg" height="80" align="center">
 
-Redka aims to reimplement the good parts of Redis with SQLite, while remaining compatible with Redis protocol.
+Redka aims to reimplement the good parts of Redis with SQLite, while remaining compatible with Redis API.
 
 Notable features:
 
@@ -460,6 +460,8 @@ Redka would not be possible without these great projects and their creators:
 -   [Redis](https://redis.io/) ([Salvatore Sanfilippo](https://github.com/antirez)). It's such an amazing idea to go beyond the get-set paradigm and provide a convenient API for more complex data structures.
 -   [SQLite](https://sqlite.org/) ([D. Richard Hipp](https://www.sqlite.org/crew.html)). The in-process database powering the world.
 -   [Redcon](https://github.com/tidwall/redcon) ([Josh Baker](https://github.com/tidwall)). A very clean and convenient implementation of a RESP server.
+
+Logo font by [Ek Type](https://ektype.in/).
 
 ### License
 

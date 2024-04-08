@@ -1,5 +1,5 @@
 // Common types and functions.
-package redka
+package core
 
 import (
 	"errors"
@@ -10,33 +10,21 @@ import (
 type typeID int
 
 const (
-	typeString    = typeID(1)
-	typeList      = typeID(2)
-	typeSet       = typeID(3)
-	typeHash      = typeID(4)
-	typeSortedSet = typeID(5)
+	TypeString    = typeID(1)
+	TypeList      = typeID(2)
+	TypeSet       = typeID(3)
+	TypeHash      = typeID(4)
+	TypeSortedSet = typeID(5)
 )
 
-// initial version of the key
-const initialVersion = 1
-
-// ErrInvalidInt is when the value is not a valid integer.
-var ErrInvalidInt = errors.New("invalid int")
-
-// ErrInvalidFloat is when the value is not a valid float.
-var ErrInvalidFloat = errors.New("invalid float")
+// Initial version of the key
+const InitialVersion = 1
 
 // ErrKeyNotFound is when the key is not found.
 var ErrKeyNotFound = errors.New("key not found")
 
 // ErrInvalidType is when the value does not have a valid type.
-var ErrInvalidType = errors.New("invalid type")
-
-// KeyValue represents a key-value pair.
-type KeyValue struct {
-	Key   string
-	Value any
-}
+var ErrInvalidType = errors.New("invalid value type")
 
 // Key represents a key data structure.
 type Key struct {
@@ -56,15 +44,15 @@ func (k Key) Exists() bool {
 // TypeName returns the name of the key type.
 func (k Key) TypeName() string {
 	switch k.Type {
-	case typeString:
+	case TypeString:
 		return "string"
-	case typeList:
+	case TypeList:
 		return "list"
-	case typeSet:
+	case TypeSet:
 		return "set"
-	case typeHash:
+	case TypeHash:
 		return "hash"
-	case typeSortedSet:
+	case TypeSortedSet:
 		return "zset"
 	}
 	return "unknown"
@@ -114,9 +102,15 @@ func (v Value) IsEmpty() bool {
 	return len(v) == 0
 }
 
-// isValueType returns true if the value has a valid type
+// KeyValue represents a key-value pair.
+type KeyValue struct {
+	Key   string
+	Value any
+}
+
+// IsValueType returns true if the value has a valid type
 // to be persisted in the database.
-func isValueType(v any) bool {
+func IsValueType(v any) bool {
 	switch v.(type) {
 	case string, int, float64, bool, []byte:
 		return true

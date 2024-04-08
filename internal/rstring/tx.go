@@ -1,10 +1,13 @@
 // Redis-like string repository in SQLite.
-package redka
+package rstring
 
 import (
 	"database/sql"
 	"slices"
 	"time"
+
+	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/sqlx"
 )
 
 const sqlStringGet = `
@@ -60,29 +63,29 @@ var sqlStringUpdate = []string{
 	set value = excluded.value;`,
 }
 
-// StringTx is a string repository transaction.
-type StringTx struct {
-	tx sqlTx
+// Tx is a string repository transaction.
+type Tx struct {
+	tx sqlx.Tx
 }
 
-// newStringTx creates a string repository transaction
+// NewTx creates a string repository transaction
 // from a generic database transaction.
-func newStringTx(tx sqlTx) *StringTx {
-	return &StringTx{tx}
+func NewTx(tx sqlx.Tx) *Tx {
+	return &Tx{tx}
 }
 
 // Get returns the value of the key.
-func (tx *StringTx) Get(key string) (Value, error) {
+func (tx *Tx) Get(key string) (core.Value, error) {
 	now := time.Now().UnixMilli()
 	row := tx.tx.QueryRow(sqlStringGet, key, now)
-	_, val, err := scanValue(row)
+	_, val, err := sqlx.ScanValue(row)
 	return val, err
 }
 
 // GetMany returns the values of multiple keys.
-func (tx *StringTx) GetMany(keys ...string) ([]Value, error) {
+func (tx *Tx) GetMany(keys ...string) ([]core.Value, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlExpandIn(sqlStringGetMany, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(sqlStringGetMany, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 
 	var rows *sql.Rows
@@ -94,9 +97,9 @@ func (tx *StringTx) GetMany(keys ...string) ([]Value, error) {
 
 	// Build a map of known keys.
 	// It will be used to fill in the missing keys.
-	known := make(map[string]Value, len(keys))
+	known := make(map[string]core.Value, len(keys))
 	for rows.Next() {
-		key, val, err := scanValue(rows)
+		key, val, err := sqlx.ScanValue(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +112,7 @@ func (tx *StringTx) GetMany(keys ...string) ([]Value, error) {
 	// Build the result slice.
 	// It will contain all values in the order of keys.
 	// Missing keys will have nil values.
-	vals := make([]Value, 0, len(keys))
+	vals := make([]core.Value, 0, len(keys))
 	for _, key := range keys {
 		vals = append(vals, known[key])
 	}
@@ -118,14 +121,14 @@ func (tx *StringTx) GetMany(keys ...string) ([]Value, error) {
 }
 
 // Set sets the key value. The key does not expire.
-func (tx *StringTx) Set(key string, value any) error {
+func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
 }
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
-func (tx *StringTx) SetExpires(key string, value any, ttl time.Duration) error {
-	if !isValueType(value) {
-		return ErrInvalidType
+func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
+	if !core.IsValueType(value) {
+		return core.ErrInvalidType
 	}
 	err := tx.set(key, value, ttl)
 	return err
@@ -133,12 +136,12 @@ func (tx *StringTx) SetExpires(key string, value any, ttl time.Duration) error {
 
 // SetNotExists sets the key value if the key does not exist.
 // Optionally sets the expiration time (if ttl > 0).
-func (tx *StringTx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
-	if !isValueType(value) {
-		return false, ErrInvalidType
+func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrInvalidType
 	}
 
-	k, err := txKeyGet(tx.tx, key)
+	k, err := sqlx.GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -152,12 +155,12 @@ func (tx *StringTx) SetNotExists(key string, value any, ttl time.Duration) (bool
 
 // SetExists sets the key value if the key exists.
 // Optionally sets the expiration time (if ttl > 0).
-func (tx *StringTx) SetExists(key string, value any, ttl time.Duration) (bool, error) {
-	if !isValueType(value) {
-		return false, ErrInvalidType
+func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrInvalidType
 	}
 
-	k, err := txKeyGet(tx.tx, key)
+	k, err := sqlx.GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -171,9 +174,9 @@ func (tx *StringTx) SetExists(key string, value any, ttl time.Duration) (bool, e
 
 // GetSet returns the previous value of a key after setting it to a new value.
 // Optionally sets the expiration time (if ttl > 0).
-func (tx *StringTx) GetSet(key string, value any, ttl time.Duration) (Value, error) {
-	if !isValueType(value) {
-		return nil, ErrInvalidType
+func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
+	if !core.IsValueType(value) {
+		return nil, core.ErrInvalidType
 	}
 
 	prev, err := tx.Get(key)
@@ -186,10 +189,10 @@ func (tx *StringTx) GetSet(key string, value any, ttl time.Duration) (Value, err
 }
 
 // SetMany sets the values of multiple keys.
-func (tx *StringTx) SetMany(kvals ...KeyValue) error {
+func (tx *Tx) SetMany(kvals ...core.KeyValue) error {
 	for _, kv := range kvals {
-		if !isValueType(kv.Value) {
-			return ErrInvalidType
+		if !core.IsValueType(kv.Value) {
+			return core.ErrInvalidType
 		}
 	}
 
@@ -205,10 +208,10 @@ func (tx *StringTx) SetMany(kvals ...KeyValue) error {
 
 // SetManyNX sets the values of multiple keys,
 // but only if none of them exist yet.
-func (tx *StringTx) SetManyNX(kvals ...KeyValue) (bool, error) {
+func (tx *Tx) SetManyNX(kvals ...core.KeyValue) (bool, error) {
 	for _, kv := range kvals {
-		if !isValueType(kv.Value) {
-			return false, ErrInvalidType
+		if !core.IsValueType(kv.Value) {
+			return false, core.ErrInvalidType
 		}
 	}
 
@@ -221,7 +224,7 @@ func (tx *StringTx) SetManyNX(kvals ...KeyValue) (bool, error) {
 	// check if any of the keys exist
 	count := 0
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlExpandIn(sqlKeyCount, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(sqlx.SQLKeyCount, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
 	if err != nil {
@@ -245,7 +248,7 @@ func (tx *StringTx) SetManyNX(kvals ...KeyValue) (bool, error) {
 }
 
 // Length returns the length of the key value.
-func (tx *StringTx) Length(key string) (int, error) {
+func (tx *Tx) Length(key string) (int, error) {
 	now := time.Now().UnixMilli()
 	var n int
 	err := tx.tx.QueryRow(sqlStringLen, key, now).Scan(&n)
@@ -256,7 +259,7 @@ func (tx *StringTx) Length(key string) (int, error) {
 }
 
 // GetRange returns the substring of the key value.
-func (tx *StringTx) GetRange(key string, start, end int) (Value, error) {
+func (tx *Tx) GetRange(key string, start, end int) (core.Value, error) {
 	val, err := tx.Get(key)
 	if err != nil {
 		return nil, err
@@ -267,11 +270,11 @@ func (tx *StringTx) GetRange(key string, start, end int) (Value, error) {
 	}
 	s := val.String()
 	start, end = rangeToSlice(len(s), start, end)
-	return Value(s[start:end]), nil
+	return core.Value(s[start:end]), nil
 }
 
 // SetRange overwrites part of the key value.
-func (tx *StringTx) SetRange(key string, offset int, value string) (int, error) {
+func (tx *Tx) SetRange(key string, offset int, value string) (int, error) {
 	val, err := tx.Get(key)
 	if err != nil {
 		return 0, err
@@ -287,7 +290,7 @@ func (tx *StringTx) SetRange(key string, offset int, value string) (int, error) 
 }
 
 // Append appends the value to the key.
-func (tx *StringTx) Append(key, value string) (int, error) {
+func (tx *Tx) Append(key, value string) (int, error) {
 	val, err := tx.Get(key)
 	if err != nil {
 		return 0, err
@@ -303,7 +306,7 @@ func (tx *StringTx) Append(key, value string) (int, error) {
 }
 
 // Incr increments the key value by the specified amount.
-func (tx *StringTx) Incr(key string, delta int) (int, error) {
+func (tx *Tx) Incr(key string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key)
 	if err != nil {
@@ -314,7 +317,7 @@ func (tx *StringTx) Incr(key string, delta int) (int, error) {
 	isFound := !val.IsEmpty()
 	valInt, err := val.Int()
 	if isFound && err != nil {
-		return 0, ErrInvalidInt
+		return 0, core.ErrInvalidType
 	}
 
 	// increment the value
@@ -328,7 +331,7 @@ func (tx *StringTx) Incr(key string, delta int) (int, error) {
 }
 
 // IncrFloat increments the key value by the specified amount.
-func (tx *StringTx) IncrFloat(key string, delta float64) (float64, error) {
+func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key)
 	if err != nil {
@@ -339,7 +342,7 @@ func (tx *StringTx) IncrFloat(key string, delta float64) (float64, error) {
 	isFound := !val.IsEmpty()
 	valFloat, err := val.Float()
 	if isFound && err != nil {
-		return 0, ErrInvalidFloat
+		return 0, core.ErrInvalidType
 	}
 
 	// increment the value
@@ -354,12 +357,12 @@ func (tx *StringTx) IncrFloat(key string, delta float64) (float64, error) {
 
 // Delete deletes keys and their values.
 // Returns the number of deleted keys. Non-existing keys are ignored.
-func (tx *StringTx) Delete(keys ...string) (int, error) {
-	return txKeyDelete(tx.tx, keys...)
+func (tx *Tx) Delete(keys ...string) (int, error) {
+	return sqlx.DeleteKey(tx.tx, keys...)
 }
 
 // set sets the key value and (optionally) its expiration time.
-func (tx StringTx) set(key string, value any, ttl time.Duration) error {
+func (tx Tx) set(key string, value any, ttl time.Duration) error {
 	now := time.Now()
 	var etime *int64
 	if ttl > 0 {
@@ -369,8 +372,8 @@ func (tx StringTx) set(key string, value any, ttl time.Duration) error {
 
 	args := []any{
 		sql.Named("key", key),
-		sql.Named("type", typeString),
-		sql.Named("version", initialVersion),
+		sql.Named("type", core.TypeString),
+		sql.Named("version", core.InitialVersion),
 		sql.Named("value", value),
 		sql.Named("etime", etime),
 		sql.Named("mtime", now.UnixMilli()),
@@ -388,12 +391,12 @@ func (tx StringTx) set(key string, value any, ttl time.Duration) error {
 // update updates the value of the existing key without changing its
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
-func (tx StringTx) update(key string, value any) error {
+func (tx Tx) update(key string, value any) error {
 	now := time.Now().UnixMilli()
 	args := []any{
 		sql.Named("key", key),
-		sql.Named("type", typeString),
-		sql.Named("version", initialVersion),
+		sql.Named("type", core.TypeString),
+		sql.Named("version", core.InitialVersion),
 		sql.Named("value", value),
 		sql.Named("mtime", now),
 	}

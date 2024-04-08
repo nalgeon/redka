@@ -3,7 +3,6 @@ package command
 import (
 	"strings"
 
-	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
 )
 
@@ -27,7 +26,7 @@ func parseEcho(b baseCmd) (*Echo, error) {
 	return cmd, nil
 }
 
-func (c *Echo) Run(w redcon.Conn, _ redka.Redka) (any, error) {
+func (c *Echo) Run(w redcon.Conn, _ Redka) (any, error) {
 	out := strings.Join(c.parts, " ")
 	w.WriteAny(out)
 	return out, nil

@@ -1,30 +1,30 @@
-package redka_test
+package testx
 
 import (
+	"database/sql"
 	"reflect"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nalgeon/redka"
 )
 
-func getDB(tb testing.TB) *redka.DB {
+func GetDB(tb testing.TB) *sql.DB {
 	tb.Helper()
-	db, err := redka.Open(":memory:")
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		tb.Fatal(err)
 	}
 	return db
 }
 
-func assertEqual(tb testing.TB, got, want any) {
+func AssertEqual(tb testing.TB, got, want any) {
 	tb.Helper()
 	if !reflect.DeepEqual(got, want) {
 		tb.Errorf("want %#v, got %#v", want, got)
 	}
 }
 
-func assertErr(tb testing.TB, got, want error) {
+func AssertErr(tb testing.TB, got, want error) {
 	tb.Helper()
 	if got == nil {
 		tb.Errorf("want %T (%v) error, got nil", want, want)
@@ -36,7 +36,7 @@ func assertErr(tb testing.TB, got, want error) {
 	}
 }
 
-func assertNoErr(tb testing.TB, got error) {
+func AssertNoErr(tb testing.TB, got error) {
 	tb.Helper()
 	if got != nil {
 		tb.Errorf("unexpected error %T (%v)", got, got)
