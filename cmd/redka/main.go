@@ -26,6 +26,9 @@ var (
 	date    = "unknown"
 )
 
+const defaultURI = "file:redka.db"
+const memoryURI = "file:redka?mode=memory&cache=shared"
+
 // Config holds the server configuration.
 type Config struct {
 	Host    string
@@ -57,7 +60,13 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	if len(flag.Args()) == 1 {
+
+	// Set the data source.
+	if len(flag.Args()) == 0 {
+		config.Path = defaultURI
+	} else if flag.Arg(0) == ":memory:" {
+		config.Path = memoryURI
+	} else {
 		config.Path = flag.Arg(0)
 	}
 

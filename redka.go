@@ -14,7 +14,6 @@ import (
 )
 
 const driverName = "sqlite3"
-const memoryURI = "file:redka?mode=memory&cache=shared"
 
 // Errors that can be returned by the commands.
 var ErrKeyNotFound = core.ErrKeyNotFound
@@ -78,10 +77,6 @@ type DB struct {
 // Open opens a new or existing database at the given path.
 // Creates the database schema if necessary.
 func Open(path string) (*DB, error) {
-	// Use in-memory database by default.
-	if path == "" {
-		path = memoryURI
-	}
 	db, err := sql.Open(driverName, path)
 	if err != nil {
 		return nil, err

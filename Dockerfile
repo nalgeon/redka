@@ -8,8 +8,8 @@ RUN make build
 
 FROM alpine:latest
 RUN mkdir /data
-VOLUME ["/data"]
-WORKDIR /app
-ENV PATH="/app:${PATH}"
-COPY --from=build /app/build/redka .
-CMD ["redka", "-h", "0.0.0.0", "-p", "6379", "/data/data.db"]
+VOLUME /data
+WORKDIR /data
+COPY --from=build /app/build/redka /usr/local/bin/redka
+EXPOSE 6379
+CMD ["redka", "-h", "0.0.0.0"]

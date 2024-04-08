@@ -223,10 +223,13 @@ For example:
 ```shell
 ./redka
 ./redka data.db
-./redka -h localhost -p 6379 data.db
+./redka -h 0.0.0.0 -p 6379 data.db
+./redka ":memory:"
 ```
 
-Running without a DB path creates an in-memory database. The data is not persisted in this case, and will be gone when the server is stopped.
+Server defaults are host `localhost`, port `6379` and DB path `redka.db`.
+
+Running with a special DB path value `:memory:` creates an in-memory database. The data is not persisted in this case, and will be gone when the server is stopped.
 
 You can also run Redka with Docker as follows:
 
@@ -239,7 +242,7 @@ docker run --rm -p 6379:6379 nalgeon/redka
 # using the /path/to/data host directory
 docker run --rm -p 6379:6379 -v /path/to/data:/data nalgeon/redka
 
-# in-memory database, custom post
+# custom port
 docker run --rm -p 6380:6380 nalgeon/redka redka -h 0.0.0.0 -p 6380
 ```
 
@@ -286,10 +289,11 @@ func main() {
 
 Don't forget to import the driver (here I use `github.com/mattn/go-sqlite3`). Using `modernc.org/sqlite` is slightly different, see `example/modernc/main.go` for details.
 
-To open an in-memory database that doesn't persist to disk, use `:memory:` as the path to the file:
+To open an in-memory database that doesn't persist to disk, use the following path:
 
 ```go
-redka.Open(":memory:") // All data is lost when the database is closed.
+// All data is lost when the database is closed.
+redka.Open("file:redka?mode=memory&cache=shared")
 ```
 
 After opening the database, call `redka.DB` methods to run individual commands:
