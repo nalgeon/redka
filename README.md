@@ -287,7 +287,7 @@ func main() {
 }
 ```
 
-Don't forget to import the driver (here I use `github.com/mattn/go-sqlite3`). Using `modernc.org/sqlite` is slightly different, see `example/modernc/main.go` for details.
+Don't forget to import the driver (here I use `github.com/mattn/go-sqlite3`). Using `modernc.org/sqlite` is slightly different, see [`example/modernc/main.go`](example/modernc/main.go) for details.
 
 To open an in-memory database that doesn't persist to disk, use the following path:
 
@@ -314,7 +314,7 @@ exists count=2 err=<nil>
 get name="alice" err=<nil>
 ```
 
-See the full example in `example/simple/main.go`.
+See the full example in [`example/simple/main.go`](example/simple/main.go).
 
 Use transactions to batch commands. There are `View` (read-only transaction) and `Update` (writable transaction) methods for this:
 
@@ -341,7 +341,7 @@ slog.Info("updated", "count", updCount, "err", err)
 updated count=2 err=<nil>
 ```
 
-See the full example in `example/tx/main.go`.
+See the full example in [`example/tx/main.go`](example/tx/main.go).
 
 ## Persistence
 
