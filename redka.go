@@ -4,6 +4,7 @@ package redka
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -18,6 +19,7 @@ const driverName = "sqlite3"
 // Errors that can be returned by the commands.
 var ErrKeyNotFound = core.ErrKeyNotFound
 var ErrInvalidType = core.ErrInvalidType
+var ErrCommandNotAllowed = errors.New("command not allowed")
 
 // Key represents a key data structure.
 type Key = core.Key
@@ -168,6 +170,9 @@ func (tx *Tx) Str() Strings {
 }
 func (tx *Tx) Key() Keys {
 	return tx.keyTx
+}
+func (tx *Tx) Flush() error {
+	return ErrCommandNotAllowed
 }
 
 // noopHandler is a silent log handler.

@@ -32,6 +32,7 @@ func ErrUnknownSubcmd(cmd, subcmd string) error {
 type Redka interface {
 	Key() redka.Keys
 	Str() redka.Strings
+	Flush() error
 }
 
 type Writer interface {
@@ -95,6 +96,8 @@ func Parse(args [][]byte) (Cmd, error) {
 	// server
 	case "command":
 		return parseOK(b)
+	case "flushdb":
+		return parseFlushDB(b)
 	case "info":
 		return parseOK(b)
 
@@ -135,14 +138,28 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseIncrBy(b, -1)
 	case "get":
 		return parseGet(b)
+	case "getset":
+		return parseGetSet(b)
 	case "incr":
 		return parseIncr(b, 1)
 	case "incrby":
 		return parseIncrBy(b, 1)
 	case "incrbyfloat":
 		return parseIncrByFloat(b)
+	case "mget":
+		return parseMGet(b)
+	case "mset":
+		return parseMSet(b)
+	case "msetnx":
+		return parseMSetNX(b)
+	case "psetex":
+		return parseSetEX(b, 1)
 	case "set":
 		return parseSet(b)
+	case "setex":
+		return parseSetEX(b, 1000)
+	case "setnx":
+		return parseSetNX(b)
 
 	default:
 		return parseUnknown(b)
