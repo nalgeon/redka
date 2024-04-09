@@ -36,8 +36,8 @@ vstring as
   select
     rkey.id as key_id, rkey.key, rstring.value,
 	case rkey.type when 1 then 'string' else 'unknown' end as type,
-	datetime(etime/1000, 'unixepoch', 'utc') as etime,
-	datetime(mtime/1000, 'unixepoch', 'utc') as mtime
+	datetime(etime/1000, 'unixepoch') as etime,
+	datetime(mtime/1000, 'unixepoch') as mtime
   from rkey join rstring on rkey.id = rstring.key_id
   where rkey.type = 1
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
