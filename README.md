@@ -36,11 +36,11 @@ Strings are the most basic Redis type, representing a sequence of bytes. Redka s
 | `GETSET`      | `DB.Str().GetSet`       | Sets the key to a new value and returns the prev value.               |
 | `INCR`        | `DB.Str().Incr`         | Increments the integer value of a key by one.                         |
 | `INCRBY`      | `DB.Str().Incr`         | Increments the integer value of a key by a number.                    |
-| `INCRBYFLOAT` | `DB.Str().Incr`         | Increments the float value of a key by a number.                      |
+| `INCRBYFLOAT` | `DB.Str().IncrFloat`    | Increments the float value of a key by a number.                      |
 | `MGET`        | `DB.Str().GetMany`      | Returns the string values of one or more keys.                        |
 | `MSET`        | `DB.Str().SetMany`      | Sets the string values of one or more keys.                           |
 | `MSETNX`      | `DB.Str().SetManyNX`    | Sets the string values of one or more keys when all keys don't exist. |
-| `PSETEX`      | `DB.Str().Set`          | Sets the string value and expiration time (in ms) of a key.           |
+| `PSETEX`      | `DB.Str().SetExpires`   | Sets the string value and expiration time (in ms) of a key.           |
 | `SET`         | `DB.Str().Set`          | Sets the string value of a key.                                       |
 | `SETEX`       | `DB.Str().SetExpires`   | Sets the string value and expiration (in sec) time of a key.          |
 | `SETNX`       | `DB.Str().SetNotExists` | Sets the string value of a key when the key doesn't exist.            |
