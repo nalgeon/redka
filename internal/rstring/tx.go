@@ -180,7 +180,7 @@ func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, erro
 }
 
 // SetMany sets the values of multiple keys.
-func (tx *Tx) SetMany(kvals ...core.KeyValue) error {
+func (tx *Tx) SetMany(kvals ...core.KVPair) error {
 	for _, kv := range kvals {
 		if !core.IsValueType(kv.Value) {
 			return core.ErrInvalidType
@@ -199,7 +199,7 @@ func (tx *Tx) SetMany(kvals ...core.KeyValue) error {
 
 // SetManyNX sets the values of multiple keys,
 // but only if none of them exist yet.
-func (tx *Tx) SetManyNX(kvals ...core.KeyValue) (bool, error) {
+func (tx *Tx) SetManyNX(kvals ...core.KVPair) (bool, error) {
 	for _, kv := range kvals {
 		if !core.IsValueType(kv.Value) {
 			return false, core.ErrInvalidType

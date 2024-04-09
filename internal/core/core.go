@@ -102,8 +102,8 @@ func (v Value) IsEmpty() bool {
 	return len(v) == 0
 }
 
-// KeyValue represents a key-value pair.
-type KeyValue struct {
+// KVPair represents a key-value pair.
+type KVPair struct {
 	Key   string
 	Value any
 }

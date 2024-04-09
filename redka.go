@@ -28,8 +28,8 @@ type Key = core.Key
 // It can be converted to other scalar types.
 type Value = core.Value
 
-// KeyValue represents a key-value pair.
-type KeyValue = core.KeyValue
+// KVPair represents a key-value pair.
+type KVPair = core.KVPair
 
 // Keys is a key repository.
 type Keys interface {
@@ -56,8 +56,8 @@ type Strings interface {
 	SetNotExists(key string, value any, ttl time.Duration) (bool, error)
 	SetExists(key string, value any, ttl time.Duration) (bool, error)
 	GetSet(key string, value any, ttl time.Duration) (Value, error)
-	SetMany(kvals ...KeyValue) error
-	SetManyNX(kvals ...KeyValue) (bool, error)
+	SetMany(kvals ...KVPair) error
+	SetManyNX(kvals ...KVPair) (bool, error)
 	Incr(key string, delta int) (int, error)
 	IncrFloat(key string, delta float64) (float64, error)
 	Delete(keys ...string) (int, error)

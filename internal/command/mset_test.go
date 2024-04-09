@@ -29,7 +29,7 @@ func TestMSetParse(t *testing.T) {
 		{
 			name: "mset name alice",
 			args: buildArgs("mset", "name", "alice"),
-			want: MSet{kvals: []redka.KeyValue{{Key: "name", Value: []byte("alice")}}},
+			want: MSet{kvals: []redka.KVPair{{Key: "name", Value: []byte("alice")}}},
 			err:  nil,
 		},
 		{
@@ -41,7 +41,7 @@ func TestMSetParse(t *testing.T) {
 		{
 			name: "mset name alice age 25",
 			args: buildArgs("mset", "name", "alice", "age", "25"),
-			want: MSet{kvals: []redka.KeyValue{
+			want: MSet{kvals: []redka.KVPair{
 				{Key: "name", Value: []byte("alice")},
 				{Key: "age", Value: []byte("25")}},
 			},

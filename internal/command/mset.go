@@ -9,7 +9,7 @@ import (
 // https://redis.io/commands/mset
 type MSet struct {
 	baseCmd
-	kvals []redka.KeyValue
+	kvals []redka.KVPair
 }
 
 func parseMSet(b baseCmd) (*MSet, error) {
@@ -18,9 +18,9 @@ func parseMSet(b baseCmd) (*MSet, error) {
 		return cmd, ErrInvalidArgNum(cmd.name)
 	}
 
-	cmd.kvals = make([]redka.KeyValue, len(cmd.args)/2)
+	cmd.kvals = make([]redka.KVPair, len(cmd.args)/2)
 	for i := 0; i < len(cmd.args); i += 2 {
-		cmd.kvals[i/2] = redka.KeyValue{
+		cmd.kvals[i/2] = redka.KVPair{
 			Key:   string(cmd.args[i]),
 			Value: cmd.args[i+1],
 		}

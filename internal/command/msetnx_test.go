@@ -29,7 +29,7 @@ func TestMSetNXParse(t *testing.T) {
 		{
 			name: "msetnx name alice",
 			args: buildArgs("msetnx", "name", "alice"),
-			want: MSetNX{kvals: []redka.KeyValue{{Key: "name", Value: []byte("alice")}}},
+			want: MSetNX{kvals: []redka.KVPair{{Key: "name", Value: []byte("alice")}}},
 			err:  nil,
 		},
 		{
@@ -41,7 +41,7 @@ func TestMSetNXParse(t *testing.T) {
 		{
 			name: "msetnx name alice age 25",
 			args: buildArgs("msetnx", "name", "alice", "age", "25"),
-			want: MSetNX{kvals: []redka.KeyValue{
+			want: MSetNX{kvals: []redka.KVPair{
 				{Key: "name", Value: []byte("alice")},
 				{Key: "age", Value: []byte("25")}},
 			},
