@@ -86,7 +86,7 @@ func TestIncrByFloatExec(t *testing.T) {
 		{
 			name: "zero",
 			cmd:  mustParse[*IncrByFloat]("incrbyfloat age 0"),
-			res:  25,
+			res:  25.0,
 			out:  "25",
 		},
 		{
