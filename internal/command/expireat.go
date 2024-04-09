@@ -30,7 +30,6 @@ func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 
 func (cmd *ExpireAt) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().ExpireAt(cmd.key, cmd.at)
-
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

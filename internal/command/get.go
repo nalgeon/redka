@@ -18,16 +18,15 @@ func parseGet(b baseCmd) (*Get, error) {
 }
 
 func (cmd *Get) Run(w Writer, red Redka) (any, error) {
-	v, err := red.Str().Get(cmd.key)
-
+	val, err := red.Str().Get(cmd.key)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err
 	}
-	if v.IsEmpty() {
+	if val.IsEmpty() {
 		w.WriteNull()
-		return v, nil
+		return val, nil
 	}
-	w.WriteBulkString(v.String())
-	return v, nil
+	w.WriteBulk(val)
+	return val, nil
 }

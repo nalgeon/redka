@@ -23,7 +23,6 @@ func parseRename(b baseCmd) (*Rename, error) {
 
 func (cmd *Rename) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().Rename(cmd.key, cmd.newKey)
-
 	if err == core.ErrKeyNotFound {
 		w.WriteError(ErrKeyNotFound.Error())
 		return false, ErrKeyNotFound

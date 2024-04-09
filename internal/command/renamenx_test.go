@@ -7,9 +7,6 @@ import (
 )
 
 func TestRenameNXParse(t *testing.T) {
-	db := getDB(t)
-	defer db.Close()
-
 	tests := []struct {
 		name   string
 		args   [][]byte

@@ -66,7 +66,7 @@ func (v Value) String() string {
 	return string(v)
 }
 func (v Value) Bytes() []byte {
-	return []byte(v)
+	return v
 }
 func (v Value) Bool() (bool, error) {
 	return strconv.ParseBool(string(v))

@@ -28,7 +28,6 @@ func parseIncrByFloat(b baseCmd) (*IncrByFloat, error) {
 
 func (cmd *IncrByFloat) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().IncrFloat(cmd.key, cmd.delta)
-
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

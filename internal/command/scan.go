@@ -83,11 +83,11 @@ func parseScan(b baseCmd) (*Scan, error) {
 
 func (cmd *Scan) Run(w Writer, red Redka) (any, error) {
 	res, err := red.Key().Scan(cmd.cursor, cmd.match, cmd.count)
-
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err
 	}
+
 	w.WriteArray(2)
 	w.WriteInt(res.Cursor)
 	w.WriteArray(len(res.Keys))
