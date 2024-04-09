@@ -129,8 +129,6 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseScan(b)
 
 	// string
-	case "append":
-		return parseAppend(b)
 	case "decr":
 		return parseIncr(b, -1)
 	case "decrby":

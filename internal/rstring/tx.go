@@ -17,15 +17,6 @@ join rkey on key_id = rkey.id
 where key = ? and (etime is null or etime > ?);
 `
 
-const sqlStringLen = `
-select length(value)
-from rstring
-where key_id = (
-  select id from rkey
-  where key = ? and (etime is null or etime > ?)
-);
-`
-
 const sqlStringGetMany = `
 select key, value
 from rstring
@@ -245,64 +236,6 @@ func (tx *Tx) SetManyNX(kvals ...core.KeyValue) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// Length returns the length of the key value.
-func (tx *Tx) Length(key string) (int, error) {
-	now := time.Now().UnixMilli()
-	var n int
-	err := tx.tx.QueryRow(sqlStringLen, key, now).Scan(&n)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
-	return n, err
-}
-
-// GetRange returns the substring of the key value.
-func (tx *Tx) GetRange(key string, start, end int) (core.Value, error) {
-	val, err := tx.Get(key)
-	if err != nil {
-		return nil, err
-	}
-	if val.IsEmpty() {
-		// return empty value if the key does not exist
-		return val, nil
-	}
-	s := val.String()
-	start, end = rangeToSlice(len(s), start, end)
-	return core.Value(s[start:end]), nil
-}
-
-// SetRange overwrites part of the key value.
-func (tx *Tx) SetRange(key string, offset int, value string) (int, error) {
-	val, err := tx.Get(key)
-	if err != nil {
-		return 0, err
-	}
-
-	newVal := setRange(val.String(), offset, value)
-	err = tx.update(key, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return len(newVal), nil
-}
-
-// Append appends the value to the key.
-func (tx *Tx) Append(key, value string) (int, error) {
-	val, err := tx.Get(key)
-	if err != nil {
-		return 0, err
-	}
-
-	newVal := val.String() + value
-	err = tx.update(key, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return len(newVal), nil
 }
 
 // Incr increments the key value by the specified amount.

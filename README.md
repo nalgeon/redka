@@ -30,11 +30,9 @@ Strings are the most basic Redis type, representing a sequence of bytes. Redka s
 
 | Command       | Go API                  | Description                                                           |
 | ------------- | ----------------------- | --------------------------------------------------------------------- |
-| `APPEND`      | `DB.Str().Append`       | Appends a string to the value of a key.                               |
 | `DECR`        | `DB.Str().Incr`         | Decrements the integer value of a key by one.                         |
 | `DECRBY`      | `DB.Str().Incr`         | Decrements a number from the integer value of a key.                  |
 | `GET`         | `DB.Str().Get`          | Returns the string value of a key.                                    |
-| `GETRANGE`    | `DB.Str().GetRange`     | Returns a substring of the string stored at a key.                    |
 | `GETSET`      | `DB.Str().GetSet`       | Sets the key to a new value and returns the prev value.               |
 | `INCR`        | `DB.Str().Incr`         | Increments the integer value of a key by one.                         |
 | `INCRBY`      | `DB.Str().Incr`         | Increments the integer value of a key by a number.                    |
@@ -46,14 +44,11 @@ Strings are the most basic Redis type, representing a sequence of bytes. Redka s
 | `SET`         | `DB.Str().Set`          | Sets the string value of a key.                                       |
 | `SETEX`       | `DB.Str().SetExpires`   | Sets the string value and expiration (in sec) time of a key.          |
 | `SETNX`       | `DB.Str().SetNotExists` | Sets the string value of a key when the key doesn't exist.            |
-| `SETRANGE`    | `DB.Str().SetRange`     | Overwrites a part of a string value with another by an offset.        |
-| `STRLEN`      | `DB.Str().Length`       | Returns the length of a string value.                                 |
-| `SUBSTR`      | `DB.Str().GetRange`     | Same as `GETRANGE`.                                                   |
 
 The following string-related commands are not planned for 1.0:
 
 ```
-GETDEL  GETEX  LCS
+APPEND  GETDEL  GETEX  GETRANGE  LCS  SETRANGE  STRLEN  SUBSTR
 ```
 
 ### Lists

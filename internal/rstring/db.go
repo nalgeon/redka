@@ -104,40 +104,6 @@ func (d *DB) SetManyNX(kvals ...core.KeyValue) (bool, error) {
 	return ok, err
 }
 
-// Length returns the length of the key value.
-func (d *DB) Length(key string) (int, error) {
-	tx := NewTx(d.SQL)
-	return tx.Length(key)
-}
-
-// GetRange returns the substring of the key value.
-func (d *DB) GetRange(key string, start, end int) (core.Value, error) {
-	tx := NewTx(d.SQL)
-	return tx.GetRange(key, start, end)
-}
-
-// SetRange overwrites part of the key value.
-func (d *DB) SetRange(key string, offset int, value string) (int, error) {
-	var n int
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		n, err = tx.SetRange(key, offset, value)
-		return err
-	})
-	return n, err
-}
-
-// Append appends the value to the key.
-func (d *DB) Append(key, value string) (int, error) {
-	var n int
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		n, err = tx.Append(key, value)
-		return err
-	})
-	return n, err
-}
-
 // Incr increments the key value by the specified amount.
 func (d *DB) Incr(key string, delta int) (int, error) {
 	var val int

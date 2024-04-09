@@ -56,10 +56,6 @@ type Strings interface {
 	GetSet(key string, value any, ttl time.Duration) (Value, error)
 	SetMany(kvals ...KeyValue) error
 	SetManyNX(kvals ...KeyValue) (bool, error)
-	Length(key string) (int, error)
-	GetRange(key string, start, end int) (Value, error)
-	SetRange(key string, offset int, value string) (int, error)
-	Append(key, value string) (int, error)
 	Incr(key string, delta int) (int, error)
 	IncrFloat(key string, delta float64) (float64, error)
 	Delete(keys ...string) (int, error)
