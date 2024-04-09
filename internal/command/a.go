@@ -129,8 +129,20 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseScan(b)
 
 	// string
+	case "append":
+		return parseAppend(b)
+	case "decr":
+		return parseIncr(b, -1)
+	case "decrby":
+		return parseIncrBy(b, -1)
 	case "get":
 		return parseGet(b)
+	case "incr":
+		return parseIncr(b, 1)
+	case "incrby":
+		return parseIncrBy(b, 1)
+	case "incrbyfloat":
+		return parseIncrByFloat(b)
 	case "set":
 		return parseSet(b)
 
