@@ -113,7 +113,7 @@ func TestSet(t *testing.T) {
 		val, _ := db.Get("name")
 		testx.AssertEqual(t, val, redka.Value("bob"))
 	})
-	t.Run("change type", func(t *testing.T) {
+	t.Run("change value type", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		err := db.Set("name", true)
 		testx.AssertNoErr(t, err)
@@ -126,6 +126,11 @@ func TestSet(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		val, _ := db.Get("name")
 		testx.AssertEqual(t, val, redka.Value("alice"))
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "name", "alice")
+		err := db.Set("person", "name")
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
 	})
 }
 
@@ -159,6 +164,13 @@ func TestSetExpires(t *testing.T) {
 		got := (*key.ETime) / 1000
 		want := now.Add(ttl).UnixMilli() / 1000
 		testx.AssertEqual(t, got, want)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		err := db.SetExpires("person", "name", time.Second)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
 	})
 }
 
@@ -199,6 +211,12 @@ func TestSetNotExists(t *testing.T) {
 		want := now.Add(ttl).UnixMilli() / 1000
 		testx.AssertEqual(t, got, want)
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "name", "alice")
+		ok, err := db.SetNotExists("person", "name", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, ok, false)
+	})
 }
 
 func TestSetExists(t *testing.T) {
@@ -237,6 +255,12 @@ func TestSetExists(t *testing.T) {
 		got := (*key.ETime) / 1000
 		want := now.Add(ttl).UnixMilli() / 1000
 		testx.AssertEqual(t, got, want)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "name", "alice")
+		ok, err := db.SetExists("person", "name", 0)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, ok, false)
 	})
 }
 
@@ -290,6 +314,14 @@ func TestGetSet(t *testing.T) {
 		want := now.Add(ttl).UnixMilli() / 1000
 		testx.AssertEqual(t, got, want)
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		val, err := db.GetSet("person", "name", 0)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, redka.Value(nil))
+	})
 }
 
 func TestSetMany(t *testing.T) {
@@ -332,6 +364,16 @@ func TestSetMany(t *testing.T) {
 			"age":  struct{ Name string }{"alice"},
 		})
 		testx.AssertErr(t, err, redka.ErrInvalidType)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		err := db.SetMany(map[string]any{
+			"name":   "alice",
+			"person": "alice",
+		})
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
 	})
 }
 
@@ -379,6 +421,17 @@ func TestSetManyNX(t *testing.T) {
 		testx.AssertErr(t, err, redka.ErrInvalidType)
 		testx.AssertEqual(t, ok, false)
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		ok, err := db.SetManyNX(map[string]any{
+			"name":   "alice",
+			"person": "alice",
+		})
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, ok, false)
+	})
 }
 
 func TestIncr(t *testing.T) {
@@ -406,6 +459,12 @@ func TestIncr(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.Incr("name", 1)
 		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertEqual(t, val, 0)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "age", 25)
+		val, err := db.Incr("person", 10)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0)
 	})
 }
@@ -437,36 +496,12 @@ func TestIncrFloat(t *testing.T) {
 		testx.AssertErr(t, err, redka.ErrInvalidType)
 		testx.AssertEqual(t, val, 0.0)
 	})
-}
-
-func TestDelete(t *testing.T) {
-	tests := []struct {
-		name string
-		keys []string
-		want int
-	}{
-		{"delete one", []string{"name"}, 1},
-		{"delete some", []string{"name", "city"}, 1},
-		{"delete many", []string{"name", "age"}, 2},
-		{"delete none", []string{"city"}, 0},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			red, db := getDB(t)
-			defer red.Close()
-
-			_ = db.Set("name", "alice")
-			_ = db.Set("age", 25)
-
-			count, err := db.Delete(test.keys...)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, count, test.want)
-			for _, key := range test.keys {
-				val, _ := db.Get(key)
-				testx.AssertEqual(t, val.IsEmpty(), true)
-			}
-		})
-	}
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "age", 25.5)
+		val, err := db.IncrFloat("person", 10.5)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, 0.0)
+	})
 }
 
 func getDB(tb testing.TB) (*redka.DB, redka.Strings) {

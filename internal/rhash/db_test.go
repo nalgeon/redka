@@ -358,6 +358,14 @@ func TestSet(t *testing.T) {
 		val, _ := db.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "bob")
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		ok, err := db.Set("person", "name", "alice")
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, ok, false)
+	})
 }
 
 func TestSetNotExists(t *testing.T) {
@@ -392,6 +400,14 @@ func TestSetNotExists(t *testing.T) {
 		testx.AssertEqual(t, ok, false)
 		val, _ := db.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		ok, err := db.SetNotExists("person", "name", "alice")
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, ok, false)
 	})
 }
 
@@ -449,6 +465,16 @@ func TestSetMany(t *testing.T) {
 		val, _ = db.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "50")
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		count, err := db.SetMany("person", map[string]any{
+			"name": "alice", "age": 25,
+		})
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, count, 0)
+	})
 }
 
 func TestIncr(t *testing.T) {
@@ -495,6 +521,14 @@ func TestIncr(t *testing.T) {
 		_, err := db.Incr("person", "name", 10)
 		testx.AssertErr(t, err, redka.ErrInvalidType)
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		val, err := db.Incr("person", "age", 25)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, 0)
+	})
 }
 
 func TestIncrFloat(t *testing.T) {
@@ -540,6 +574,14 @@ func TestIncrFloat(t *testing.T) {
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.IncrFloat("person", "name", 10.5)
 		testx.AssertErr(t, err, redka.ErrInvalidType)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		val, err := db.IncrFloat("person", "age", 25.0)
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, 0.0)
 	})
 }
 
@@ -630,6 +672,14 @@ func TestDelete(t *testing.T) {
 		testx.AssertEqual(t, exist, false)
 		exist, _ = db.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "alice")
+		val, err := db.Delete("person", "name")
+		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, 0)
 	})
 }
 

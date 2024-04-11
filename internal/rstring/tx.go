@@ -30,6 +30,7 @@ var sqlSet = []string{
 	values (:key, :type, :version, :etime, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
+	  type = excluded.type,
 	  etime = excluded.etime,
 	  mtime = excluded.mtime
 	;`,
@@ -45,6 +46,7 @@ var sqlUpdate = []string{
 	values (:key, :type, :version, null, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
+	  type = excluded.type,
 	  -- not changing etime
 	  mtime = excluded.mtime
 	;`,
@@ -283,12 +285,6 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	return newVal, nil
 }
 
-// Delete deletes keys and their values.
-// Returns the number of deleted keys. Non-existing keys are ignored.
-func (tx *Tx) Delete(keys ...string) (int, error) {
-	return rkey.Delete(tx.tx, keys...)
-}
-
 // set sets the key value and (optionally) its expiration time.
 func (tx Tx) set(key string, value any, ttl time.Duration) error {
 	now := time.Now()
@@ -309,7 +305,7 @@ func (tx Tx) set(key string, value any, ttl time.Duration) error {
 
 	_, err := tx.tx.Exec(sqlSet[0], args...)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 
 	_, err = tx.tx.Exec(sqlSet[1], args...)
@@ -330,7 +326,7 @@ func (tx Tx) update(key string, value any) error {
 	}
 	_, err := tx.tx.Exec(sqlUpdate[0], args...)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 	_, err = tx.tx.Exec(sqlUpdate[1], args...)
 	return err

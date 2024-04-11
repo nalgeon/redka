@@ -125,15 +125,3 @@ func (d *DB) IncrFloat(key string, delta float64) (float64, error) {
 	})
 	return val, err
 }
-
-// Delete deletes keys and their values.
-// Returns the number of deleted keys. Non-existing keys are ignored.
-func (d *DB) Delete(keys ...string) (int, error) {
-	var count int
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		count, err = tx.Delete(keys...)
-		return err
-	})
-	return count, err
-}

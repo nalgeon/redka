@@ -72,6 +72,7 @@ var sqlSet = []string{
 	values (:key, :type, :version, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
+	  type = excluded.type,
 	  mtime = excluded.mtime
 	;`,
 
@@ -314,7 +315,10 @@ func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 		return false, err
 	}
 	err = tx.set(key, field, value)
-	return existCount == 0, err
+	if err != nil {
+		return false, err
+	}
+	return existCount == 0, nil
 }
 
 // SetNotExists creates the value of a field in a hash if it does not exist.
@@ -330,7 +334,10 @@ func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 		return false, nil
 	}
 	err = tx.set(key, field, value)
-	return true, err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // SetMany creates or updates the values of multiple fields in a hash.
@@ -417,6 +424,18 @@ func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 	now := time.Now().UnixMilli()
 
+	// Check if the hash exists.
+	k, err := rkey.Get(tx.tx, key)
+	if err != nil {
+		return 0, err
+	}
+	if !k.Exists() {
+		return 0, nil
+	}
+	if k.Type != core.TypeHash {
+		return 0, core.ErrKeyTypeMismatch
+	}
+
 	// Count the number of existing fields.
 	existCount, err := tx.Len(key)
 	if err != nil {
@@ -477,7 +496,7 @@ func (tx Tx) set(key string, field string, value any) error {
 
 	_, err := tx.tx.Exec(sqlSet[0], args...)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 
 	_, err = tx.tx.Exec(sqlSet[1], args...)

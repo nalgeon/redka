@@ -18,6 +18,7 @@ const driverName = "sqlite3"
 
 // Errors that can be returned by the commands.
 var ErrKeyNotFound = core.ErrKeyNotFound
+var ErrKeyTypeMismatch = core.ErrKeyTypeMismatch
 var ErrInvalidType = core.ErrInvalidType
 
 // Key represents a key data structure.
@@ -58,7 +59,6 @@ type Strings interface {
 	SetManyNX(kvals map[string]any) (bool, error)
 	Incr(key string, delta int) (int, error)
 	IncrFloat(key string, delta float64) (float64, error)
-	Delete(keys ...string) (int, error)
 }
 
 // Hashes is a hash repository.

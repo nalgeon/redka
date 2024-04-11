@@ -7,14 +7,14 @@ import (
 )
 
 // type identifiers
-type typeID int
+type TypeID int
 
 const (
-	TypeString    = typeID(1)
-	TypeList      = typeID(2)
-	TypeSet       = typeID(3)
-	TypeHash      = typeID(4)
-	TypeSortedSet = typeID(5)
+	TypeString    = TypeID(1)
+	TypeList      = TypeID(2)
+	TypeSet       = TypeID(3)
+	TypeHash      = TypeID(4)
+	TypeSortedSet = TypeID(5)
 )
 
 // Initial version of the key
@@ -22,6 +22,9 @@ const InitialVersion = 1
 
 // ErrKeyNotFound is when the key is not found.
 var ErrKeyNotFound = errors.New("key not found")
+
+// ErrKeyTypeMismatch is when the key already exists with a different type.
+var ErrKeyTypeMismatch = errors.New("key type mismatch")
 
 // ErrInvalidType is when the value does not have a valid type.
 var ErrInvalidType = errors.New("invalid value type")
@@ -33,7 +36,7 @@ var ErrNotAllowed = errors.New("operation not allowed")
 type Key struct {
 	ID      int
 	Key     string
-	Type    typeID
+	Type    TypeID
 	Version int
 	ETime   *int64
 	MTime   int64

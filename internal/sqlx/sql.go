@@ -4,6 +4,8 @@ package sqlx
 import (
 	"database/sql"
 	"strings"
+
+	"github.com/nalgeon/redka/internal/core"
 )
 
 // Tx is a database transaction (or a transaction-like object).
@@ -52,4 +54,12 @@ func Select[T any](db Tx, query string, args []any,
 	}
 
 	return vals, err
+}
+
+// Returns typed errors for some specific cases.
+func TypedError(err error) error {
+	if err.Error() == "key type mismatch" {
+		return core.ErrKeyTypeMismatch
+	}
+	return err
 }
