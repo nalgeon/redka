@@ -11,21 +11,21 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlStringGet = `
+const sqlGet = `
 select key, value
 from rstring
 join rkey on key_id = rkey.id
 where key = ? and (etime is null or etime > ?);
 `
 
-const sqlStringGetMany = `
+const sqlGetMany = `
 select key, value
 from rstring
 join rkey on key_id = rkey.id
 where key in (:keys) and (etime is null or etime > :now);
 `
 
-var sqlStringSet = []string{
+var sqlSet = []string{
 	`insert into rkey (key, type, version, etime, mtime)
 	values (:key, :type, :version, :etime, :mtime)
 	on conflict (key) do update set
@@ -40,7 +40,7 @@ var sqlStringSet = []string{
 	set value = excluded.value;`,
 }
 
-var sqlStringUpdate = []string{
+var sqlUpdate = []string{
 	`insert into rkey (key, type, version, etime, mtime)
 	values (:key, :type, :version, null, :mtime)
 	on conflict (key) do update set
@@ -69,7 +69,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Get returns the value of the key.
 func (tx *Tx) Get(key string) (core.Value, error) {
 	now := time.Now().UnixMilli()
-	row := tx.tx.QueryRow(sqlStringGet, key, now)
+	row := tx.tx.QueryRow(sqlGet, key, now)
 	_, val, err := scanValue(row)
 	return val, err
 }
@@ -84,7 +84,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlStringGetMany, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 
 	var rows *sql.Rows
@@ -307,12 +307,12 @@ func (tx Tx) set(key string, value any, ttl time.Duration) error {
 		sql.Named("mtime", now.UnixMilli()),
 	}
 
-	_, err := tx.tx.Exec(sqlStringSet[0], args...)
+	_, err := tx.tx.Exec(sqlSet[0], args...)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.tx.Exec(sqlStringSet[1], args...)
+	_, err = tx.tx.Exec(sqlSet[1], args...)
 	return err
 }
 
@@ -328,11 +328,11 @@ func (tx Tx) update(key string, value any) error {
 		sql.Named("value", value),
 		sql.Named("mtime", now),
 	}
-	_, err := tx.tx.Exec(sqlStringUpdate[0], args...)
+	_, err := tx.tx.Exec(sqlUpdate[0], args...)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlStringUpdate[1], args...)
+	_, err = tx.tx.Exec(sqlUpdate[1], args...)
 	return err
 }
 

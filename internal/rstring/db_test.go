@@ -8,11 +8,10 @@ import (
 	"github.com/nalgeon/redka/internal/testx"
 )
 
-func TestStringGet(t *testing.T) {
-	red := getDB(t)
+func TestGet(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
 
-	db := red.Str()
 	_ = db.Set("name", "alice")
 
 	tests := []struct {
@@ -23,20 +22,19 @@ func TestStringGet(t *testing.T) {
 		{"key found", "name", redka.Value("alice")},
 		{"key not found", "key1", redka.Value(nil)},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			val, err := db.Get(tt.key)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			val, err := db.Get(test.key)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, tt.want)
+			testx.AssertEqual(t, val, test.want)
 		})
 	}
 }
 
-func TestStringGetMany(t *testing.T) {
-	red := getDB(t)
+func TestGetMany(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
 
-	db := red.Str()
 	_ = db.Set("name", "alice")
 	_ = db.Set("age", 25)
 
@@ -61,20 +59,19 @@ func TestStringGetMany(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			vals, err := db.GetMany(tt.keys...)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			vals, err := db.GetMany(test.keys...)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, vals, tt.want)
+			testx.AssertEqual(t, vals, test.want)
 		})
 	}
 }
 
-func TestStringSet(t *testing.T) {
-	red := getDB(t)
+func TestSet(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
 
-	db := red.Str()
 	tests := []struct {
 		name  string
 		key   string
@@ -89,15 +86,15 @@ func TestStringSet(t *testing.T) {
 		{"bool false", "ok", false, redka.Value("0")},
 		{"bytes", "bytes", []byte("hello"), redka.Value("hello")},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := db.Set(tt.key, tt.value)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := db.Set(test.key, test.value)
 			testx.AssertNoErr(t, err)
 
-			val, _ := db.Get(tt.key)
-			testx.AssertEqual(t, val, tt.want)
+			val, _ := db.Get(test.key)
+			testx.AssertEqual(t, val, test.want)
 
-			key, _ := red.Key().Get(tt.key)
+			key, _ := red.Key().Get(test.key)
 			testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		})
 	}
@@ -132,12 +129,11 @@ func TestStringSet(t *testing.T) {
 	})
 }
 
-func TestStringSetExpires(t *testing.T) {
-	red := getDB(t)
-	defer red.Close()
-
-	db := red.Str()
+func TestSetExpires(t *testing.T) {
 	t.Run("no ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		err := db.SetExpires("name", "alice", 0)
 		testx.AssertNoErr(t, err)
 
@@ -148,6 +144,9 @@ func TestStringSetExpires(t *testing.T) {
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
 	t.Run("with ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		now := time.Now()
 		ttl := time.Second
 		err := db.SetExpires("name", "alice", ttl)
@@ -163,11 +162,10 @@ func TestStringSetExpires(t *testing.T) {
 	})
 }
 
-func TestStringSetNotExists(t *testing.T) {
-	red := getDB(t)
+func TestSetNotExists(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
 
-	db := red.Str()
 	_ = db.Set("name", "alice")
 
 	tests := []struct {
@@ -179,13 +177,13 @@ func TestStringSetNotExists(t *testing.T) {
 		{"new key", "age", 25, true},
 		{"existing key", "name", "bob", false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ok, err := db.SetNotExists(tt.key, tt.value, 0)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ok, err := db.SetNotExists(test.key, test.value, 0)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, ok, tt.want)
+			testx.AssertEqual(t, ok, test.want)
 
-			key, _ := red.Key().Get(tt.key)
+			key, _ := red.Key().Get(test.key)
 			testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		})
 	}
@@ -203,11 +201,10 @@ func TestStringSetNotExists(t *testing.T) {
 	})
 }
 
-func TestStringSetExists(t *testing.T) {
-	red := getDB(t)
+func TestSetExists(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
 
-	db := red.Str()
 	_ = db.Set("name", "alice")
 
 	tests := []struct {
@@ -219,13 +216,13 @@ func TestStringSetExists(t *testing.T) {
 		{"new key", "age", 25, false},
 		{"existing key", "name", "bob", true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ok, err := db.SetExists(tt.key, tt.value, 0)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ok, err := db.SetExists(test.key, test.value, 0)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, ok, tt.want)
+			testx.AssertEqual(t, ok, test.want)
 
-			key, _ := red.Key().Get(tt.key)
+			key, _ := red.Key().Get(test.key)
 			testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		})
 	}
@@ -243,13 +240,11 @@ func TestStringSetExists(t *testing.T) {
 	})
 }
 
-func TestStringGetSet(t *testing.T) {
-	red := getDB(t)
-	defer red.Close()
-
-	db := red.Str()
-
+func TestGetSet(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		val, err := db.GetSet("name", "alice", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, redka.Value(nil))
@@ -257,6 +252,9 @@ func TestStringGetSet(t *testing.T) {
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
 	t.Run("update key", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		_ = db.Set("name", "alice")
 		val, err := db.GetSet("name", "bob", 0)
 		testx.AssertNoErr(t, err)
@@ -265,6 +263,9 @@ func TestStringGetSet(t *testing.T) {
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
 	t.Run("not changed", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		_ = db.Set("name", "alice")
 		val, err := db.GetSet("name", "alice", 0)
 		testx.AssertNoErr(t, err)
@@ -273,6 +274,9 @@ func TestStringGetSet(t *testing.T) {
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
 	t.Run("with ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		_ = db.Set("name", "alice")
 
 		now := time.Now()
@@ -288,13 +292,11 @@ func TestStringGetSet(t *testing.T) {
 	})
 }
 
-func TestStringSetMany(t *testing.T) {
-	red := getDB(t)
-	defer red.Close()
-
-	db := red.Str()
-
+func TestSetMany(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		err := db.SetMany(map[string]any{
 			"name": "alice",
 			"age":  25,
@@ -306,8 +308,12 @@ func TestStringSetMany(t *testing.T) {
 		testx.AssertEqual(t, age, redka.Value("25"))
 	})
 	t.Run("update", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		_ = db.Set("name", "alice")
 		_ = db.Set("age", 25)
+
 		err := db.SetMany(map[string]any{
 			"name": "bob",
 			"age":  50,
@@ -319,6 +325,8 @@ func TestStringSetMany(t *testing.T) {
 		testx.AssertEqual(t, age, redka.Value("50"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
 		err := db.SetMany(map[string]any{
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
@@ -327,14 +335,11 @@ func TestStringSetMany(t *testing.T) {
 	})
 }
 
-func TestStringSetManyNX(t *testing.T) {
-	red := getDB(t)
-	defer red.Close()
-
-	db := red.Str()
-	_ = db.Set("name", "alice")
-
+func TestSetManyNX(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		ok, err := db.SetManyNX(map[string]any{
 			"age":  25,
 			"city": "paris",
@@ -347,6 +352,9 @@ func TestStringSetManyNX(t *testing.T) {
 		testx.AssertEqual(t, city, redka.Value("paris"))
 	})
 	t.Run("update", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		_ = db.Set("age", 25)
 		_ = db.Set("city", "paris")
 		ok, err := db.SetManyNX(map[string]any{
@@ -361,6 +369,9 @@ func TestStringSetManyNX(t *testing.T) {
 		testx.AssertEqual(t, city, redka.Value("paris"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
 		ok, err := db.SetManyNX(map[string]any{
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
@@ -370,11 +381,9 @@ func TestStringSetManyNX(t *testing.T) {
 	})
 }
 
-func TestStringIncr(t *testing.T) {
-	red := getDB(t)
+func TestIncr(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
-
-	db := red.Str()
 
 	tests := []struct {
 		name  string
@@ -386,11 +395,11 @@ func TestStringIncr(t *testing.T) {
 		{"increment", "age", 15, 25},
 		{"decrement", "age", -5, 20},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			val, err := db.Incr(tt.key, tt.value)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			val, err := db.Incr(test.key, test.value)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, tt.want)
+			testx.AssertEqual(t, val, test.want)
 		})
 	}
 	t.Run("invalid int", func(t *testing.T) {
@@ -401,11 +410,9 @@ func TestStringIncr(t *testing.T) {
 	})
 }
 
-func TestStringIncrFloat(t *testing.T) {
-	red := getDB(t)
+func TestIncrFloat(t *testing.T) {
+	red, db := getDB(t)
 	defer red.Close()
-
-	db := red.Str()
 
 	tests := []struct {
 		name  string
@@ -417,11 +424,11 @@ func TestStringIncrFloat(t *testing.T) {
 		{"increment", "pi", 1.86, 5},
 		{"decrement", "pi", -1.5, 3.5},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			val, err := db.IncrFloat(tt.key, tt.value)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			val, err := db.IncrFloat(test.key, test.value)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, tt.want)
+			testx.AssertEqual(t, val, test.want)
 		})
 	}
 	t.Run("invalid float", func(t *testing.T) {
@@ -432,11 +439,7 @@ func TestStringIncrFloat(t *testing.T) {
 	})
 }
 
-func TestStringDelete(t *testing.T) {
-	red := getDB(t)
-	defer red.Close()
-
-	db := red.Str()
+func TestDelete(t *testing.T) {
 	tests := []struct {
 		name string
 		keys []string
@@ -447,14 +450,18 @@ func TestStringDelete(t *testing.T) {
 		{"delete many", []string{"name", "age"}, 2},
 		{"delete none", []string{"city"}, 0},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			red, db := getDB(t)
+			defer red.Close()
+
 			_ = db.Set("name", "alice")
 			_ = db.Set("age", 25)
-			count, err := db.Delete(tt.keys...)
+
+			count, err := db.Delete(test.keys...)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, count, tt.want)
-			for _, key := range tt.keys {
+			testx.AssertEqual(t, count, test.want)
+			for _, key := range test.keys {
 				val, _ := db.Get(key)
 				testx.AssertEqual(t, val.IsEmpty(), true)
 			}
@@ -462,11 +469,11 @@ func TestStringDelete(t *testing.T) {
 	}
 }
 
-func getDB(tb testing.TB) *redka.DB {
+func getDB(tb testing.TB) (*redka.DB, redka.Strings) {
 	tb.Helper()
 	db, err := redka.Open(":memory:")
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return db
+	return db, db.Str()
 }
