@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -19,8 +20,8 @@ func TestGet(t *testing.T) {
 		key  string
 		want any
 	}{
-		{"key found", "name", redka.Value("alice")},
-		{"key not found", "key1", redka.Value(nil)},
+		{"key found", "name", core.Value("alice")},
+		{"key not found", "key1", core.Value(nil)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -41,21 +42,21 @@ func TestGetMany(t *testing.T) {
 	tests := []struct {
 		name string
 		keys []string
-		want map[string]redka.Value
+		want map[string]core.Value
 	}{
 		{"all found", []string{"name", "age"},
-			map[string]redka.Value{
-				"name": redka.Value("alice"), "age": redka.Value("25"),
+			map[string]core.Value{
+				"name": core.Value("alice"), "age": core.Value("25"),
 			},
 		},
 		{"some found", []string{"name", "key1"},
-			map[string]redka.Value{
-				"name": redka.Value("alice"), "key1": redka.Value(nil),
+			map[string]core.Value{
+				"name": core.Value("alice"), "key1": core.Value(nil),
 			},
 		},
 		{"none found", []string{"key1", "key2"},
-			map[string]redka.Value{
-				"key1": redka.Value(nil), "key2": redka.Value(nil),
+			map[string]core.Value{
+				"key1": core.Value(nil), "key2": core.Value(nil),
 			},
 		},
 	}
@@ -78,13 +79,13 @@ func TestSet(t *testing.T) {
 		value any
 		want  any
 	}{
-		{"string", "name", "alice", redka.Value("alice")},
-		{"empty string", "empty", "", redka.Value("")},
-		{"int", "age", 25, redka.Value("25")},
-		{"float", "pi", 3.14, redka.Value("3.14")},
-		{"bool true", "ok", true, redka.Value("1")},
-		{"bool false", "ok", false, redka.Value("0")},
-		{"bytes", "bytes", []byte("hello"), redka.Value("hello")},
+		{"string", "name", "alice", core.Value("alice")},
+		{"empty string", "empty", "", core.Value("")},
+		{"int", "age", 25, core.Value("25")},
+		{"float", "pi", 3.14, core.Value("3.14")},
+		{"bool true", "ok", true, core.Value("1")},
+		{"bool false", "ok", false, core.Value("0")},
+		{"bytes", "bytes", []byte("hello"), core.Value("hello")},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -100,37 +101,37 @@ func TestSet(t *testing.T) {
 	}
 	t.Run("struct", func(t *testing.T) {
 		err := db.Set("struct", struct{ Name string }{"alice"})
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 	})
 	t.Run("nil", func(t *testing.T) {
 		err := db.Set("nil", nil)
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 	})
 	t.Run("update", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		err := db.Set("name", "bob")
 		testx.AssertNoErr(t, err)
 		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, redka.Value("bob"))
+		testx.AssertEqual(t, val, core.Value("bob"))
 	})
 	t.Run("change value type", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		err := db.Set("name", true)
 		testx.AssertNoErr(t, err)
 		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, redka.Value("1"))
+		testx.AssertEqual(t, val, core.Value("1"))
 	})
 	t.Run("not changed", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		err := db.Set("name", "alice")
 		testx.AssertNoErr(t, err)
 		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "name", "alice")
 		err := db.Set("person", "name")
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 	})
 }
 
@@ -143,7 +144,7 @@ func TestSetExpires(t *testing.T) {
 		testx.AssertNoErr(t, err)
 
 		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 
 		key, _ := red.Key().Get("name")
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
@@ -158,7 +159,7 @@ func TestSetExpires(t *testing.T) {
 		testx.AssertNoErr(t, err)
 
 		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 
 		key, _ := red.Key().Get("name")
 		got := (*key.ETime) / 1000
@@ -170,7 +171,7 @@ func TestSetExpires(t *testing.T) {
 		defer red.Close()
 		_, _ = red.Hash().Set("person", "name", "alice")
 		err := db.SetExpires("person", "name", time.Second)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 	})
 }
 
@@ -259,7 +260,7 @@ func TestSetExists(t *testing.T) {
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "name", "alice")
 		ok, err := db.SetExists("person", "name", 0)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -271,7 +272,7 @@ func TestGetSet(t *testing.T) {
 
 		val, err := db.GetSet("name", "alice", 0)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, redka.Value(nil))
+		testx.AssertEqual(t, val, core.Value(nil))
 		key, _ := red.Key().Get("name")
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
@@ -282,7 +283,7 @@ func TestGetSet(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.GetSet("name", "bob", 0)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 		key, _ := red.Key().Get("name")
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
@@ -293,7 +294,7 @@ func TestGetSet(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.GetSet("name", "alice", 0)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 		key, _ := red.Key().Get("name")
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
@@ -307,7 +308,7 @@ func TestGetSet(t *testing.T) {
 		ttl := time.Second
 		val, err := db.GetSet("name", "bob", ttl)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, redka.Value("alice"))
+		testx.AssertEqual(t, val, core.Value("alice"))
 
 		key, _ := red.Key().Get("name")
 		got := (*key.ETime) / 1000
@@ -319,8 +320,8 @@ func TestGetSet(t *testing.T) {
 		defer red.Close()
 		_, _ = red.Hash().Set("person", "name", "alice")
 		val, err := db.GetSet("person", "name", 0)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
-		testx.AssertEqual(t, val, redka.Value(nil))
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertEqual(t, val, core.Value(nil))
 	})
 }
 
@@ -335,9 +336,9 @@ func TestSetMany(t *testing.T) {
 		})
 		testx.AssertNoErr(t, err)
 		name, _ := db.Get("name")
-		testx.AssertEqual(t, name, redka.Value("alice"))
+		testx.AssertEqual(t, name, core.Value("alice"))
 		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, redka.Value("25"))
+		testx.AssertEqual(t, age, core.Value("25"))
 	})
 	t.Run("update", func(t *testing.T) {
 		red, db := getDB(t)
@@ -352,9 +353,9 @@ func TestSetMany(t *testing.T) {
 		})
 		testx.AssertNoErr(t, err)
 		name, _ := db.Get("name")
-		testx.AssertEqual(t, name, redka.Value("bob"))
+		testx.AssertEqual(t, name, core.Value("bob"))
 		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, redka.Value("50"))
+		testx.AssertEqual(t, age, core.Value("50"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
 		red, db := getDB(t)
@@ -363,7 +364,7 @@ func TestSetMany(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
@@ -373,7 +374,7 @@ func TestSetMany(t *testing.T) {
 			"name":   "alice",
 			"person": "alice",
 		})
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 	})
 }
 
@@ -389,9 +390,9 @@ func TestSetManyNX(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
 		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, redka.Value("25"))
+		testx.AssertEqual(t, age, core.Value("25"))
 		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, redka.Value("paris"))
+		testx.AssertEqual(t, city, core.Value("paris"))
 	})
 	t.Run("update", func(t *testing.T) {
 		red, db := getDB(t)
@@ -406,9 +407,9 @@ func TestSetManyNX(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
 		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, redka.Value("25"))
+		testx.AssertEqual(t, age, core.Value("25"))
 		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, redka.Value("paris"))
+		testx.AssertEqual(t, city, core.Value("paris"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
 		red, db := getDB(t)
@@ -418,7 +419,7 @@ func TestSetManyNX(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
@@ -458,13 +459,13 @@ func TestIncr(t *testing.T) {
 	t.Run("invalid int", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.Incr("name", 1)
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 		testx.AssertEqual(t, val, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "age", 25)
 		val, err := db.Incr("person", 10)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0)
 	})
 }
@@ -493,13 +494,13 @@ func TestIncrFloat(t *testing.T) {
 	t.Run("invalid float", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.IncrFloat("name", 1.5)
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 		testx.AssertEqual(t, val, 0.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "age", 25.5)
 		val, err := db.IncrFloat("person", 10.5)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0.0)
 	})
 }

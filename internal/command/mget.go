@@ -1,6 +1,6 @@
 package command
 
-import "github.com/nalgeon/redka"
+import "github.com/nalgeon/redka/internal/core"
 
 // Atomically returns the string values of one or more keys.
 // MGET key [key ...]
@@ -33,7 +33,7 @@ func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
 	// Build the result slice.
 	// It will contain all values in the order of keys.
 	// Missing keys will have nil values.
-	vals := make([]redka.Value, len(cmd.keys))
+	vals := make([]core.Value, len(cmd.keys))
 	for i, key := range cmd.keys {
 		vals[i] = items[key]
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -22,9 +23,9 @@ func TestGet(t *testing.T) {
 		field string
 		want  any
 	}{
-		{"field found", "person", "name", redka.Value("alice")},
-		{"field not found", "person", "age", redka.Value(nil)},
-		{"key not found", "pet", "name", redka.Value(nil)},
+		{"field found", "person", "name", core.Value("alice")},
+		{"field not found", "person", "age", core.Value(nil)},
+		{"key not found", "pet", "name", core.Value(nil)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -46,19 +47,19 @@ func TestGetMany(t *testing.T) {
 		name   string
 		key    string
 		fields []string
-		want   map[string]redka.Value
+		want   map[string]core.Value
 	}{
 		{"all found", "person", []string{"name", "age"},
-			map[string]redka.Value{"name": redka.Value("alice"), "age": redka.Value("25")},
+			map[string]core.Value{"name": core.Value("alice"), "age": core.Value("25")},
 		},
 		{"some found", "person", []string{"name", "city"},
-			map[string]redka.Value{"name": redka.Value("alice"), "city": redka.Value(nil)},
+			map[string]core.Value{"name": core.Value("alice"), "city": core.Value(nil)},
 		},
 		{"none found", "person", []string{"key1", "key2"},
-			map[string]redka.Value{"key1": redka.Value(nil), "key2": redka.Value(nil)},
+			map[string]core.Value{"key1": core.Value(nil), "key2": core.Value(nil)},
 		},
 		{"key not found", "pet", []string{"name", "age"},
-			map[string]redka.Value{"name": redka.Value(nil), "age": redka.Value(nil)},
+			map[string]core.Value{"name": core.Value(nil), "age": core.Value(nil)},
 		},
 	}
 	for _, test := range tests {
@@ -106,15 +107,15 @@ func TestItems(t *testing.T) {
 	tests := []struct {
 		name  string
 		key   string
-		items map[string]redka.Value
+		items map[string]core.Value
 	}{
-		{"multiple item", "person", map[string]redka.Value{
-			"name": redka.Value("alice"), "age": redka.Value("25"),
+		{"multiple item", "person", map[string]core.Value{
+			"name": core.Value("alice"), "age": core.Value("25"),
 		}},
-		{"single item", "pet", map[string]redka.Value{
-			"name": redka.Value("doggo"),
+		{"single item", "pet", map[string]core.Value{
+			"name": core.Value("doggo"),
 		}},
-		{"key not found", "robot", map[string]redka.Value{}},
+		{"key not found", "robot", map[string]core.Value{}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -164,15 +165,15 @@ func TestValues(t *testing.T) {
 	tests := []struct {
 		name string
 		key  string
-		vals []redka.Value
+		vals []core.Value
 	}{
-		{"multiple fields", "person", []redka.Value{
-			redka.Value("alice"), redka.Value("25"),
+		{"multiple fields", "person", []core.Value{
+			core.Value("alice"), core.Value("25"),
 		}},
-		{"single field", "pet", []redka.Value{
-			redka.Value("doggo"),
+		{"single field", "pet", []core.Value{
+			core.Value("doggo"),
 		}},
-		{"key not found", "robot", []redka.Value{}},
+		{"key not found", "robot", []core.Value{}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -210,35 +211,35 @@ func TestScan(t *testing.T) {
 	}{
 		{"all", 0, "*", 0, 5,
 			[]rhash.HashItem{
-				{Field: "f11", Value: redka.Value("11")},
-				{Field: "f12", Value: redka.Value("12")},
-				{Field: "f21", Value: redka.Value("21")},
-				{Field: "f22", Value: redka.Value("22")},
-				{Field: "f31", Value: redka.Value("31")},
+				{Field: "f11", Value: core.Value("11")},
+				{Field: "f12", Value: core.Value("12")},
+				{Field: "f21", Value: core.Value("21")},
+				{Field: "f22", Value: core.Value("22")},
+				{Field: "f31", Value: core.Value("31")},
 			},
 		},
 		{"some", 0, "f2*", 10, 4,
 			[]rhash.HashItem{
-				{Field: "f21", Value: redka.Value("21")},
-				{Field: "f22", Value: redka.Value("22")},
+				{Field: "f21", Value: core.Value("21")},
+				{Field: "f22", Value: core.Value("22")},
 			},
 		},
 		{"none", 0, "n*", 10, 0, []rhash.HashItem(nil)},
 		{"cursor 1st", 0, "*", 2, 2,
 			[]rhash.HashItem{
-				{Field: "f11", Value: redka.Value("11")},
-				{Field: "f12", Value: redka.Value("12")},
+				{Field: "f11", Value: core.Value("11")},
+				{Field: "f12", Value: core.Value("12")},
 			},
 		},
 		{"cursor 2nd", 2, "*", 2, 4,
 			[]rhash.HashItem{
-				{Field: "f21", Value: redka.Value("21")},
-				{Field: "f22", Value: redka.Value("22")},
+				{Field: "f21", Value: core.Value("21")},
+				{Field: "f22", Value: core.Value("22")},
 			},
 		},
 		{"cursor 3rd", 4, "*", 2, 5,
 			[]rhash.HashItem{
-				{Field: "f31", Value: redka.Value("31")},
+				{Field: "f31", Value: core.Value("31")},
 			},
 		},
 		{"exhausted", 6, "*", 2, 0, []rhash.HashItem(nil)},
@@ -363,7 +364,7 @@ func TestSet(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		ok, err := db.Set("person", "name", "alice")
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -406,7 +407,7 @@ func TestSetNotExists(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		ok, err := db.SetNotExists("person", "name", "alice")
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -423,7 +424,7 @@ func TestSetMany(t *testing.T) {
 		count, err := db.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
-		var val redka.Value
+		var val core.Value
 		val, _ = db.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 		val, _ = db.Get("person", "age")
@@ -441,7 +442,7 @@ func TestSetMany(t *testing.T) {
 		count, err := db.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
-		var val redka.Value
+		var val core.Value
 		val, _ = db.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "25")
 		val, _ = db.Get("person", "city")
@@ -459,7 +460,7 @@ func TestSetMany(t *testing.T) {
 		count, err := db.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 1)
-		var val redka.Value
+		var val core.Value
 		val, _ = db.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "bob")
 		val, _ = db.Get("person", "age")
@@ -472,7 +473,7 @@ func TestSetMany(t *testing.T) {
 		count, err := db.SetMany("person", map[string]any{
 			"name": "alice", "age": 25,
 		})
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, count, 0)
 	})
 }
@@ -519,14 +520,14 @@ func TestIncr(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.Incr("person", "name", 10)
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.Incr("person", "age", 25)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0)
 	})
 }
@@ -573,14 +574,14 @@ func TestIncrFloat(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.IncrFloat("person", "name", 10.5)
-		testx.AssertErr(t, err, redka.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.IncrFloat("person", "age", 25.0)
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0.0)
 	})
 }
@@ -678,7 +679,7 @@ func TestDelete(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.Delete("person", "name")
-		testx.AssertErr(t, err, redka.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
 		testx.AssertEqual(t, val, 0)
 	})
 }

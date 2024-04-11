@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -137,7 +138,7 @@ func TestScanner(t *testing.T) {
 	_ = red.Str().Set("22", "22")
 	_ = red.Str().Set("31", "31")
 
-	var keys []redka.Key
+	var keys []core.Key
 	err := red.View(func(tx *redka.Tx) error {
 		sc := tx.Key().Scanner("*", 2)
 		for sc.Scan() {
@@ -177,14 +178,14 @@ func TestGet(t *testing.T) {
 	tests := []struct {
 		name string
 		key  string
-		want redka.Key
+		want core.Key
 	}{
 		{"found", "name",
-			redka.Key{
+			core.Key{
 				ID: 1, Key: "name", Type: 1, Version: 1, ETime: nil, MTime: 0,
 			},
 		},
-		{"not found", "key1", redka.Key{}},
+		{"not found", "key1", core.Key{}},
 	}
 
 	for _, test := range tests {
@@ -303,7 +304,7 @@ func TestRename(t *testing.T) {
 
 		_ = red.Str().Set("name", "alice")
 		ok, err := db.Rename("key1", "name")
-		testx.AssertEqual(t, err, redka.ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrKeyNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -336,7 +337,7 @@ func TestRenameNX(t *testing.T) {
 		defer red.Close()
 
 		ok, err := db.RenameNX("key1", "key2")
-		testx.AssertEqual(t, err, redka.ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrKeyNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("new exists", func(t *testing.T) {
@@ -349,7 +350,7 @@ func TestRenameNX(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
 		age, _ := red.Str().Get("age")
-		testx.AssertEqual(t, age, redka.Value("25"))
+		testx.AssertEqual(t, age, core.Value("25"))
 	})
 }
 
