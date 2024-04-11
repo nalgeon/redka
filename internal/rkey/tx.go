@@ -10,38 +10,38 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlKeyGet = `
+const sqlGet = `
 select id, key, type, version, etime, mtime
 from rkey
 where key = ? and (etime is null or etime > ?)`
 
-const sqlKeyCount = `
+const sqlCount = `
 select count(id) from rkey
 where key in (:keys) and (etime is null or etime > :now)`
 
-const sqlKeyKeys = `
+const sqlKeys = `
 select id, key, type, version, etime, mtime from rkey
 where key glob :pattern and (etime is null or etime > :now)`
 
-const sqlKeyScan = `
+const sqlScan = `
 select id, key, type, version, etime, mtime from rkey
 where id > :cursor and key glob :pattern and (etime is null or etime > :now)
 limit :count`
 
-const sqlKeyRandom = `
+const sqlRandom = `
 select id, key, type, version, etime, mtime from rkey
 where etime is null or etime > ?
 order by random() limit 1`
 
-const sqlKeyExpire = `
+const sqlExpire = `
 update rkey set etime = :at
 where key = :key and (etime is null or etime > :now)`
 
-const sqlKeyPersist = `
+const sqlPersist = `
 update rkey set etime = null
 where key = :key and (etime is null or etime > :now)`
 
-const sqlKeyRename = `
+const sqlRename = `
 update or replace rkey set
   id = old.id,
   key = :new_key,
@@ -58,15 +58,15 @@ where rkey.key = :key and (
   rkey.etime is null or rkey.etime > :now
 )`
 
-const sqlKeyDel = `
+const sqlDelete = `
 delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
-const sqlKeyDelAllExpired = `
+const sqlDeleteAllExpired = `
 delete from rkey
 where etime <= :now`
 
-const sqlKeyDelNExpired = `
+const sqlDeleteNExpired = `
 delete from rkey
 where rowid in (
   select rowid from rkey
@@ -89,13 +89,13 @@ func NewTx(tx sqlx.Tx) *Tx {
 
 // Exists checks if the key exists.
 func (tx *Tx) Exists(key string) (bool, error) {
-	count, err := CountKeys(tx.tx, key)
+	count, err := Count(tx.tx, key)
 	return count > 0, err
 }
 
 // Count returns the number of existing keys among specified.
 func (tx *Tx) Count(keys ...string) (int, error) {
-	return CountKeys(tx.tx, keys...)
+	return Count(tx.tx, keys...)
 }
 
 // Keys returns all keys matching pattern.
@@ -108,7 +108,7 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 		return k, err
 	}
 	var keys []core.Key
-	keys, err := sqlx.Select(tx.tx, sqlKeyKeys, args, scan)
+	keys, err := sqlx.Select(tx.tx, sqlKeys, args, scan)
 	return keys, err
 }
 
@@ -132,7 +132,7 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 		return k, err
 	}
 	var keys []core.Key
-	keys, err := sqlx.Select(tx.tx, sqlKeyScan, args, scan)
+	keys, err := sqlx.Select(tx.tx, sqlScan, args, scan)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -159,7 +159,7 @@ func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 func (tx *Tx) Random() (core.Key, error) {
 	now := time.Now().UnixMilli()
 	var k core.Key
-	err := tx.tx.QueryRow(sqlKeyRandom, now).Scan(
+	err := tx.tx.QueryRow(sqlRandom, now).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
@@ -170,7 +170,7 @@ func (tx *Tx) Random() (core.Key, error) {
 
 // Get returns a specific key with all associated details.
 func (tx *Tx) Get(key string) (core.Key, error) {
-	return GetKey(tx.tx, key)
+	return Get(tx.tx, key)
 }
 
 // Expire sets a timeout on the key using a relative duration.
@@ -187,7 +187,7 @@ func (tx *Tx) ExpireAt(key string, at time.Time) (bool, error) {
 		sql.Named("now", now),
 		sql.Named("at", at.UnixMilli()),
 	}
-	res, err := tx.tx.Exec(sqlKeyExpire, args...)
+	res, err := tx.tx.Exec(sqlExpire, args...)
 	if err != nil {
 		return false, err
 	}
@@ -199,7 +199,7 @@ func (tx *Tx) ExpireAt(key string, at time.Time) (bool, error) {
 func (tx *Tx) Persist(key string) (bool, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
-	res, err := tx.tx.Exec(sqlKeyPersist, args...)
+	res, err := tx.tx.Exec(sqlPersist, args...)
 	if err != nil {
 		return false, err
 	}
@@ -211,7 +211,7 @@ func (tx *Tx) Persist(key string) (bool, error) {
 // If there is an existing key with the new name, it is replaced.
 func (tx *Tx) Rename(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
-	oldK, err := GetKey(tx.tx, key)
+	oldK, err := Get(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -237,7 +237,7 @@ func (tx *Tx) Rename(key, newKey string) (bool, error) {
 		sql.Named("new_key", newKey),
 		sql.Named("now", now),
 	}
-	_, err = tx.tx.Exec(sqlKeyRename, args...)
+	_, err = tx.tx.Exec(sqlRename, args...)
 	return err == nil, err
 }
 
@@ -245,7 +245,7 @@ func (tx *Tx) Rename(key, newKey string) (bool, error) {
 // If there is an existing key with the new name, does nothing.
 func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
-	oldK, err := GetKey(tx.tx, key)
+	oldK, err := Get(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -274,14 +274,14 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 		sql.Named("new_key", newKey),
 		sql.Named("now", now),
 	}
-	_, err = tx.tx.Exec(sqlKeyRename, args...)
+	_, err = tx.tx.Exec(sqlRename, args...)
 	return err == nil, err
 }
 
 // Delete deletes keys and their values.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
-	return DeleteKeys(tx.tx, keys...)
+	return Delete(tx.tx, keys...)
 }
 
 // DeleteAll deletes all keys and their values,
@@ -299,9 +299,9 @@ func (tx *Tx) deleteExpired(n int) (int, error) {
 	var err error
 	if n > 0 {
 		args := []any{sql.Named("now", now), sql.Named("n", n)}
-		res, err = tx.tx.Exec(sqlKeyDelNExpired, args...)
+		res, err = tx.tx.Exec(sqlDeleteNExpired, args...)
 	} else {
-		res, err = tx.tx.Exec(sqlKeyDelAllExpired, now)
+		res, err = tx.tx.Exec(sqlDeleteAllExpired, now)
 	}
 	if err != nil {
 		return 0, err
@@ -376,11 +376,11 @@ func (sc *Scanner) Err() error {
 	return sc.err
 }
 
-// GetKey returns the key data structure.
-func GetKey(tx sqlx.Tx, key string) (core.Key, error) {
+// Get returns the key data structure.
+func Get(tx sqlx.Tx, key string) (core.Key, error) {
 	now := time.Now().UnixMilli()
 	var k core.Key
-	err := tx.QueryRow(sqlKeyGet, key, now).Scan(
+	err := tx.QueryRow(sqlGet, key, now).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
@@ -389,20 +389,20 @@ func GetKey(tx sqlx.Tx, key string) (core.Key, error) {
 	return k, err
 }
 
-// CountKeys returns the number of existing keys among specified.
-func CountKeys(tx sqlx.Tx, keys ...string) (int, error) {
+// Count returns the number of existing keys among specified.
+func Count(tx sqlx.Tx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlKeyCount, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 	var count int
 	err := tx.QueryRow(query, args...).Scan(&count)
 	return count, err
 }
 
-// DeleteKeys deletes keys and their values (regardless of the type).
-func DeleteKeys(tx sqlx.Tx, keys ...string) (int, error) {
+// Delete deletes keys and their values (regardless of the type).
+func Delete(tx sqlx.Tx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlKeyDel, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
 	res, err := tx.Exec(query, args...)
 	if err != nil {

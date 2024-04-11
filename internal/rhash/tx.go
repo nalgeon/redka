@@ -425,7 +425,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 
 	if len(fields) == 0 {
 		// Delete the hash if no fields are specified.
-		_, err := rkey.DeleteKeys(tx.tx, key)
+		_, err := rkey.Delete(tx.tx, key)
 		if err != nil {
 			return 0, err
 		}
@@ -443,7 +443,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 
 	if int(delCount) == existCount {
 		// Delete the hash if no fields remain.
-		_, err = rkey.DeleteKeys(tx.tx, key)
+		_, err = rkey.Delete(tx.tx, key)
 		if err != nil {
 			return 0, err
 		}
