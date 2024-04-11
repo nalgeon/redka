@@ -28,7 +28,7 @@ func (d *DB) Get(key string) (core.Value, error) {
 }
 
 // GetMany returns the values of multiple keys.
-func (d *DB) GetMany(keys ...string) ([]core.Value, error) {
+func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
 	tx := NewTx(d.SQL)
 	return tx.GetMany(keys...)
 }

@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Atomically returns the string values of one or more keys.
 // MGET key [key ...]
 // https://redis.io/commands/mget
@@ -21,12 +23,22 @@ func parseMGet(b baseCmd) (*MGet, error) {
 }
 
 func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
-	vals, err := red.Str().GetMany(cmd.keys...)
+	// Get the key-value map for requested keys.
+	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err
 	}
 
+	// Build the result slice.
+	// It will contain all values in the order of keys.
+	// Missing keys will have nil values.
+	vals := make([]redka.Value, len(cmd.keys))
+	for i, key := range cmd.keys {
+		vals[i] = items[key]
+	}
+
+	// Write the result.
 	w.WriteArray(len(vals))
 	for _, v := range vals {
 		if v.IsEmpty() {

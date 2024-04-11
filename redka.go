@@ -48,7 +48,7 @@ type Keys interface {
 // Strings is a string repository.
 type Strings interface {
 	Get(key string) (Value, error)
-	GetMany(keys ...string) ([]Value, error)
+	GetMany(keys ...string) (map[string]Value, error)
 	Set(key string, value any) error
 	SetExpires(key string, value any, ttl time.Duration) error
 	SetNotExists(key string, value any, ttl time.Duration) (bool, error)

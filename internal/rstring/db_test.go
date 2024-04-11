@@ -43,16 +43,22 @@ func TestStringGetMany(t *testing.T) {
 	tests := []struct {
 		name string
 		keys []string
-		want []redka.Value
+		want map[string]redka.Value
 	}{
 		{"all found", []string{"name", "age"},
-			[]redka.Value{redka.Value("alice"), redka.Value("25")},
+			map[string]redka.Value{
+				"name": redka.Value("alice"), "age": redka.Value("25"),
+			},
 		},
 		{"some found", []string{"name", "key1"},
-			[]redka.Value{redka.Value("alice"), redka.Value(nil)},
+			map[string]redka.Value{
+				"name": redka.Value("alice"), "key1": redka.Value(nil),
+			},
 		},
 		{"none found", []string{"key1", "key2"},
-			[]redka.Value{redka.Value(nil), redka.Value(nil)},
+			map[string]redka.Value{
+				"key1": redka.Value(nil), "key2": redka.Value(nil),
+			},
 		},
 	}
 	for _, tt := range tests {

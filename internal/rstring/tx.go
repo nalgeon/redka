@@ -75,7 +75,14 @@ func (tx *Tx) Get(key string) (core.Value, error) {
 }
 
 // GetMany returns the values of multiple keys.
-func (tx *Tx) GetMany(keys ...string) ([]core.Value, error) {
+func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
+	// Build a map of requested keys.
+	items := make(map[string]core.Value, len(keys))
+	for _, key := range keys {
+		items[key] = nil
+	}
+
+	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlStringGetMany, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
@@ -87,29 +94,20 @@ func (tx *Tx) GetMany(keys ...string) ([]core.Value, error) {
 	}
 	defer rows.Close()
 
-	// Build a map of known keys.
-	// It will be used to fill in the missing keys.
-	known := make(map[string]core.Value, len(keys))
+	// Fill the map with the values for existing keys
+	// (the rest of the keys will remain nil).
 	for rows.Next() {
 		key, val, err := scanValue(rows)
 		if err != nil {
 			return nil, err
 		}
-		known[key] = val
+		items[key] = val
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
 
-	// Build the result slice.
-	// It will contain all values in the order of keys.
-	// Missing keys will have nil values.
-	vals := make([]core.Value, 0, len(keys))
-	for _, key := range keys {
-		vals = append(vals, known[key])
-	}
-
-	return vals, nil
+	return items, nil
 }
 
 // Set sets the key value. The key does not expire.
