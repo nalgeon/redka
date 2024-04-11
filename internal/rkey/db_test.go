@@ -304,7 +304,7 @@ func TestRename(t *testing.T) {
 
 		_ = red.Str().Set("name", "alice")
 		ok, err := db.Rename("key1", "name")
-		testx.AssertEqual(t, err, core.ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -337,7 +337,7 @@ func TestRenameNX(t *testing.T) {
 		defer red.Close()
 
 		ok, err := db.RenameNX("key1", "key2")
-		testx.AssertEqual(t, err, core.ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("new exists", func(t *testing.T) {

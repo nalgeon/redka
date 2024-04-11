@@ -101,11 +101,11 @@ func TestSet(t *testing.T) {
 	}
 	t.Run("struct", func(t *testing.T) {
 		err := db.Set("struct", struct{ Name string }{"alice"})
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("nil", func(t *testing.T) {
 		err := db.Set("nil", nil)
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("update", func(t *testing.T) {
 		_ = db.Set("name", "alice")
@@ -131,7 +131,7 @@ func TestSet(t *testing.T) {
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "name", "alice")
 		err := db.Set("person", "name")
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 	})
 }
 
@@ -171,7 +171,7 @@ func TestSetExpires(t *testing.T) {
 		defer red.Close()
 		_, _ = red.Hash().Set("person", "name", "alice")
 		err := db.SetExpires("person", "name", time.Second)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 	})
 }
 
@@ -260,7 +260,7 @@ func TestSetExists(t *testing.T) {
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "name", "alice")
 		ok, err := db.SetExists("person", "name", 0)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -320,7 +320,7 @@ func TestGetSet(t *testing.T) {
 		defer red.Close()
 		_, _ = red.Hash().Set("person", "name", "alice")
 		val, err := db.GetSet("person", "name", 0)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, core.Value(nil))
 	})
 }
@@ -364,7 +364,7 @@ func TestSetMany(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
@@ -374,7 +374,7 @@ func TestSetMany(t *testing.T) {
 			"name":   "alice",
 			"person": "alice",
 		})
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 	})
 }
 
@@ -419,7 +419,7 @@ func TestSetManyNX(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
@@ -459,13 +459,13 @@ func TestIncr(t *testing.T) {
 	t.Run("invalid int", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.Incr("name", 1)
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 		testx.AssertEqual(t, val, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "age", 25)
 		val, err := db.Incr("person", 10)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, 0)
 	})
 }
@@ -494,13 +494,13 @@ func TestIncrFloat(t *testing.T) {
 	t.Run("invalid float", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.IncrFloat("name", 1.5)
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 		testx.AssertEqual(t, val, 0.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_, _ = red.Hash().Set("person", "age", 25.5)
 		val, err := db.IncrFloat("person", 10.5)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, 0.0)
 	})
 }

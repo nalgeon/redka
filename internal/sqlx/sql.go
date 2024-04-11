@@ -59,7 +59,7 @@ func Select[T any](db Tx, query string, args []any,
 // Returns typed errors for some specific cases.
 func TypedError(err error) error {
 	if err.Error() == "key type mismatch" {
-		return core.ErrKeyTypeMismatch
+		return core.ErrKeyType
 	}
 	return err
 }

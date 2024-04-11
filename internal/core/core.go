@@ -20,14 +20,14 @@ const (
 // Initial version of the key
 const InitialVersion = 1
 
-// ErrKeyNotFound is when the key is not found.
-var ErrKeyNotFound = errors.New("key not found")
+// ErrNotFound is when the key is not found.
+var ErrNotFound = errors.New("key not found")
 
-// ErrKeyTypeMismatch is when the key already exists with a different type.
-var ErrKeyTypeMismatch = errors.New("key type mismatch")
+// ErrKeyType is when the key already exists with a different type.
+var ErrKeyType = errors.New("key type mismatch")
 
-// ErrInvalidValueType is when the value does not have a valid type.
-var ErrInvalidValueType = errors.New("invalid value type")
+// ErrValueType is when the value does not have a valid type.
+var ErrValueType = errors.New("invalid value type")
 
 // ErrNotAllowed indicates that the operation is not allowed.
 var ErrNotAllowed = errors.New("operation not allowed")

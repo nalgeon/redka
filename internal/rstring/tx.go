@@ -120,7 +120,7 @@ func (tx *Tx) Set(key string, value any) error {
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
-		return core.ErrInvalidValueType
+		return core.ErrValueType
 	}
 	err := tx.set(key, value, ttl)
 	return err
@@ -130,7 +130,7 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 // Optionally sets the expiration time (if ttl > 0).
 func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
 	if !core.IsValueType(value) {
-		return false, core.ErrInvalidValueType
+		return false, core.ErrValueType
 	}
 
 	k, err := rkey.Get(tx.tx, key)
@@ -149,7 +149,7 @@ func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, erro
 // Optionally sets the expiration time (if ttl > 0).
 func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) {
 	if !core.IsValueType(value) {
-		return false, core.ErrInvalidValueType
+		return false, core.ErrValueType
 	}
 
 	k, err := rkey.Get(tx.tx, key)
@@ -168,7 +168,7 @@ func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) 
 // Optionally sets the expiration time (if ttl > 0).
 func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
 	if !core.IsValueType(value) {
-		return nil, core.ErrInvalidValueType
+		return nil, core.ErrValueType
 	}
 
 	prev, err := tx.Get(key)
@@ -184,7 +184,7 @@ func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, erro
 func (tx *Tx) SetMany(items map[string]any) error {
 	for _, val := range items {
 		if !core.IsValueType(val) {
-			return core.ErrInvalidValueType
+			return core.ErrValueType
 		}
 	}
 
@@ -203,7 +203,7 @@ func (tx *Tx) SetMany(items map[string]any) error {
 func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	for _, val := range items {
 		if !core.IsValueType(val) {
-			return false, core.ErrInvalidValueType
+			return false, core.ErrValueType
 		}
 	}
 
@@ -246,7 +246,7 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 	// check if the value is a valid integer
 	valInt, err := val.Int()
 	if err != nil {
-		return 0, core.ErrInvalidValueType
+		return 0, core.ErrValueType
 	}
 
 	// increment the value
@@ -270,7 +270,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	// check if the value is a valid float
 	valFloat, err := val.Float()
 	if err != nil {
-		return 0, core.ErrInvalidValueType
+		return 0, core.ErrValueType
 	}
 
 	// increment the value

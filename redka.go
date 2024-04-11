@@ -17,9 +17,9 @@ import (
 const driverName = "sqlite3"
 
 // Errors that can be returned by the commands.
-var ErrKeyNotFound = core.ErrKeyNotFound
-var ErrKeyTypeMismatch = core.ErrKeyTypeMismatch
-var ErrInvalidValueType = core.ErrInvalidValueType
+var ErrNotFound = core.ErrNotFound
+var ErrKeyType = core.ErrKeyType
+var ErrValueType = core.ErrValueType
 
 // Key represents a key data structure.
 type Key = core.Key

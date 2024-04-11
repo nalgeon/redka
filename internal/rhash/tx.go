@@ -308,7 +308,7 @@ func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
 // Returns true if the field was created, false if it was updated.
 func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
-		return false, core.ErrInvalidValueType
+		return false, core.ErrValueType
 	}
 	existCount, err := tx.count(key, field)
 	if err != nil {
@@ -324,7 +324,7 @@ func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 // SetNotExists creates the value of a field in a hash if it does not exist.
 func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
-		return false, core.ErrInvalidValueType
+		return false, core.ErrValueType
 	}
 	exist, err := tx.Exists(key, field)
 	if err != nil {
@@ -345,7 +345,7 @@ func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 	for _, val := range items {
 		if !core.IsValueType(val) {
-			return 0, core.ErrInvalidValueType
+			return 0, core.ErrValueType
 		}
 	}
 
@@ -381,7 +381,7 @@ func (tx *Tx) Incr(key, field string, delta int) (int, error) {
 	// check if the value is a valid integer
 	valInt, err := val.Int()
 	if err != nil {
-		return 0, core.ErrInvalidValueType
+		return 0, core.ErrValueType
 	}
 
 	// increment the value
@@ -405,7 +405,7 @@ func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 	// check if the value is a valid float
 	valFloat, err := val.Float()
 	if err != nil {
-		return 0, core.ErrInvalidValueType
+		return 0, core.ErrValueType
 	}
 
 	// increment the value
@@ -431,7 +431,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 		return 0, nil
 	}
 	if k.Type != core.TypeHash {
-		return 0, core.ErrKeyTypeMismatch
+		return 0, core.ErrKeyType
 	}
 
 	// Count the number of existing fields.

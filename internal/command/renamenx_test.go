@@ -121,9 +121,9 @@ func TestRenameNXExec(t *testing.T) {
 		cmd := mustParse[*RenameNX]("renamenx name title")
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, db)
-		testx.AssertEqual(t, err, core.ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.out(), ErrKeyNotFound.Error())
+		testx.AssertEqual(t, conn.out(), ErrNotFound.Error())
 
 		key, _ := db.Key().Get("name")
 		testx.AssertEqual(t, key.Exists(), false)

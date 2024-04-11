@@ -216,7 +216,7 @@ func (tx *Tx) Rename(key, newKey string) (bool, error) {
 		return false, err
 	}
 	if !oldK.Exists() {
-		return false, core.ErrKeyNotFound
+		return false, core.ErrNotFound
 	}
 
 	// If the keys are the same, do nothing.
@@ -250,7 +250,7 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 		return false, err
 	}
 	if !oldK.Exists() {
-		return false, core.ErrKeyNotFound
+		return false, core.ErrNotFound
 	}
 
 	// If the keys are the same, do nothing.

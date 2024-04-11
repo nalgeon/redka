@@ -364,7 +364,7 @@ func TestSet(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		ok, err := db.Set("person", "name", "alice")
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -407,7 +407,7 @@ func TestSetNotExists(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		ok, err := db.SetNotExists("person", "name", "alice")
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, ok, false)
 	})
 }
@@ -473,7 +473,7 @@ func TestSetMany(t *testing.T) {
 		count, err := db.SetMany("person", map[string]any{
 			"name": "alice", "age": 25,
 		})
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, count, 0)
 	})
 }
@@ -520,14 +520,14 @@ func TestIncr(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.Incr("person", "name", 10)
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.Incr("person", "age", 25)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, 0)
 	})
 }
@@ -574,14 +574,14 @@ func TestIncrFloat(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.IncrFloat("person", "name", 10.5)
-		testx.AssertErr(t, err, core.ErrInvalidValueType)
+		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.IncrFloat("person", "age", 25.0)
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, 0.0)
 	})
 }
@@ -679,7 +679,7 @@ func TestDelete(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
 		val, err := db.Delete("person", "name")
-		testx.AssertErr(t, err, core.ErrKeyTypeMismatch)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, val, 0)
 	})
 }

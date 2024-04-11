@@ -11,8 +11,8 @@ import (
 
 var ErrInvalidCursor = errors.New("ERR invalid cursor")
 var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
-var ErrKeyNotFound = errors.New("ERR no such key")
-var ErrKeyTypeMismatch = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
+var ErrNotFound = errors.New("ERR no such key")
+var ErrKeyType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
 var ErrNotInMulti = errors.New("ERR EXEC without MULTI")
 var ErrSyntaxError = errors.New("ERR syntax error")
@@ -34,10 +34,10 @@ func ErrUnknownSubcmd(cmd, subcmd string) error {
 // and returns its string representation.
 func translateError(err error) string {
 	switch err {
-	case core.ErrKeyNotFound:
-		return ErrKeyNotFound.Error()
-	case core.ErrKeyTypeMismatch:
-		return ErrKeyTypeMismatch.Error()
+	case core.ErrNotFound:
+		return ErrNotFound.Error()
+	case core.ErrKeyType:
+		return ErrKeyType.Error()
 	default:
 		return err.Error()
 	}
