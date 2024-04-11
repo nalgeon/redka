@@ -19,6 +19,31 @@ func TestKeyExists(t *testing.T) {
 
 	tests := []struct {
 		name string
+		key  string
+		want bool
+	}{
+		{"found", "name", true},
+		{"not found", "city", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			count, err := db.Exists(tt.key)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, count, tt.want)
+		})
+	}
+}
+
+func TestKeyCount(t *testing.T) {
+	red := getDB(t)
+	defer red.Close()
+
+	db := red.Key()
+	_ = red.Str().Set("name", "alice")
+	_ = red.Str().Set("age", 25)
+
+	tests := []struct {
+		name string
 		keys []string
 		want int
 	}{
@@ -28,7 +53,7 @@ func TestKeyExists(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count, err := db.Exists(tt.keys...)
+			count, err := db.Count(tt.keys...)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, count, tt.want)
 		})
@@ -350,7 +375,7 @@ func TestKeyDelete(t *testing.T) {
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, count, tt.want)
 
-			count, _ = db.Exists(tt.keys...)
+			count, _ = db.Count(tt.keys...)
 			testx.AssertEqual(t, count, 0)
 
 			for _, key := range tt.keys {
@@ -375,7 +400,7 @@ func TestKeyDeleteExpired(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
 
-		count, _ = db.Exists("name", "age")
+		count, _ = db.Count("name", "age")
 		testx.AssertEqual(t, count, 0)
 	})
 	t.Run("delete n", func(t *testing.T) {
@@ -401,7 +426,7 @@ func TestKeyDeleteAll(t *testing.T) {
 	err := db.DeleteAll()
 	testx.AssertNoErr(t, err)
 
-	count, _ := db.Exists("name", "age")
+	count, _ := db.Count("name", "age")
 	testx.AssertEqual(t, count, 0)
 }
 

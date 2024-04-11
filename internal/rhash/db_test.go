@@ -558,8 +558,8 @@ func TestDelete(t *testing.T) {
 		exist, _ := db.Exists("person", "name")
 		testx.AssertEqual(t, exist, false)
 
-		keyCount, _ := red.Key().Exists("person")
-		testx.AssertEqual(t, keyCount, 0)
+		exist, _ = red.Key().Exists("person")
+		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("delete some fields", func(t *testing.T) {
 		red, db := getDB(t)
@@ -599,8 +599,8 @@ func TestDelete(t *testing.T) {
 		exist, _ = db.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
 
-		keyCount, _ := red.Key().Exists("person")
-		testx.AssertEqual(t, keyCount, 0)
+		exist, _ = red.Key().Exists("person")
+		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("delete non-existent key", func(t *testing.T) {
 		red, db := getDB(t)
@@ -610,8 +610,8 @@ func TestDelete(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, delCount, 0)
 
-		keyCount, _ := red.Key().Exists("person")
-		testx.AssertEqual(t, keyCount, 0)
+		exist, _ := red.Key().Exists("person")
+		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("delete non-existent field", func(t *testing.T) {
 		red, db := getDB(t)

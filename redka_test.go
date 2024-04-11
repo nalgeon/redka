@@ -16,7 +16,7 @@ func TestDBView(t *testing.T) {
 	_ = db.Str().Set("age", 25)
 
 	err := db.View(func(tx *redka.Tx) error {
-		count, err := tx.Key().Exists("name", "age")
+		count, err := tx.Key().Count("name", "age")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
 
@@ -51,7 +51,7 @@ func TestDBUpdate(t *testing.T) {
 	testx.AssertNoErr(t, err)
 
 	err = db.View(func(tx *redka.Tx) error {
-		count, _ := tx.Key().Exists("name", "age")
+		count, _ := tx.Key().Count("name", "age")
 		testx.AssertEqual(t, count, 2)
 
 		name, _ := tx.Str().Get("name")

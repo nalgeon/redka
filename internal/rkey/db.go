@@ -21,10 +21,16 @@ func New(db *sql.DB) *DB {
 	return &DB{d}
 }
 
-// Exists returns the number of existing keys among specified.
-func (db *DB) Exists(keys ...string) (int, error) {
+// Exists checks if the key exists.
+func (db *DB) Exists(key string) (bool, error) {
 	tx := NewTx(db.SQL)
-	return tx.Exists(keys...)
+	return tx.Exists(key)
+}
+
+// Count returns the number of existing keys among specified.
+func (db *DB) Count(keys ...string) (int, error) {
+	tx := NewTx(db.SQL)
+	return tx.Count(keys...)
 }
 
 // Search returns all keys matching pattern.

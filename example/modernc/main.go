@@ -25,6 +25,6 @@ func main() {
 	err = db.Str().Set("name", "alice")
 	slog.Info("set", "err", err)
 
-	count, err := db.Key().Exists("name", "age", "city")
-	slog.Info("exists", "count", count, "err", err)
+	count, err := db.Key().Count("name", "age", "city")
+	slog.Info("count", "count", count, "err", err)
 }

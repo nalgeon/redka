@@ -25,8 +25,8 @@ func main() {
 	slog.Info("set", "err", err)
 
 	// Check if the keys exist.
-	count, err := db.Key().Exists("name", "age", "city")
-	slog.Info("exists", "count", count, "err", err)
+	count, err := db.Key().Count("name", "age", "city")
+	slog.Info("count", "count", count, "err", err)
 
 	// Get a key.
 	name, err := db.Str().Get("name")

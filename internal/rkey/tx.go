@@ -87,8 +87,14 @@ func NewTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx}
 }
 
-// Exists returns the number of existing keys among specified.
-func (tx *Tx) Exists(keys ...string) (int, error) {
+// Exists checks if the key exists.
+func (tx *Tx) Exists(key string) (bool, error) {
+	count, err := CountKeys(tx.tx, key)
+	return count > 0, err
+}
+
+// Count returns the number of existing keys among specified.
+func (tx *Tx) Count(keys ...string) (int, error) {
 	return CountKeys(tx.tx, keys...)
 }
 
@@ -253,11 +259,11 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 	}
 
 	// Make sure the new key does not exist.
-	count, err := tx.Exists(newKey)
+	exist, err := tx.Exists(newKey)
 	if err != nil {
 		return false, err
 	}
-	if count != 0 {
+	if exist {
 		return false, nil
 	}
 

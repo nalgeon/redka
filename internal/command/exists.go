@@ -21,7 +21,7 @@ func parseExists(b baseCmd) (*Exists, error) {
 }
 
 func (cmd *Exists) Run(w Writer, red Redka) (any, error) {
-	count, err := red.Key().Exists(cmd.keys...)
+	count, err := red.Key().Count(cmd.keys...)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

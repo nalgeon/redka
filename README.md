@@ -95,7 +95,7 @@ Redka supports the following key management (generic) commands:
 | Command     | Go API              | Description                                                |
 | ----------- | ------------------- | ---------------------------------------------------------- |
 | `DEL`       | `DB.Key().Delete`   | Deletes one or more keys.                                  |
-| `EXISTS`    | `DB.Key().Exists`   | Determines whether one or more keys exist.                 |
+| `EXISTS`    | `DB.Key().Count`    | Determines whether one or more keys exist.                 |
 | `EXPIRE`    | `DB.Key().Expire`   | Sets the expiration time of a key (in seconds).            |
 | `EXPIREAT`  | `DB.Key().ExpireAt` | Sets the expiration time of a key to a Unix timestamp.     |
 | `KEYS`      | `DB.Key().Search`   | Returns all key names that match a pattern.                |
@@ -298,15 +298,15 @@ After opening the database, call `redka.DB` methods to run individual commands:
 db.Str().Set("name", "alice")
 db.Str().Set("age", 25)
 
-count, err := db.Key().Exists("name", "age", "city")
-slog.Info("exists", "count", count, "err", err)
+count, err := db.Key().Count("name", "age", "city")
+slog.Info("count", "count", count, "err", err)
 
 name, err := db.Str().Get("name")
 slog.Info("get", "name", name, "err", err)
 ```
 
 ```
-exists count=2 err=<nil>
+count count=2 err=<nil>
 get name="alice" err=<nil>
 ```
 
