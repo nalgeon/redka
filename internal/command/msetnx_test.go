@@ -3,7 +3,6 @@ package command
 import (
 	"testing"
 
-	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -29,7 +28,7 @@ func TestMSetNXParse(t *testing.T) {
 		{
 			name: "msetnx name alice",
 			args: buildArgs("msetnx", "name", "alice"),
-			want: MSetNX{kvals: []redka.KVPair{{Key: "name", Value: []byte("alice")}}},
+			want: MSetNX{items: map[string]any{"name": []byte("alice")}},
 			err:  nil,
 		},
 		{
@@ -41,10 +40,10 @@ func TestMSetNXParse(t *testing.T) {
 		{
 			name: "msetnx name alice age 25",
 			args: buildArgs("msetnx", "name", "alice", "age", "25"),
-			want: MSetNX{kvals: []redka.KVPair{
-				{Key: "name", Value: []byte("alice")},
-				{Key: "age", Value: []byte("25")}},
-			},
+			want: MSetNX{items: map[string]any{
+				"name": []byte("alice"),
+				"age":  []byte("25"),
+			}},
 			err: nil,
 		},
 	}
@@ -55,7 +54,7 @@ func TestMSetNXParse(t *testing.T) {
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				cm := cmd.(*MSetNX)
-				testx.AssertEqual(t, cm.kvals, test.want.kvals)
+				testx.AssertEqual(t, cm.items, test.want.items)
 			}
 		})
 	}

@@ -85,20 +85,20 @@ func (d *DB) GetSet(key string, value any, ttl time.Duration) (core.Value, error
 }
 
 // SetMany sets the values of multiple keys.
-func (d *DB) SetMany(kvals ...core.KVPair) error {
+func (d *DB) SetMany(items map[string]any) error {
 	err := d.Update(func(tx *Tx) error {
-		return tx.SetMany(kvals...)
+		return tx.SetMany(items)
 	})
 	return err
 }
 
 // SetManyNX sets the values of multiple keys,
 // but only if none of them yet exist.
-func (d *DB) SetManyNX(kvals ...core.KVPair) (bool, error) {
+func (d *DB) SetManyNX(items map[string]any) (bool, error) {
 	var ok bool
 	err := d.Update(func(tx *Tx) error {
 		var err error
-		ok, err = tx.SetManyNX(kvals...)
+		ok, err = tx.SetManyNX(items)
 		return err
 	})
 	return ok, err

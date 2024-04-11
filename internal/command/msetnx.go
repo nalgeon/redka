@@ -1,16 +1,12 @@
 package command
 
-import (
-	"github.com/nalgeon/redka"
-)
-
 // Atomically modifies the string values of one
 // or more keys only when all keys don't exist.
 // MSETNX key value [key value ...]
 // https://redis.io/commands/msetnx
 type MSetNX struct {
 	baseCmd
-	kvals []redka.KVPair
+	items map[string]any
 }
 
 func parseMSetNX(b baseCmd) (*MSetNX, error) {
@@ -19,19 +15,16 @@ func parseMSetNX(b baseCmd) (*MSetNX, error) {
 		return cmd, ErrInvalidArgNum(cmd.name)
 	}
 
-	cmd.kvals = make([]redka.KVPair, len(cmd.args)/2)
+	cmd.items = make(map[string]any, len(cmd.args)/2)
 	for i := 0; i < len(cmd.args); i += 2 {
-		cmd.kvals[i/2] = redka.KVPair{
-			Key:   string(cmd.args[i]),
-			Value: cmd.args[i+1],
-		}
+		cmd.items[string(cmd.args[i])] = cmd.args[i+1]
 	}
 
 	return cmd, nil
 }
 
 func (cmd *MSetNX) Run(w Writer, red Redka) (any, error) {
-	ok, err := red.Str().SetManyNX(cmd.kvals...)
+	ok, err := red.Str().SetManyNX(cmd.items)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

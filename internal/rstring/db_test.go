@@ -289,10 +289,10 @@ func TestStringSetMany(t *testing.T) {
 	db := red.Str()
 
 	t.Run("create", func(t *testing.T) {
-		err := db.SetMany(
-			redka.KVPair{Key: "name", Value: "alice"},
-			redka.KVPair{Key: "age", Value: 25},
-		)
+		err := db.SetMany(map[string]any{
+			"name": "alice",
+			"age":  25,
+		})
 		testx.AssertNoErr(t, err)
 		name, _ := db.Get("name")
 		testx.AssertEqual(t, name, redka.Value("alice"))
@@ -302,10 +302,10 @@ func TestStringSetMany(t *testing.T) {
 	t.Run("update", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		_ = db.Set("age", 25)
-		err := db.SetMany(
-			redka.KVPair{Key: "name", Value: "bob"},
-			redka.KVPair{Key: "age", Value: 50},
-		)
+		err := db.SetMany(map[string]any{
+			"name": "bob",
+			"age":  50,
+		})
 		testx.AssertNoErr(t, err)
 		name, _ := db.Get("name")
 		testx.AssertEqual(t, name, redka.Value("bob"))
@@ -313,10 +313,10 @@ func TestStringSetMany(t *testing.T) {
 		testx.AssertEqual(t, age, redka.Value("50"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
-		err := db.SetMany(
-			redka.KVPair{Key: "name", Value: "alice"},
-			redka.KVPair{Key: "age", Value: struct{ Name string }{"alice"}},
-		)
+		err := db.SetMany(map[string]any{
+			"name": "alice",
+			"age":  struct{ Name string }{"alice"},
+		})
 		testx.AssertErr(t, err, redka.ErrInvalidType)
 	})
 }
@@ -329,36 +329,36 @@ func TestStringSetManyNX(t *testing.T) {
 	_ = db.Set("name", "alice")
 
 	t.Run("create", func(t *testing.T) {
-		ok, err := db.SetManyNX(
-			redka.KVPair{Key: "age", Value: 25},
-			redka.KVPair{Key: "city", Value: "wonderland"},
-		)
+		ok, err := db.SetManyNX(map[string]any{
+			"age":  25,
+			"city": "paris",
+		})
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
 		age, _ := db.Get("age")
 		testx.AssertEqual(t, age, redka.Value("25"))
 		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, redka.Value("wonderland"))
+		testx.AssertEqual(t, city, redka.Value("paris"))
 	})
 	t.Run("update", func(t *testing.T) {
 		_ = db.Set("age", 25)
-		_ = db.Set("city", "wonderland")
-		ok, err := db.SetManyNX(
-			redka.KVPair{Key: "age", Value: 50},
-			redka.KVPair{Key: "city", Value: "wonderland"},
-		)
+		_ = db.Set("city", "paris")
+		ok, err := db.SetManyNX(map[string]any{
+			"age":  50,
+			"city": "berlin",
+		})
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
 		age, _ := db.Get("age")
 		testx.AssertEqual(t, age, redka.Value("25"))
 		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, redka.Value("wonderland"))
+		testx.AssertEqual(t, city, redka.Value("paris"))
 	})
 	t.Run("invalid type", func(t *testing.T) {
-		ok, err := db.SetManyNX(
-			redka.KVPair{Key: "name", Value: "alice"},
-			redka.KVPair{Key: "age", Value: struct{ Name string }{"alice"}},
-		)
+		ok, err := db.SetManyNX(map[string]any{
+			"name": "alice",
+			"age":  struct{ Name string }{"alice"},
+		})
 		testx.AssertErr(t, err, redka.ErrInvalidType)
 		testx.AssertEqual(t, ok, false)
 	})

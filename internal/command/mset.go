@@ -1,15 +1,11 @@
 package command
 
-import (
-	"github.com/nalgeon/redka"
-)
-
 // Atomically creates or modifies the string values of one or more keys.
 // MSET key value [key value ...]
 // https://redis.io/commands/mset
 type MSet struct {
 	baseCmd
-	kvals []redka.KVPair
+	items map[string]any
 }
 
 func parseMSet(b baseCmd) (*MSet, error) {
@@ -18,19 +14,16 @@ func parseMSet(b baseCmd) (*MSet, error) {
 		return cmd, ErrInvalidArgNum(cmd.name)
 	}
 
-	cmd.kvals = make([]redka.KVPair, len(cmd.args)/2)
+	cmd.items = make(map[string]any, len(cmd.args)/2)
 	for i := 0; i < len(cmd.args); i += 2 {
-		cmd.kvals[i/2] = redka.KVPair{
-			Key:   string(cmd.args[i]),
-			Value: cmd.args[i+1],
-		}
+		cmd.items[string(cmd.args[i])] = cmd.args[i+1]
 	}
 
 	return cmd, nil
 }
 
 func (cmd *MSet) Run(w Writer, red Redka) (any, error) {
-	err := red.Str().SetMany(cmd.kvals...)
+	err := red.Str().SetMany(cmd.items)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

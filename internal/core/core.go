@@ -105,12 +105,6 @@ func (v Value) IsEmpty() bool {
 	return len(v) == 0
 }
 
-// KVPair represents a key-value pair.
-type KVPair struct {
-	Key   string
-	Value any
-}
-
 // IsValueType returns true if the value has a valid type
 // to be persisted in the database.
 func IsValueType(v any) bool {

@@ -181,15 +181,15 @@ func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, erro
 }
 
 // SetMany sets the values of multiple keys.
-func (tx *Tx) SetMany(kvals ...core.KVPair) error {
-	for _, kv := range kvals {
-		if !core.IsValueType(kv.Value) {
+func (tx *Tx) SetMany(items map[string]any) error {
+	for _, val := range items {
+		if !core.IsValueType(val) {
 			return core.ErrInvalidType
 		}
 	}
 
-	for _, kv := range kvals {
-		err := tx.set(kv.Key, kv.Value, 0)
+	for key, val := range items {
+		err := tx.set(key, val, 0)
 		if err != nil {
 			return err
 		}
@@ -200,17 +200,17 @@ func (tx *Tx) SetMany(kvals ...core.KVPair) error {
 
 // SetManyNX sets the values of multiple keys,
 // but only if none of them exist yet.
-func (tx *Tx) SetManyNX(kvals ...core.KVPair) (bool, error) {
-	for _, kv := range kvals {
-		if !core.IsValueType(kv.Value) {
+func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
+	for _, val := range items {
+		if !core.IsValueType(val) {
 			return false, core.ErrInvalidType
 		}
 	}
 
 	// extract keys
-	keys := make([]string, 0, len(kvals))
-	for _, kv := range kvals {
-		keys = append(keys, kv.Key)
+	keys := make([]string, 0, len(items))
+	for key := range items {
+		keys = append(keys, key)
 	}
 
 	// check if any of the keys exist
@@ -225,8 +225,8 @@ func (tx *Tx) SetManyNX(kvals ...core.KVPair) (bool, error) {
 	}
 
 	// set the keys
-	for _, kv := range kvals {
-		err = tx.set(kv.Key, kv.Value, 0)
+	for key, val := range items {
+		err = tx.set(key, val, 0)
 		if err != nil {
 			return false, err
 		}
