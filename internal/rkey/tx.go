@@ -19,7 +19,7 @@ const sqlKeyCount = `
 select count(id) from rkey
 where key in (:keys) and (etime is null or etime > :now)`
 
-const sqlKeySearch = `
+const sqlKeyKeys = `
 select id, key, type, version, etime, mtime from rkey
 where key glob :pattern and (etime is null or etime > :now)`
 
@@ -98,8 +98,8 @@ func (tx *Tx) Count(keys ...string) (int, error) {
 	return CountKeys(tx.tx, keys...)
 }
 
-// Search returns all keys matching pattern.
-func (tx *Tx) Search(pattern string) ([]core.Key, error) {
+// Keys returns all keys matching pattern.
+func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("pattern", pattern), sql.Named("now", now)}
 	scan := func(rows *sql.Rows) (core.Key, error) {
@@ -108,7 +108,7 @@ func (tx *Tx) Search(pattern string) ([]core.Key, error) {
 		return k, err
 	}
 	var keys []core.Key
-	keys, err := sqlx.Select(tx.tx, sqlKeySearch, args, scan)
+	keys, err := sqlx.Select(tx.tx, sqlKeyKeys, args, scan)
 	return keys, err
 }
 

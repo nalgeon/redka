@@ -60,7 +60,7 @@ func TestKeyCount(t *testing.T) {
 	}
 }
 
-func TestKeySearch(t *testing.T) {
+func TestKeyKeys(t *testing.T) {
 	red := getDB(t)
 	defer red.Close()
 
@@ -79,7 +79,7 @@ func TestKeySearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			keys, err := db.Search(tt.pattern)
+			keys, err := db.Keys(tt.pattern)
 			testx.AssertNoErr(t, err)
 			for i, key := range keys {
 				name := key.Key

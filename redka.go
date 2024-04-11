@@ -31,7 +31,7 @@ type Value = core.Value
 type Keys interface {
 	Exists(key string) (bool, error)
 	Count(keys ...string) (int, error)
-	Search(pattern string) ([]Key, error)
+	Keys(pattern string) ([]Key, error)
 	Scan(cursor int, pattern string, count int) (rkey.ScanResult, error)
 	Scanner(pattern string, pageSize int) *rkey.Scanner
 	Random() (Key, error)

@@ -33,10 +33,10 @@ func (db *DB) Count(keys ...string) (int, error) {
 	return tx.Count(keys...)
 }
 
-// Search returns all keys matching pattern.
-func (db *DB) Search(pattern string) ([]core.Key, error) {
+// Keys returns all keys matching pattern.
+func (db *DB) Keys(pattern string) ([]core.Key, error) {
 	tx := NewTx(db.SQL)
-	return tx.Search(pattern)
+	return tx.Keys(pattern)
 }
 
 // Scan iterates over keys matching pattern by returning

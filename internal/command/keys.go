@@ -18,7 +18,7 @@ func parseKeys(b baseCmd) (*Keys, error) {
 }
 
 func (cmd *Keys) Run(w Writer, red Redka) (any, error) {
-	keys, err := red.Key().Search(cmd.pattern)
+	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
 		w.WriteError(err.Error())
 		return nil, err

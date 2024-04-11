@@ -52,7 +52,7 @@ func TestFlushDBExec(t *testing.T) {
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
 
-		keys, _ := db.Key().Search("*")
+		keys, _ := db.Key().Keys("*")
 		testx.AssertEqual(t, len(keys), 0)
 	})
 
@@ -67,7 +67,7 @@ func TestFlushDBExec(t *testing.T) {
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
 
-		keys, _ := db.Key().Search("*")
+		keys, _ := db.Key().Keys("*")
 		testx.AssertEqual(t, len(keys), 0)
 	})
 }
