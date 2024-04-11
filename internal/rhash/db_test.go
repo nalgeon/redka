@@ -519,7 +519,7 @@ func TestIncr(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.Incr("person", "name", 10)
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
@@ -573,7 +573,7 @@ func TestIncrFloat(t *testing.T) {
 
 		_, _ = db.Set("person", "name", "alice")
 		_, err := db.IncrFloat("person", "name", 10.5)
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)

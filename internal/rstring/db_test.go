@@ -100,11 +100,11 @@ func TestSet(t *testing.T) {
 	}
 	t.Run("struct", func(t *testing.T) {
 		err := db.Set("struct", struct{ Name string }{"alice"})
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 	})
 	t.Run("nil", func(t *testing.T) {
 		err := db.Set("nil", nil)
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 	})
 	t.Run("update", func(t *testing.T) {
 		_ = db.Set("name", "alice")
@@ -363,7 +363,7 @@ func TestSetMany(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
@@ -418,7 +418,7 @@ func TestSetManyNX(t *testing.T) {
 			"name": "alice",
 			"age":  struct{ Name string }{"alice"},
 		})
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
@@ -458,7 +458,7 @@ func TestIncr(t *testing.T) {
 	t.Run("invalid int", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.Incr("name", 1)
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 		testx.AssertEqual(t, val, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
@@ -493,7 +493,7 @@ func TestIncrFloat(t *testing.T) {
 	t.Run("invalid float", func(t *testing.T) {
 		_ = db.Set("name", "alice")
 		val, err := db.IncrFloat("name", 1.5)
-		testx.AssertErr(t, err, redka.ErrInvalidType)
+		testx.AssertErr(t, err, redka.ErrInvalidValueType)
 		testx.AssertEqual(t, val, 0.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {

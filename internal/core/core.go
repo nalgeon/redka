@@ -26,8 +26,8 @@ var ErrKeyNotFound = errors.New("key not found")
 // ErrKeyTypeMismatch is when the key already exists with a different type.
 var ErrKeyTypeMismatch = errors.New("key type mismatch")
 
-// ErrInvalidType is when the value does not have a valid type.
-var ErrInvalidType = errors.New("invalid value type")
+// ErrInvalidValueType is when the value does not have a valid type.
+var ErrInvalidValueType = errors.New("invalid value type")
 
 // ErrNotAllowed indicates that the operation is not allowed.
 var ErrNotAllowed = errors.New("operation not allowed")
