@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/sqlx"
@@ -63,11 +64,31 @@ type Strings interface {
 	Delete(keys ...string) (int, error)
 }
 
+// Hashes is a hash repository.
+type Hashes interface {
+	Get(key, field string) (Value, error)
+	GetMany(key string, fields ...string) (map[string]Value, error)
+	Exists(key, field string) (bool, error)
+	Items(key string) (map[string]core.Value, error)
+	Fields(key string) ([]string, error)
+	Values(key string) ([]Value, error)
+	Len(key string) (int, error)
+	Scan(key string, cursor int, match string, count int) (rhash.ScanResult, error)
+	Scanner(key string, pattern string, pageSize int) *rhash.Scanner
+	Set(key, field string, value any) (bool, error)
+	SetNotExists(key, field string, value any) (bool, error)
+	SetMany(key string, items map[string]any) (int, error)
+	Incr(key, field string, delta int) (int, error)
+	IncrFloat(key, field string, delta float64) (float64, error)
+	Delete(key string, fields ...string) (int, error)
+}
+
 // DB is a Redis-like database backed by SQLite.
 type DB struct {
 	*sqlx.DB[*Tx]
 	keyDB    *rkey.DB
 	stringDB *rstring.DB
+	hashDB   *rhash.DB
 	bg       *time.Ticker
 	log      *slog.Logger
 }
@@ -93,6 +114,7 @@ func OpenDB(db *sql.DB) (*DB, error) {
 		DB:       sdb,
 		keyDB:    rkey.New(db),
 		stringDB: rstring.New(db),
+		hashDB:   rhash.New(db),
 		log:      slog.New(new(noopHandler)),
 	}
 	rdb.bg = rdb.startBgManager()
@@ -102,6 +124,11 @@ func OpenDB(db *sql.DB) (*DB, error) {
 // Str returns the string repository.
 func (db *DB) Str() Strings {
 	return db.stringDB
+}
+
+// Hash returns the hash repository.
+func (db *DB) Hash() Hashes {
+	return db.hashDB
 }
 
 // Key returns the key repository.
@@ -156,20 +183,28 @@ func (db *DB) startBgManager() *time.Ticker {
 
 // Tx is a Redis-like database transaction.
 type Tx struct {
-	tx    sqlx.Tx
-	keyTx *rkey.Tx
-	strTx *rstring.Tx
+	tx     sqlx.Tx
+	keyTx  *rkey.Tx
+	strTx  *rstring.Tx
+	hashTx *rhash.Tx
 }
 
 // newTx creates a new database transaction.
 func newTx(tx sqlx.Tx) *Tx {
-	return &Tx{tx: tx, keyTx: rkey.NewTx(tx), strTx: rstring.NewTx(tx)}
+	return &Tx{tx: tx,
+		keyTx:  rkey.NewTx(tx),
+		strTx:  rstring.NewTx(tx),
+		hashTx: rhash.NewTx(tx),
+	}
 }
 func (tx *Tx) Str() Strings {
 	return tx.strTx
 }
 func (tx *Tx) Key() Keys {
 	return tx.keyTx
+}
+func (tx *Tx) Hash() Hashes {
+	return tx.hashTx
 }
 func (tx *Tx) Flush() error {
 	return ErrCommandNotAllowed

@@ -69,7 +69,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 func (tx *Tx) Get(key string) (core.Value, error) {
 	now := time.Now().UnixMilli()
 	row := tx.tx.QueryRow(sqlStringGet, key, now)
-	_, val, err := sqlx.ScanValue(row)
+	_, val, err := scanValue(row)
 	return val, err
 }
 
@@ -90,7 +90,7 @@ func (tx *Tx) GetMany(keys ...string) ([]core.Value, error) {
 	// It will be used to fill in the missing keys.
 	known := make(map[string]core.Value, len(keys))
 	for rows.Next() {
-		key, val, err := sqlx.ScanValue(rows)
+		key, val, err := scanValue(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -339,4 +339,17 @@ func (tx Tx) update(key string, value any) error {
 	}
 	_, err = tx.tx.Exec(sqlStringUpdate[1], args...)
 	return err
+}
+
+// scanValue scans a key value from the row (rows).
+func scanValue(scanner sqlx.RowScanner) (key string, val core.Value, err error) {
+	var value []byte
+	err = scanner.Scan(&key, &value)
+	if err == sql.ErrNoRows {
+		return "", nil, nil
+	}
+	if err != nil {
+		return "", nil, err
+	}
+	return key, core.Value(value), nil
 }

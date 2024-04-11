@@ -35,9 +35,35 @@ create view if not exists
 vstring as
   select
     rkey.id as key_id, rkey.key, rstring.value,
-	case rkey.type when 1 then 'string' else 'unknown' end as type,
 	datetime(etime/1000, 'unixepoch') as etime,
 	datetime(mtime/1000, 'unixepoch') as mtime
   from rkey join rstring on rkey.id = rstring.key_id
   where rkey.type = 1
+    and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
+
+-- hashes
+create table if not exists
+rhash (
+    key_id integer,
+    field text not null,
+    value blob not null,
+
+    foreign key (key_id) references rkey (id)
+      on delete cascade
+);
+
+create unique index if not exists
+rhash_pk_idx on rhash (key_id, field);
+
+create index if not exists
+rhash_key_id_idx on rhash (key_id);
+
+create view if not exists
+vhash as
+  select
+    rkey.id as key_id, rkey.key, rhash.field, rhash.value,
+	datetime(etime/1000, 'unixepoch') as etime,
+	datetime(mtime/1000, 'unixepoch') as mtime
+  from rkey join rhash on rkey.id = rhash.key_id
+  where rkey.type = 4
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'));

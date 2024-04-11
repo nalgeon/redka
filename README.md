@@ -76,7 +76,7 @@ Hashes are record types modeled as collections of field-value pairs. Redka aims 
 
 ```
 HDEL  HEXISTS  HGET  HGETALL  HINCRBY  HINCRBYFLOAT  HKEYS
-HLEN  HMGET  HMSET  HSET  HSETNX  HVALS
+HLEN  HMGET  HMSET  HSCAN  HSET  HSETNX  HVALS
 ```
 
 ### Sorted sets
@@ -367,15 +367,15 @@ select * from vstring;
 ```
 
 ```
-┌────────┬──────┬───────┬────────┬───────┬─────────────────────┐
-│ key_id │ key  │ value │  type  │ etime │        mtime        │
-├────────┼──────┼───────┼────────┼───────┼─────────────────────┤
-│ 1      │ name │ alice │ string │       │ 2024-04-03 16:58:14 │
-│ 2      │ age  │ 50    │ string │       │ 2024-04-03 16:34:52 │
-└────────┴──────┴───────┴────────┴───────┴─────────────────────┘
+┌────────┬──────┬───────┬───────┬─────────────────────┐
+│ key_id │ key  │ value │ etime │        mtime        │
+├────────┼──────┼───────┼───────┼─────────────────────┤
+│ 1      │ name │ alice │       │ 2024-04-03 16:58:14 │
+│ 2      │ age  │ 50    │       │ 2024-04-03 16:34:52 │
+└────────┴──────┴───────┴───────┴─────────────────────┘
 ```
 
-`type` in views is the Redis data type. `etime` and `mtime` are in UTC.
+`etime` and `mtime` are in UTC.
 
 ## Performance
 

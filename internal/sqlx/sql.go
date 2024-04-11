@@ -40,10 +40,7 @@ delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
 const sqlTruncate = `
-pragma writable_schema = 1;
-delete from sqlite_schema
-  where name like 'rkey%' or name like 'rstring%';
-pragma writable_schema = 0;
+delete from rkey;
 vacuum;
 pragma integrity_check;`
 
@@ -86,19 +83,6 @@ func DeleteKey(tx Tx, keys ...string) (int, error) {
 	return int(affectedCount), nil
 }
 
-// scanValue scans a key value from the row (rows).
-func ScanValue(scanner RowScanner) (key string, val core.Value, err error) {
-	var value []byte
-	err = scanner.Scan(&key, &value)
-	if err == sql.ErrNoRows {
-		return "", nil, nil
-	}
-	if err != nil {
-		return "", nil, err
-	}
-	return key, core.Value(value), nil
-}
-
 // ExpandIn expands the IN clause in the query for a given parameter.
 func ExpandIn[T any](query string, param string, args []T) (string, []any) {
 	anyArgs := make([]any, len(args))
@@ -138,14 +122,5 @@ func Select[T any](db Tx, query string, args []any,
 // Truncate deletes all data from the database.
 func Truncate[T any](db *DB[T]) error {
 	_, err := db.SQL.Exec(sqlTruncate)
-	if err != nil {
-		return err
-	}
-
-	err = db.init()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
