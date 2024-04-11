@@ -109,7 +109,7 @@ func TestMSetNXExec(t *testing.T) {
 		name, _ := db.Str().Get("name")
 		testx.AssertEqual(t, name.String(), "alice")
 		age, _ := db.Str().Get("age")
-		testx.AssertEqual(t, age.IsEmpty(), true)
+		testx.AssertEqual(t, age.Exists(), false)
 	})
 
 	t.Run("update multiple", func(t *testing.T) {

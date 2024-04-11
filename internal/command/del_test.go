@@ -87,7 +87,7 @@ func TestDelExec(t *testing.T) {
 			testx.AssertEqual(t, conn.out(), test.out)
 
 			name, _ := db.Str().Get("name")
-			testx.AssertEqual(t, name.IsEmpty(), true)
+			testx.AssertEqual(t, name.Exists(), false)
 			city, _ := db.Str().Get("city")
 			testx.AssertEqual(t, city.String(), "paris")
 		})

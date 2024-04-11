@@ -244,9 +244,8 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 	}
 
 	// check if the value is a valid integer
-	isFound := !val.IsEmpty()
 	valInt, err := val.Int()
-	if isFound && err != nil {
+	if err != nil {
 		return 0, core.ErrInvalidValueType
 	}
 
@@ -269,9 +268,8 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	}
 
 	// check if the value is a valid float
-	isFound := !val.IsEmpty()
 	valFloat, err := val.Float()
-	if isFound && err != nil {
+	if err != nil {
 		return 0, core.ErrInvalidValueType
 	}
 

@@ -25,7 +25,7 @@ func (cmd *GetSet) Run(w Writer, red Redka) (any, error) {
 		w.WriteError(translateError(err))
 		return nil, err
 	}
-	if val.IsEmpty() {
+	if !val.Exists() {
 		w.WriteNull()
 		return val, nil
 	}

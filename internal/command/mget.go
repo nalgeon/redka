@@ -41,10 +41,10 @@ func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
 	// Write the result.
 	w.WriteArray(len(vals))
 	for _, v := range vals {
-		if v.IsEmpty() {
-			w.WriteNull()
-		} else {
+		if v.Exists() {
 			w.WriteBulk(v.Bytes())
+		} else {
+			w.WriteNull()
 		}
 	}
 	return vals, nil

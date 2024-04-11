@@ -380,7 +380,7 @@ func TestDelete(t *testing.T) {
 
 			for _, key := range test.keys {
 				val, _ := red.Str().Get(key)
-				testx.AssertEqual(t, val.IsEmpty(), true)
+				testx.AssertEqual(t, val.Exists(), false)
 			}
 		})
 	}
