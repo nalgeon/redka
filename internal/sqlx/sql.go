@@ -4,11 +4,7 @@ package sqlx
 import (
 	"database/sql"
 	_ "embed"
-	"slices"
 	"strings"
-	"time"
-
-	"github.com/nalgeon/redka/internal/core"
 )
 
 // Database schema version.
@@ -26,19 +22,6 @@ pragma foreign_keys = on;
 //go:embed schema.sql
 var sqlSchema string
 
-const SQLKeyCount = `
-select count(id) from rkey
-where key in (:keys) and (etime is null or etime > :now)`
-
-const SQLKeyGet = `
-select id, key, type, version, etime, mtime
-from rkey
-where key = ? and (etime is null or etime > ?)`
-
-const SQLKeyDel = `
-delete from rkey where key in (:keys)
-  and (etime is null or etime > :now)`
-
 const sqlTruncate = `
 delete from rkey;
 vacuum;
@@ -54,33 +37,6 @@ type Tx interface {
 // rowScanner is an interface to scan rows.
 type RowScanner interface {
 	Scan(dest ...any) error
-}
-
-// GetKey returns the key data structure.
-func GetKey(tx Tx, key string) (k core.Key, err error) {
-	now := time.Now().UnixMilli()
-	row := tx.QueryRow(SQLKeyGet, key, now)
-	err = row.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
-	if err == sql.ErrNoRows {
-		return k, nil
-	}
-	if err != nil {
-		return k, err
-	}
-	return k, nil
-}
-
-// DeleteKey deletes a key and its associated values.
-func DeleteKey(tx Tx, keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
-	query, keyArgs := ExpandIn(SQLKeyDel, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
-	res, err := tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
-	}
-	affectedCount, _ := res.RowsAffected()
-	return int(affectedCount), nil
 }
 
 // ExpandIn expands the IN clause in the query for a given parameter.

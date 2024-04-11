@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -132,7 +133,7 @@ func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, erro
 		return false, core.ErrInvalidType
 	}
 
-	k, err := sqlx.GetKey(tx.tx, key)
+	k, err := rkey.GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -151,7 +152,7 @@ func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) 
 		return false, core.ErrInvalidType
 	}
 
-	k, err := sqlx.GetKey(tx.tx, key)
+	k, err := rkey.GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -213,11 +214,7 @@ func (tx *Tx) SetManyNX(kvals ...core.KVPair) (bool, error) {
 	}
 
 	// check if any of the keys exist
-	count := 0
-	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlx.SQLKeyCount, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
-	err := tx.tx.QueryRow(query, args...).Scan(&count)
+	count, err := rkey.CountKeys(tx.tx, keys...)
 	if err != nil {
 		return false, err
 	}
@@ -291,7 +288,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 // Delete deletes keys and their values.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
-	return sqlx.DeleteKey(tx.tx, keys...)
+	return rkey.DeleteKeys(tx.tx, keys...)
 }
 
 // set sets the key value and (optionally) its expiration time.

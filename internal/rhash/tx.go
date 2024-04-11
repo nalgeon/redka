@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -424,7 +425,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 
 	if len(fields) == 0 {
 		// Delete the hash if no fields are specified.
-		_, err := sqlx.DeleteKey(tx.tx, key)
+		_, err := rkey.DeleteKeys(tx.tx, key)
 		if err != nil {
 			return 0, err
 		}
@@ -442,7 +443,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 
 	if int(delCount) == existCount {
 		// Delete the hash if no fields remain.
-		_, err = sqlx.DeleteKey(tx.tx, key)
+		_, err = rkey.DeleteKeys(tx.tx, key)
 		if err != nil {
 			return 0, err
 		}

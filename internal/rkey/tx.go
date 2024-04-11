@@ -10,6 +10,15 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
+const sqlKeyGet = `
+select id, key, type, version, etime, mtime
+from rkey
+where key = ? and (etime is null or etime > ?)`
+
+const sqlKeyCount = `
+select count(id) from rkey
+where key in (:keys) and (etime is null or etime > :now)`
+
 const sqlKeySearch = `
 select id, key, type, version, etime, mtime from rkey
 where key glob :pattern and (etime is null or etime > :now)`
@@ -49,6 +58,10 @@ where rkey.key = :key and (
   rkey.etime is null or rkey.etime > :now
 )`
 
+const sqlKeyDel = `
+delete from rkey where key in (:keys)
+  and (etime is null or etime > :now)`
+
 const sqlKeyDelAllExpired = `
 delete from rkey
 where etime <= :now`
@@ -76,12 +89,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 
 // Exists returns the number of existing keys among specified.
 func (tx *Tx) Exists(keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlx.SQLKeyCount, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
-	var count int
-	err := tx.tx.QueryRow(query, args...).Scan(&count)
-	return count, err
+	return CountKeys(tx.tx, keys...)
 }
 
 // Search returns all keys matching pattern.
@@ -156,15 +164,7 @@ func (tx *Tx) Random() (core.Key, error) {
 
 // Get returns a specific key with all associated details.
 func (tx *Tx) Get(key string) (core.Key, error) {
-	now := time.Now().UnixMilli()
-	var k core.Key
-	err := tx.tx.QueryRow(sqlx.SQLKeyGet, key, now).Scan(
-		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
-	)
-	if err == sql.ErrNoRows {
-		return core.Key{}, nil
-	}
-	return k, err
+	return GetKey(tx.tx, key)
 }
 
 // Expire sets a timeout on the key using a relative duration.
@@ -205,7 +205,7 @@ func (tx *Tx) Persist(key string) (bool, error) {
 // If there is an existing key with the new name, it is replaced.
 func (tx *Tx) Rename(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
-	oldK, err := sqlx.GetKey(tx.tx, key)
+	oldK, err := GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -239,7 +239,7 @@ func (tx *Tx) Rename(key, newKey string) (bool, error) {
 // If there is an existing key with the new name, does nothing.
 func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
-	oldK, err := sqlx.GetKey(tx.tx, key)
+	oldK, err := GetKey(tx.tx, key)
 	if err != nil {
 		return false, err
 	}
@@ -275,7 +275,7 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 // Delete deletes keys and their values.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
-	return sqlx.DeleteKey(tx.tx, keys...)
+	return DeleteKeys(tx.tx, keys...)
 }
 
 // deleteExpired deletes keys with expired TTL, but no more than n keys.
@@ -361,4 +361,40 @@ func (sc *Scanner) Key() core.Key {
 // Err returns the first error encountered during iteration.
 func (sc *Scanner) Err() error {
 	return sc.err
+}
+
+// GetKey returns the key data structure.
+func GetKey(tx sqlx.Tx, key string) (core.Key, error) {
+	now := time.Now().UnixMilli()
+	var k core.Key
+	err := tx.QueryRow(sqlKeyGet, key, now).Scan(
+		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
+	)
+	if err == sql.ErrNoRows {
+		return core.Key{}, nil
+	}
+	return k, err
+}
+
+// CountKeys returns the number of existing keys among specified.
+func CountKeys(tx sqlx.Tx, keys ...string) (int, error) {
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlKeyCount, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	var count int
+	err := tx.QueryRow(query, args...).Scan(&count)
+	return count, err
+}
+
+// DeleteKeys deletes keys and their values (regardless of the type).
+func DeleteKeys(tx sqlx.Tx, keys ...string) (int, error) {
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlKeyDel, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	res, err := tx.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	affectedCount, _ := res.RowsAffected()
+	return int(affectedCount), nil
 }
