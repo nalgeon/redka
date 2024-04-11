@@ -32,7 +32,6 @@ func ErrUnknownSubcmd(cmd, subcmd string) error {
 type Redka interface {
 	Key() redka.Keys
 	Str() redka.Strings
-	Flush() error
 }
 
 type Writer interface {

@@ -137,10 +137,10 @@ UNWATCH  WATCH
 
 Redka supports only a couple of server and connection management commands:
 
-| Command   | Go API     | Description                        |
-| --------- | ---------- | ---------------------------------- |
-| `ECHO`    | —          | Returns the given string.          |
-| `FLUSHDB` | `DB.Flush` | Remove all keys from the database. |
+| Command   | Go API               | Description                        |
+| --------- | -------------------- | ---------------------------------- |
+| `ECHO`    | —                    | Returns the given string.          |
+| `FLUSHDB` | `DB.Key().DeleteAll` | Remove all keys from the database. |
 
 The rest of the server and connection management commands are not planned for 1.0.
 

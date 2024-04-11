@@ -86,21 +86,6 @@ func TestDBUpdateRollback(t *testing.T) {
 	testx.AssertEqual(t, age.MustInt(), 25)
 }
 
-func TestDBFlush(t *testing.T) {
-	db := getDB(t)
-	defer db.Close()
-
-	_ = db.Str().Set("name", "alice")
-	_ = db.Str().Set("age", 25)
-
-	err := db.Flush()
-	testx.AssertNoErr(t, err)
-
-	count, _ := db.Key().Exists("name", "age")
-	testx.AssertEqual(t, count, 0)
-
-}
-
 func getDB(tb testing.TB) *redka.DB {
 	tb.Helper()
 	db, err := redka.Open(":memory:")

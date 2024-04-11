@@ -3,29 +3,8 @@ package sqlx
 
 import (
 	"database/sql"
-	_ "embed"
 	"strings"
 )
-
-// Database schema version.
-// const schemaVersion = 1
-
-// Default SQL settings.
-const sqlSettings = `
-pragma journal_mode = wal;
-pragma synchronous = normal;
-pragma temp_store = memory;
-pragma mmap_size = 268435456;
-pragma foreign_keys = on;
-`
-
-//go:embed schema.sql
-var sqlSchema string
-
-const sqlTruncate = `
-delete from rkey;
-vacuum;
-pragma integrity_check;`
 
 // Tx is a database transaction (or a transaction-like object).
 type Tx interface {
@@ -73,10 +52,4 @@ func Select[T any](db Tx, query string, args []any,
 	}
 
 	return vals, err
-}
-
-// Truncate deletes all data from the database.
-func Truncate[T any](db *DB[T]) error {
-	_, err := db.SQL.Exec(sqlTruncate)
-	return err
 }

@@ -278,6 +278,13 @@ func (tx *Tx) Delete(keys ...string) (int, error) {
 	return DeleteKeys(tx.tx, keys...)
 }
 
+// DeleteAll deletes all keys and their values,
+// effectively resetting the database.
+func (tx *Tx) DeleteAll() error {
+	// This operation is not allowed inside a transaction.
+	return core.ErrNotAllowed
+}
+
 // deleteExpired deletes keys with expired TTL, but no more than n keys.
 // If n = 0, deletes all expired keys.
 func (tx *Tx) deleteExpired(n int) (int, error) {

@@ -16,7 +16,7 @@ func parseFlushDB(b baseCmd) (*FlushDB, error) {
 }
 
 func (cmd *FlushDB) Run(w Writer, red Redka) (any, error) {
-	err := red.Flush()
+	err := red.Key().DeleteAll()
 	if err != nil {
 		w.WriteError(err.Error())
 		return false, err

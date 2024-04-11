@@ -389,6 +389,22 @@ func TestKeyDeleteExpired(t *testing.T) {
 	})
 }
 
+func TestKeyDeleteAll(t *testing.T) {
+	red := getDB(t)
+	defer red.Close()
+
+	db := rkey.New(red.SQL)
+
+	_ = red.Str().Set("name", "alice")
+	_ = red.Str().Set("age", 25)
+
+	err := db.DeleteAll()
+	testx.AssertNoErr(t, err)
+
+	count, _ := db.Exists("name", "age")
+	testx.AssertEqual(t, count, 0)
+}
+
 func getDB(tb testing.TB) *redka.DB {
 	tb.Helper()
 	db, err := redka.Open(":memory:")

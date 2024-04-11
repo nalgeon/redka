@@ -138,3 +138,9 @@ func (db *DB) DeleteExpired(n int) (count int, err error) {
 	})
 	return count, err
 }
+
+// DeleteAll deletes all keys and their values,
+// effectively resetting the database.
+func (db *DB) DeleteAll() error {
+	return db.DB.DeleteAll()
+}

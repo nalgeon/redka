@@ -26,6 +26,9 @@ var ErrKeyNotFound = errors.New("key not found")
 // ErrInvalidType is when the value does not have a valid type.
 var ErrInvalidType = errors.New("invalid value type")
 
+// ErrNotAllowed indicates that the operation is not allowed.
+var ErrNotAllowed = errors.New("operation not allowed")
+
 // Key represents a key data structure.
 type Key struct {
 	ID      int

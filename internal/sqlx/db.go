@@ -3,8 +3,29 @@ package sqlx
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"sync"
 )
+
+// Database schema version.
+// const schemaVersion = 1
+
+// Default SQL settings.
+const sqlSettings = `
+pragma journal_mode = wal;
+pragma synchronous = normal;
+pragma temp_store = memory;
+pragma mmap_size = 268435456;
+pragma foreign_keys = on;
+`
+
+//go:embed schema.sql
+var sqlSchema string
+
+const sqlDeleteAll = `
+delete from rkey;
+vacuum;
+pragma integrity_check;`
 
 // DB is a generic database-backed repository
 // with a domain-specific transaction of type T.
@@ -48,6 +69,12 @@ func (d *DB[T]) View(f func(tx T) error) error {
 // ViewContext executes a function within a read-only transaction.
 func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, false, f)
+}
+
+// DeleteAll deletes all data from the database.
+func (d *DB[T]) DeleteAll() error {
+	_, err := d.SQL.Exec(sqlDeleteAll)
+	return err
 }
 
 // Init sets the connection properties and creates the necessary tables.

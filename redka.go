@@ -4,7 +4,6 @@ package redka
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log/slog"
 	"time"
 
@@ -20,7 +19,6 @@ const driverName = "sqlite3"
 // Errors that can be returned by the commands.
 var ErrKeyNotFound = core.ErrKeyNotFound
 var ErrInvalidType = core.ErrInvalidType
-var ErrCommandNotAllowed = errors.New("command not allowed")
 
 // Key represents a key data structure.
 type Key = core.Key
@@ -46,6 +44,7 @@ type Keys interface {
 	Rename(key, newKey string) (bool, error)
 	RenameNX(key, newKey string) (bool, error)
 	Delete(keys ...string) (int, error)
+	DeleteAll() error
 }
 
 // Strings is a string repository.
@@ -142,11 +141,9 @@ func (db *DB) Close() error {
 	return db.SQL.Close()
 }
 
-// Flush deletes all keys and values from the database.
-func (db *DB) Flush() error {
-	db.Lock()
-	defer db.Unlock()
-	return sqlx.Truncate(db.DB)
+// DeleteAll deletes all keys and values from the database.
+func (db *DB) DeleteAll() error {
+	return db.DB.DeleteAll()
 }
 
 // SetLogger sets the logger for the database.
@@ -205,9 +202,6 @@ func (tx *Tx) Key() Keys {
 }
 func (tx *Tx) Hash() Hashes {
 	return tx.hashTx
-}
-func (tx *Tx) Flush() error {
-	return ErrCommandNotAllowed
 }
 
 // noopHandler is a silent log handler.
