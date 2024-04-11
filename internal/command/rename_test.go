@@ -3,6 +3,7 @@ package command
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -118,7 +119,7 @@ func TestRenameExec(t *testing.T) {
 		cmd := mustParse[*Rename]("rename name title")
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, db)
-		testx.AssertEqual(t, err, ErrKeyNotFound)
+		testx.AssertEqual(t, err, core.ErrKeyNotFound)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), ErrKeyNotFound.Error())
 

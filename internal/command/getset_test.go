@@ -3,7 +3,7 @@ package command
 import (
 	"testing"
 
-	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -62,7 +62,7 @@ func TestGetSetExec(t *testing.T) {
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, db)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, redka.Value(nil))
+		testx.AssertEqual(t, res, core.Value(nil))
 		testx.AssertEqual(t, conn.out(), "(nil)")
 
 		name, _ := db.Str().Get("name")
@@ -79,7 +79,7 @@ func TestGetSetExec(t *testing.T) {
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, db)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, redka.Value("alice"))
+		testx.AssertEqual(t, res, core.Value("alice"))
 		testx.AssertEqual(t, conn.out(), "alice")
 
 		name, _ := db.Str().Get("name")

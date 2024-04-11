@@ -23,7 +23,7 @@ func parseDel(b baseCmd) (*Del, error) {
 func (cmd *Del) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Key().Delete(cmd.keys...)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	w.WriteInt(count)

@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka/internal/core"
-
 // Renames a key and overwrites the destination.
 // RENAME key newkey
 // https://redis.io/commands/rename
@@ -23,12 +21,8 @@ func parseRename(b baseCmd) (*Rename, error) {
 
 func (cmd *Rename) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().Rename(cmd.key, cmd.newKey)
-	if err == core.ErrKeyNotFound {
-		w.WriteError(ErrKeyNotFound.Error())
-		return false, ErrKeyNotFound
-	}
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return false, err
 	}
 	w.WriteString("OK")

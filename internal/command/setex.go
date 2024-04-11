@@ -37,7 +37,7 @@ func parseSetEX(b baseCmd, multi int) (*SetEX, error) {
 func (cmd *SetEX) Run(w Writer, red Redka) (any, error) {
 	err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	w.WriteString("OK")

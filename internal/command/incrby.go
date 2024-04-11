@@ -35,7 +35,7 @@ func parseIncrBy(b baseCmd, sign int) (*IncrBy, error) {
 func (cmd *IncrBy) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().Incr(cmd.key, cmd.delta)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	w.WriteInt(val)

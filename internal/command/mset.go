@@ -25,7 +25,7 @@ func parseMSet(b baseCmd) (*MSet, error) {
 func (cmd *MSet) Run(w Writer, red Redka) (any, error) {
 	err := red.Str().SetMany(cmd.items)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	w.WriteString("OK")

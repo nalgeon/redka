@@ -3,7 +3,7 @@ package command
 import (
 	"testing"
 
-	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -62,25 +62,25 @@ func TestMGetExec(t *testing.T) {
 		{
 			name: "single key",
 			cmd:  mustParse[*MGet]("mget name"),
-			res:  []redka.Value{redka.Value("alice")},
+			res:  []core.Value{core.Value("alice")},
 			out:  "1,alice",
 		},
 		{
 			name: "multiple keys",
 			cmd:  mustParse[*MGet]("mget name age"),
-			res:  []redka.Value{redka.Value("alice"), redka.Value("25")},
+			res:  []core.Value{core.Value("alice"), core.Value("25")},
 			out:  "2,alice,25",
 		},
 		{
 			name: "some not found",
 			cmd:  mustParse[*MGet]("mget name city age"),
-			res:  []redka.Value{redka.Value("alice"), redka.Value(nil), redka.Value("25")},
+			res:  []core.Value{core.Value("alice"), core.Value(nil), core.Value("25")},
 			out:  "3,alice,(nil),25",
 		},
 		{
 			name: "all not found",
 			cmd:  mustParse[*MGet]("mget one two"),
-			res:  []redka.Value{redka.Value(nil), redka.Value(nil)},
+			res:  []core.Value{core.Value(nil), core.Value(nil)},
 			out:  "2,(nil),(nil)",
 		},
 	}

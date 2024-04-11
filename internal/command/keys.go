@@ -20,7 +20,7 @@ func parseKeys(b baseCmd) (*Keys, error) {
 func (cmd *Keys) Run(w Writer, red Redka) (any, error) {
 	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	w.WriteArray(len(keys))

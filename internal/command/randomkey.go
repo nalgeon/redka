@@ -18,7 +18,7 @@ func parseRandomKey(b baseCmd) (*RandomKey, error) {
 func (cmd *RandomKey) Run(w Writer, red Redka) (any, error) {
 	key, err := red.Key().Random()
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if !key.Exists() {

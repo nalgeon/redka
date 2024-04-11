@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka/internal/core"
-
 // Renames a key only when the target key name doesn't exist.
 // RENAMENX key newkey
 // https://redis.io/commands/renamenx
@@ -23,13 +21,9 @@ func parseRenameNX(b baseCmd) (*RenameNX, error) {
 
 func (cmd *RenameNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().RenameNX(cmd.key, cmd.newKey)
-	if err == core.ErrKeyNotFound {
-		w.WriteError(ErrKeyNotFound.Error())
-		return false, ErrKeyNotFound
-	}
 	if err != nil {
-		w.WriteError(err.Error())
-		return nil, err
+		w.WriteError(translateError(err))
+		return false, err
 	}
 	if ok {
 		w.WriteInt(1)

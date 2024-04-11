@@ -26,7 +26,7 @@ func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
 	// Get the key-value map for requested keys.
 	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 

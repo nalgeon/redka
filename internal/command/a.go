@@ -6,11 +6,13 @@ import (
 	"strings"
 
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 )
 
 var ErrInvalidCursor = errors.New("ERR invalid cursor")
 var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
 var ErrKeyNotFound = errors.New("ERR no such key")
+var ErrKeyTypeMismatch = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
 var ErrNotInMulti = errors.New("ERR EXEC without MULTI")
 var ErrSyntaxError = errors.New("ERR syntax error")
@@ -26,6 +28,19 @@ func ErrUnknownCmd(cmd string) error {
 }
 func ErrUnknownSubcmd(cmd, subcmd string) error {
 	return fmt.Errorf("ERR unknown subcommand '%s %s'", cmd, subcmd)
+}
+
+// translateError translates a domain error to a command error
+// and returns its string representation.
+func translateError(err error) string {
+	switch err {
+	case core.ErrKeyNotFound:
+		return ErrKeyNotFound.Error()
+	case core.ErrKeyTypeMismatch:
+		return ErrKeyTypeMismatch.Error()
+	default:
+		return err.Error()
+	}
 }
 
 // Redka is a Redis-like repository.

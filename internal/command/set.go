@@ -97,7 +97,7 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 	}
 
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if !ok {

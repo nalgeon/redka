@@ -3,7 +3,7 @@ package command
 import (
 	"testing"
 
-	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -60,13 +60,13 @@ func TestGetExec(t *testing.T) {
 		{
 			name: "get found",
 			cmd:  mustParse[*Get]("get name"),
-			res:  redka.Value("alice"),
+			res:  core.Value("alice"),
 			out:  "alice",
 		},
 		{
 			name: "get not found",
 			cmd:  mustParse[*Get]("get age"),
-			res:  redka.Value(nil),
+			res:  core.Value(nil),
 			out:  "(nil)",
 		},
 	}

@@ -31,7 +31,7 @@ func parseExpire(b baseCmd, multi int) (*Expire, error) {
 func (cmd *Expire) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().Expire(cmd.key, cmd.ttl)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if ok {

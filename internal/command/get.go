@@ -20,7 +20,7 @@ func parseGet(b baseCmd) (*Get, error) {
 func (cmd *Get) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().Get(cmd.key)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if val.IsEmpty() {

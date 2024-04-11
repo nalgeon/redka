@@ -22,7 +22,7 @@ func parseSetNX(b baseCmd) (*SetNX, error) {
 func (cmd *SetNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Str().SetNotExists(cmd.key, cmd.value, 0)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if ok {

@@ -20,7 +20,7 @@ func parsePersist(b baseCmd) (*Persist, error) {
 func (cmd *Persist) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().Persist(cmd.key)
 	if err != nil {
-		w.WriteError(err.Error())
+		w.WriteError(translateError(err))
 		return nil, err
 	}
 	if ok {
