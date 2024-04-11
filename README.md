@@ -98,7 +98,7 @@ Redka supports the following key management (generic) commands:
 | `EXISTS`    | `DB.Key().Count`    | Determines whether one or more keys exist.                 |
 | `EXPIRE`    | `DB.Key().Expire`   | Sets the expiration time of a key (in seconds).            |
 | `EXPIREAT`  | `DB.Key().ExpireAt` | Sets the expiration time of a key to a Unix timestamp.     |
-| `KEYS`      | `DB.Key().Search`   | Returns all key names that match a pattern.                |
+| `KEYS`      | `DB.Key().Keys`     | Returns all key names that match a pattern.                |
 | `PERSIST`   | `DB.Key().Persist`  | Removes the expiration time of a key.                      |
 | `PEXPIRE`   | `DB.Key().Expire`   | Sets the expiration time of a key in ms.                   |
 | `PEXPIREAT` | `DB.Key().ExpireAt` | Sets the expiration time of a key to a Unix ms timestamp.  |
@@ -358,6 +358,12 @@ rstring
 ---
 key_id   integer
 value    blob not null
+
+rhash
+---
+key_id   integer
+field    text not null
+value    blob not null
 ```
 
 To access the data with SQL, use views instead of tables:
@@ -376,6 +382,12 @@ select * from vstring;
 ```
 
 `etime` and `mtime` are in UTC.
+
+There is a separate view for every data type:
+
+```
+vstring  vhash
+```
 
 ## Performance
 
