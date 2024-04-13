@@ -30,7 +30,7 @@ end;
 -- strings
 create table if not exists
 rstring (
-    key_id integer,
+    key_id integer not null,
     value  blob not null,
 
     foreign key (key_id) references rkey (id)
@@ -53,7 +53,7 @@ vstring as
 -- hashes
 create table if not exists
 rhash (
-    key_id integer,
+    key_id integer not null,
     field text not null,
     value blob not null,
 
