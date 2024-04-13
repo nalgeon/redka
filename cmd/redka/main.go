@@ -88,12 +88,11 @@ func main() {
 	slog.Info("starting redka", "version", version, "commit", commit, "built_at", date)
 
 	// Open the database.
-	db, err := redka.Open(config.Path)
+	db, err := redka.Open(config.Path, &redka.Options{Logger: logger})
 	if err != nil {
 		slog.Error("data source", "error", err)
 		os.Exit(1)
 	}
-	db.SetLogger(logger)
 	slog.Info("data source", "path", config.Path)
 
 	// Start the server.

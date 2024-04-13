@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// Open a database.
-	db, err := redka.Open("data.db")
+	db, err := redka.Open("data.db", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

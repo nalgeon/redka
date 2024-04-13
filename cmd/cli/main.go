@@ -33,7 +33,7 @@ func main() {
 	filename := flag.Arg(0)
 
 	// Open the database.
-	db, err := redka.Open(dbURI)
+	db, err := redka.Open(dbURI, nil)
 	if err != nil {
 		fail("failed to open database: %v\n", err)
 	}

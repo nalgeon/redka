@@ -16,7 +16,7 @@ func main() {
 	// Redka expects "sqlite3". So we have to re-register it as "sqlite3".
 	sql.Register("sqlite3", &driver.Driver{})
 
-	db, err := redka.Open("data.db")
+	db, err := redka.Open("data.db", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func TestHandlers(t *testing.T) {
-	db, err := redka.Open(":memory:")
+	db, err := redka.Open(":memory:", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

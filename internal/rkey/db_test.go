@@ -433,7 +433,7 @@ func TestDeleteAll(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rkey.DB) {
 	tb.Helper()
-	red, err := redka.Open(":memory:")
+	red, err := redka.Open(":memory:", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}

@@ -11,6 +11,7 @@ package redka
 import (
 	"context"
 	"database/sql"
+	"io"
 	"log/slog"
 	"time"
 
@@ -41,6 +42,17 @@ type Key = core.Key
 // It can be converted to other scalar types.
 type Value = core.Value
 
+// Options is the configuration for the database.
+type Options struct {
+	// Logger is the logger for the database.
+	// If nil, a silent logger is used.
+	Logger *slog.Logger
+}
+
+var defaultOptions = Options{
+	Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+}
+
 // DB is a Redis-like database backed by SQLite.
 // Provides access to data structures like keys, strings, and hashes.
 //
@@ -65,29 +77,26 @@ type DB struct {
 // as long as you use a single instance throughout your program.
 // Typically, you only close the DB when the program exits.
 //
+// The opts parameter is optional. If nil, uses default options.
+//
 // [simple]: https://github.com/nalgeon/redka/blob/main/example/simple/main.go
 // [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
-func Open(path string) (*DB, error) {
+func Open(path string, opts *Options) (*DB, error) {
 	db, err := sql.Open(driverName, path)
 	if err != nil {
 		return nil, err
 	}
-	return OpenDB(db)
-}
-
-// OpenDB connects to the existing database.
-// Creates the database schema if necessary.
-func OpenDB(db *sql.DB) (*DB, error) {
 	sdb, err := sqlx.Open(db, newTx)
 	if err != nil {
 		return nil, err
 	}
+	opts = applyOptions(defaultOptions, opts)
 	rdb := &DB{
 		DB:       sdb,
 		keyDB:    rkey.New(db),
 		stringDB: rstring.New(db),
 		hashDB:   rhash.New(db),
-		log:      slog.New(new(noopHandler)),
+		log:      opts.Logger,
 	}
 	rdb.bg = rdb.startBgManager()
 	return rdb, nil
@@ -114,11 +123,6 @@ func (db *DB) Hash() *rhash.DB {
 // to manage all keys regardless of their type.
 func (db *DB) Key() *rkey.DB {
 	return db.keyDB
-}
-
-// SetLogger sets the logger for the database.
-func (db *DB) SetLogger(l *slog.Logger) {
-	db.log = l
 }
 
 // // NoTx creates a new domain transaction without the underlying
@@ -232,18 +236,14 @@ func (tx *Tx) Hash() *rhash.Tx {
 	return tx.hashTx
 }
 
-// noopHandler is a silent log handler.
-type noopHandler struct{}
-
-func (h *noopHandler) Enabled(context.Context, slog.Level) bool {
-	return false
-}
-func (h *noopHandler) Handle(context.Context, slog.Record) error {
-	return nil
-}
-func (h *noopHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
-}
-func (h *noopHandler) WithGroup(name string) slog.Handler {
-	return h
+// applyOptions applies custom options to the
+// default options and returns the result.
+func applyOptions(opts Options, custom *Options) *Options {
+	if custom == nil {
+		return &opts
+	}
+	if custom.Logger != nil {
+		opts.Logger = custom.Logger
+	}
+	return &opts
 }
