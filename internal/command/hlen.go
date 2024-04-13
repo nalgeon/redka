@@ -11,7 +11,7 @@ type HLen struct {
 func parseHLen(b baseCmd) (*HLen, error) {
 	cmd := &HLen{baseCmd: b}
 	if len(cmd.args) != 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	return cmd, nil
@@ -20,7 +20,7 @@ func parseHLen(b baseCmd) (*HLen, error) {
 func (cmd *HLen) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Hash().Len(cmd.key)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteInt(count)

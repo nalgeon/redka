@@ -19,14 +19,14 @@ func TestHDelParse(t *testing.T) {
 			args:   buildArgs("hdel"),
 			key:    "",
 			fields: nil,
-			err:    ErrInvalidArgNum("hdel"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hdel person",
 			args:   buildArgs("hdel", "person"),
 			key:    "",
 			fields: nil,
-			err:    ErrInvalidArgNum("hdel"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hdel person name",

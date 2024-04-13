@@ -11,7 +11,7 @@ type HVals struct {
 func parseHVals(b baseCmd) (*HVals, error) {
 	cmd := &HVals{baseCmd: b}
 	if len(cmd.args) != 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	return cmd, nil
@@ -20,7 +20,7 @@ func parseHVals(b baseCmd) (*HVals, error) {
 func (cmd *HVals) Run(w Writer, red Redka) (any, error) {
 	vals, err := red.Hash().Values(cmd.key)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteArray(len(vals))

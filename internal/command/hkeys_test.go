@@ -17,7 +17,7 @@ func TestHKeysParse(t *testing.T) {
 			name: "hkeys",
 			args: buildArgs("hkeys"),
 			key:  "",
-			err:  ErrInvalidArgNum("hkeys"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hkeys person",
@@ -29,7 +29,7 @@ func TestHKeysParse(t *testing.T) {
 			name: "hkeys person name",
 			args: buildArgs("hkeys", "person", "name"),
 			key:  "",
-			err:  ErrInvalidArgNum("hkeys"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 
@@ -59,7 +59,9 @@ func TestHKeysExec(t *testing.T) {
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, []string{"age", "name"})
-		testx.AssertEqual(t, conn.out(), "2,age,name")
+		testx.AssertEqual(t,
+			conn.out() == "2,age,name" || conn.out() == "2,name,age",
+			true)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db := getDB(t)

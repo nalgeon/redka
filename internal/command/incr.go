@@ -18,7 +18,7 @@ type Incr struct {
 func parseIncr(b baseCmd, sign int) (*Incr, error) {
 	cmd := &Incr{baseCmd: b}
 	if len(cmd.args) != 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.delta = sign
@@ -28,7 +28,7 @@ func parseIncr(b baseCmd, sign int) (*Incr, error) {
 func (cmd *Incr) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().Incr(cmd.key, cmd.delta)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteInt(val)

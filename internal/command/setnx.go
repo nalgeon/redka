@@ -12,7 +12,7 @@ type SetNX struct {
 func parseSetNX(b baseCmd) (*SetNX, error) {
 	cmd := &SetNX{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.value = cmd.args[1]
@@ -22,7 +22,7 @@ func parseSetNX(b baseCmd) (*SetNX, error) {
 func (cmd *SetNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Str().SetNotExists(cmd.key, cmd.value, 0)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if ok {

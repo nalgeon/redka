@@ -17,7 +17,7 @@ type ExpireAt struct {
 func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 	cmd := &ExpireAt{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	at, err := strconv.Atoi(string(cmd.args[1]))
@@ -31,7 +31,7 @@ func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 func (cmd *ExpireAt) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().ExpireAt(cmd.key, cmd.at)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if ok {

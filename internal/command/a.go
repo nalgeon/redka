@@ -9,40 +9,18 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 )
 
+var ErrInvalidArgNum = errors.New("ERR wrong number of arguments")
 var ErrInvalidCursor = errors.New("ERR invalid cursor")
-var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
+var ErrInvalidExpireTime = errors.New("ERR invalid expire time")
 var ErrInvalidFloat = errors.New("ERR value is not a float")
-var ErrNotFound = errors.New("ERR no such key")
+var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
 var ErrKeyType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
+var ErrNotFound = errors.New("ERR no such key")
 var ErrNotInMulti = errors.New("ERR EXEC without MULTI")
 var ErrSyntaxError = errors.New("ERR syntax error")
-
-func ErrInvalidArgNum(cmd string) error {
-	return fmt.Errorf("ERR wrong number of arguments for '%s' command", cmd)
-}
-func ErrInvalidExpireTime(cmd string) error {
-	return fmt.Errorf("ERR invalid expire time in '%s' command", cmd)
-}
-func ErrUnknownCmd(cmd string) error {
-	return fmt.Errorf("ERR unknown command '%s'", cmd)
-}
-func ErrUnknownSubcmd(cmd, subcmd string) error {
-	return fmt.Errorf("ERR unknown subcommand '%s %s'", cmd, subcmd)
-}
-
-// translateError translates a domain error to a command error
-// and returns its string representation.
-func translateError(err error) string {
-	switch err {
-	case core.ErrNotFound:
-		return ErrNotFound.Error()
-	case core.ErrKeyType:
-		return ErrKeyType.Error()
-	default:
-		return err.Error()
-	}
-}
+var ErrUnknownCmd = errors.New("ERR unknown command")
+var ErrUnknownSubcmd = errors.New("ERR unknown subcommand")
 
 // Redka is a Redis-like repository.
 type Redka interface {
@@ -67,17 +45,23 @@ type Writer interface {
 
 // Cmd is a Redis-compatible command.
 type Cmd interface {
+	// Name returns the command name.
 	Name() string
-	Err() error
+
+	// String returns the command string representation (name and arguments).
 	String() string
 
+	// Error translates a domain error to a command error
+	// and returns its string representation.
+	Error(err error) string
+
+	// Run executes the command and writes the result to the writer.
 	Run(w Writer, red Redka) (any, error)
 }
 
 type baseCmd struct {
 	name string
 	args [][]byte
-	err  error
 }
 
 func newBaseCmd(args [][]byte) baseCmd {
@@ -85,6 +69,16 @@ func newBaseCmd(args [][]byte) baseCmd {
 		name: strings.ToLower(string(args[0])),
 		args: args[1:],
 	}
+}
+
+func (cmd baseCmd) Error(err error) string {
+	switch err {
+	case core.ErrNotFound:
+		err = ErrNotFound
+	case core.ErrKeyType:
+		err = ErrKeyType
+	}
+	return fmt.Sprintf("%s (%s)", err, cmd.Name())
 }
 
 func (cmd baseCmd) Name() string {
@@ -99,9 +93,6 @@ func (cmd baseCmd) String() string {
 		b.Write(arg)
 	}
 	return b.String()
-}
-func (cmd baseCmd) Err() error {
-	return cmd.err
 }
 
 // Parse parses a text representation of a command into a Cmd.

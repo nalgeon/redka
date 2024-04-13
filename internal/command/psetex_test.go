@@ -18,19 +18,19 @@ func TestPSetEXParse(t *testing.T) {
 			name: "psetex",
 			args: buildArgs("psetex"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("psetex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "psetex name",
 			args: buildArgs("psetex", "name"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("psetex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "psetex name alice",
 			args: buildArgs("psetex", "name", "alice"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("psetex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "psetex name alice 60",

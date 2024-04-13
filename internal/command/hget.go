@@ -12,7 +12,7 @@ type HGet struct {
 func parseHGet(b baseCmd) (*HGet, error) {
 	cmd := &HGet{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.field = string(cmd.args[1])
@@ -22,7 +22,7 @@ func parseHGet(b baseCmd) (*HGet, error) {
 func (cmd *HGet) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Hash().Get(cmd.key, cmd.field)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if !val.Exists() {

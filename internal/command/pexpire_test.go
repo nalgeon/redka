@@ -20,14 +20,14 @@ func TestPExpireParse(t *testing.T) {
 			args: buildArgs("pexpire"),
 			key:  "",
 			ttl:  0,
-			err:  ErrInvalidArgNum("pexpire"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "pexpire name",
 			args: buildArgs("pexpire", "name"),
 			key:  "",
 			ttl:  0,
-			err:  ErrInvalidArgNum("pexpire"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "pexpire name 5000",
@@ -48,7 +48,7 @@ func TestPExpireParse(t *testing.T) {
 			args: buildArgs("pexpire", "name", "100", "age", "100"),
 			key:  "",
 			ttl:  0,
-			err:  ErrInvalidArgNum("pexpire"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

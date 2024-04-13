@@ -18,7 +18,7 @@ func TestGetParse(t *testing.T) {
 			name: "get",
 			args: buildArgs("get"),
 			want: "",
-			err:  ErrInvalidArgNum("get"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "get name",
@@ -30,7 +30,7 @@ func TestGetParse(t *testing.T) {
 			name: "get name age",
 			args: buildArgs("get", "name", "age"),
 			want: "",
-			err:  ErrInvalidArgNum("get"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

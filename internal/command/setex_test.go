@@ -18,19 +18,19 @@ func TestSetEXParse(t *testing.T) {
 			name: "setex",
 			args: buildArgs("setex"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("setex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "setex name",
 			args: buildArgs("setex", "name"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("setex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "setex name alice",
 			args: buildArgs("setex", "name", "alice"),
 			want: SetEX{},
-			err:  ErrInvalidArgNum("setex"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "setex name alice 60",

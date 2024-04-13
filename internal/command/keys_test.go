@@ -18,7 +18,7 @@ func TestKeysParse(t *testing.T) {
 			name: "keys",
 			args: buildArgs("keys"),
 			want: "",
-			err:  ErrInvalidArgNum("keys"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "keys *",
@@ -36,7 +36,7 @@ func TestKeysParse(t *testing.T) {
 			name: "keys * k2*",
 			args: buildArgs("keys", "*", "k2*"),
 			want: "",
-			err:  ErrInvalidArgNum("keys"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

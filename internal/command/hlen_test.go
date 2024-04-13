@@ -17,7 +17,7 @@ func TestHLenParse(t *testing.T) {
 			name: "hlen",
 			args: buildArgs("hlen"),
 			key:  "",
-			err:  ErrInvalidArgNum("hlen"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hlen person",
@@ -29,7 +29,7 @@ func TestHLenParse(t *testing.T) {
 			name: "hlen person name",
 			args: buildArgs("hlen", "person", "name"),
 			key:  "",
-			err:  ErrInvalidArgNum("hlen"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

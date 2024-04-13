@@ -47,14 +47,14 @@ func parseSet(b baseCmd) (*Set, error) {
 		}
 
 		if cmd.ttl <= 0 {
-			return ErrInvalidExpireTime(cmd.name)
+			return ErrInvalidExpireTime
 		}
 		return nil
 	}
 
 	cmd := &Set{baseCmd: b}
 	if len(cmd.args) < 2 || len(cmd.args) > 5 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 
 	cmd.key = string(cmd.args[0])
@@ -97,7 +97,7 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 	}
 
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if !ok {

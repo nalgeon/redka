@@ -20,14 +20,14 @@ func TestHMGetParse(t *testing.T) {
 			args:   buildArgs("hmget"),
 			key:    "",
 			fields: nil,
-			err:    ErrInvalidArgNum("hmget"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hmget person",
 			args:   buildArgs("hmget", "person"),
 			key:    "",
 			fields: nil,
-			err:    ErrInvalidArgNum("hmget"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hmget person name",

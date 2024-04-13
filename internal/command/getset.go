@@ -12,7 +12,7 @@ type GetSet struct {
 func parseGetSet(b baseCmd) (*GetSet, error) {
 	cmd := &GetSet{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.value = cmd.args[1]
@@ -22,7 +22,7 @@ func parseGetSet(b baseCmd) (*GetSet, error) {
 func (cmd *GetSet) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().GetSet(cmd.key, cmd.value, 0)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if !val.Exists() {

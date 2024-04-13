@@ -17,13 +17,13 @@ func TestSetNXParse(t *testing.T) {
 			name: "setnx",
 			args: buildArgs("setnx"),
 			want: SetNX{},
-			err:  ErrInvalidArgNum("setnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "setnx name",
 			args: buildArgs("setnx", "name"),
 			want: SetNX{},
-			err:  ErrInvalidArgNum("setnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "setnx name alice",
@@ -35,7 +35,7 @@ func TestSetNXParse(t *testing.T) {
 			name: "setnx name alice 60",
 			args: buildArgs("setnx", "name", "alice", "60"),
 			want: SetNX{},
-			err:  ErrInvalidArgNum("setnx"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

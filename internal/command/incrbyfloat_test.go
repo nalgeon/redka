@@ -17,13 +17,13 @@ func TestIncrByFloatParse(t *testing.T) {
 			name: "incrbyfloat",
 			args: buildArgs("incrbyfloat"),
 			want: IncrByFloat{},
-			err:  ErrInvalidArgNum("incrbyfloat"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "incrbyfloat age",
 			args: buildArgs("incrbyfloat", "age"),
 			want: IncrByFloat{},
-			err:  ErrInvalidArgNum("incrbyfloat"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "incrbyfloat age 4.2",

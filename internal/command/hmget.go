@@ -14,7 +14,7 @@ type HMGet struct {
 func parseHMGet(b baseCmd) (*HMGet, error) {
 	cmd := &HMGet{baseCmd: b}
 	if len(cmd.args) < 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.fields = make([]string, len(cmd.args)-1)
@@ -28,7 +28,7 @@ func (cmd *HMGet) Run(w Writer, red Redka) (any, error) {
 	// Get the field-value map for requested fields.
 	items, err := red.Hash().GetMany(cmd.key, cmd.fields...)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 

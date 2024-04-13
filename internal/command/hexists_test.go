@@ -19,14 +19,14 @@ func TestHExistsParse(t *testing.T) {
 			args:  buildArgs("hexists"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hexists"),
+			err:   ErrInvalidArgNum,
 		},
 		{
 			name:  "hexists person",
 			args:  buildArgs("hexists", "person"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hexists"),
+			err:   ErrInvalidArgNum,
 		},
 		{
 			name:  "hexists person name",
@@ -40,7 +40,7 @@ func TestHExistsParse(t *testing.T) {
 			args:  buildArgs("hexists", "person", "name", "age"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hexists"),
+			err:   ErrInvalidArgNum,
 		},
 	}
 

@@ -13,7 +13,7 @@ type HDel struct {
 func parseHDel(b baseCmd) (*HDel, error) {
 	cmd := &HDel{baseCmd: b}
 	if len(cmd.args) < 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.fields = make([]string, len(cmd.args)-1)
@@ -26,7 +26,7 @@ func parseHDel(b baseCmd) (*HDel, error) {
 func (cmd *HDel) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Hash().Delete(cmd.key, cmd.fields...)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteInt(count)

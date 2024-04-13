@@ -17,19 +17,19 @@ func TestHSetParse(t *testing.T) {
 			name: "hset",
 			args: buildArgs("hset"),
 			want: HSet{},
-			err:  ErrInvalidArgNum("hset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hset person",
 			args: buildArgs("hset", "person"),
 			want: HSet{},
-			err:  ErrInvalidArgNum("hset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hset person name",
 			args: buildArgs("hset", "person", "name"),
 			want: HSet{},
-			err:  ErrInvalidArgNum("hset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hset person name alice",
@@ -41,7 +41,7 @@ func TestHSetParse(t *testing.T) {
 			name: "hset person name alice age",
 			args: buildArgs("hset", "person", "name", "alice", "age"),
 			want: HSet{},
-			err:  ErrInvalidArgNum("hset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hset person name alice age 25",

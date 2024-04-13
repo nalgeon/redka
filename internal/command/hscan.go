@@ -38,7 +38,7 @@ func parseHScan(b baseCmd) (*HScan, error) {
 
 	cmd := &HScan{baseCmd: b}
 	if len(cmd.args) < 2 || len(cmd.args) > 6 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	var err error
 	cmd.key = string(cmd.args[0])
@@ -86,7 +86,7 @@ func parseHScan(b baseCmd) (*HScan, error) {
 func (cmd *HScan) Run(w Writer, red Redka) (any, error) {
 	res, err := red.Hash().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 

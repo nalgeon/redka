@@ -26,7 +26,7 @@ func parse(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		pcmd, err := command.Parse(cmd.Args)
 		if err != nil {
-			conn.WriteError(err.Error())
+			conn.WriteError(pcmd.Error(err))
 			return
 		}
 		state := getState(conn)
@@ -100,7 +100,7 @@ func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 		return nil
 	})
 	if err != nil {
-		conn.WriteError(err.Error())
+		slog.Warn("run multi", "client", conn.RemoteAddr(), "err", err)
 	}
 }
 

@@ -37,7 +37,7 @@ func parseScan(b baseCmd) (*Scan, error) {
 
 	cmd := &Scan{baseCmd: b}
 	if len(cmd.args) < 1 || len(cmd.args) > 5 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	var err error
 	cmd.cursor, err = strconv.Atoi(string(cmd.args[0]))
@@ -84,7 +84,7 @@ func parseScan(b baseCmd) (*Scan, error) {
 func (cmd *Scan) Run(w Writer, red Redka) (any, error) {
 	res, err := red.Key().Scan(cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 

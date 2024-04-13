@@ -19,7 +19,7 @@ type SetEX struct {
 func parseSetEX(b baseCmd, multi int) (*SetEX, error) {
 	cmd := &SetEX{baseCmd: b}
 	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 
 	cmd.key = string(cmd.args[0])
@@ -37,7 +37,7 @@ func parseSetEX(b baseCmd, multi int) (*SetEX, error) {
 func (cmd *SetEX) Run(w Writer, red Redka) (any, error) {
 	err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteString("OK")

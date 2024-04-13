@@ -17,7 +17,7 @@ func TestExistsParse(t *testing.T) {
 			name: "exists",
 			args: buildArgs("exists"),
 			want: nil,
-			err:  ErrInvalidArgNum("exists"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "exists name",

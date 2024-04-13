@@ -11,7 +11,7 @@ func parseUnknown(b baseCmd) (*Unknown, error) {
 }
 
 func (cmd *Unknown) Run(w Writer, _ Redka) (any, error) {
-	err := ErrUnknownCmd(cmd.name)
-	w.WriteError(err.Error())
+	err := ErrUnknownCmd
+	w.WriteError(cmd.Error(err))
 	return false, err
 }

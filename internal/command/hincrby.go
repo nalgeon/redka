@@ -16,7 +16,7 @@ type HIncrBy struct {
 func parseHIncrBy(b baseCmd) (*HIncrBy, error) {
 	cmd := &HIncrBy{baseCmd: b}
 	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.field = string(cmd.args[1])
@@ -31,7 +31,7 @@ func parseHIncrBy(b baseCmd) (*HIncrBy, error) {
 func (cmd *HIncrBy) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Hash().Incr(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteInt(val)

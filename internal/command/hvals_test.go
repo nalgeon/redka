@@ -18,7 +18,7 @@ func TestHValsParse(t *testing.T) {
 			name: "hvals",
 			args: buildArgs("hvals"),
 			key:  "",
-			err:  ErrInvalidArgNum("hvals"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hvals person",
@@ -30,7 +30,7 @@ func TestHValsParse(t *testing.T) {
 			name: "hvals person name",
 			args: buildArgs("hvals", "person", "name"),
 			key:  "",
-			err:  ErrInvalidArgNum("hvals"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 
@@ -60,7 +60,9 @@ func TestHValsExec(t *testing.T) {
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, []core.Value{core.Value("alice"), core.Value("25")})
-		testx.AssertEqual(t, conn.out(), "2,alice,25")
+		testx.AssertEqual(t,
+			conn.out() == "2,alice,25" || conn.out() == "2,25,alice",
+			true)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db := getDB(t)

@@ -12,7 +12,7 @@ type HExists struct {
 func parseHExists(b baseCmd) (*HExists, error) {
 	cmd := &HExists{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.field = string(cmd.args[1])
@@ -22,7 +22,7 @@ func parseHExists(b baseCmd) (*HExists, error) {
 func (cmd *HExists) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Hash().Exists(cmd.key, cmd.field)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	if ok {

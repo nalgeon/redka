@@ -16,7 +16,7 @@ type HIncrByFloat struct {
 func parseHIncrByFloat(b baseCmd) (*HIncrByFloat, error) {
 	cmd := &HIncrByFloat{baseCmd: b}
 	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	cmd.field = string(cmd.args[1])
@@ -31,7 +31,7 @@ func parseHIncrByFloat(b baseCmd) (*HIncrByFloat, error) {
 func (cmd *HIncrByFloat) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Hash().IncrFloat(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteBulkString(strconv.FormatFloat(val, 'f', -1, 64))

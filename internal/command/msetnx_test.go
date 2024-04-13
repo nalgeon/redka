@@ -17,13 +17,13 @@ func TestMSetNXParse(t *testing.T) {
 			name: "msetnx",
 			args: buildArgs("msetnx"),
 			want: MSetNX{},
-			err:  ErrInvalidArgNum("msetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "msetnx name",
 			args: buildArgs("msetnx", "name"),
 			want: MSetNX{},
-			err:  ErrInvalidArgNum("msetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "msetnx name alice",
@@ -35,7 +35,7 @@ func TestMSetNXParse(t *testing.T) {
 			name: "msetnx name alice age",
 			args: buildArgs("msetnx", "name", "alice", "age"),
 			want: MSetNX{},
-			err:  ErrInvalidArgNum("msetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "msetnx name alice age 25",

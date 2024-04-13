@@ -11,7 +11,7 @@ type Exists struct {
 func parseExists(b baseCmd) (*Exists, error) {
 	cmd := &Exists{baseCmd: b}
 	if len(cmd.args) < 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.keys = make([]string, len(cmd.args))
 	for i, arg := range cmd.args {
@@ -23,7 +23,7 @@ func parseExists(b baseCmd) (*Exists, error) {
 func (cmd *Exists) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Key().Count(cmd.keys...)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteInt(count)

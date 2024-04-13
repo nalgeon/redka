@@ -17,7 +17,7 @@ func TestEchoParse(t *testing.T) {
 			name: "echo",
 			args: buildArgs("echo"),
 			want: []string{},
-			err:  ErrInvalidArgNum("echo"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "echo hello",

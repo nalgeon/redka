@@ -20,14 +20,14 @@ func TestHGetParse(t *testing.T) {
 			args:  buildArgs("hget"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hget"),
+			err:   ErrInvalidArgNum,
 		},
 		{
 			name:  "hget person",
 			args:  buildArgs("hget", "person"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hget"),
+			err:   ErrInvalidArgNum,
 		},
 		{
 			name:  "hget person name",
@@ -41,7 +41,7 @@ func TestHGetParse(t *testing.T) {
 			args:  buildArgs("hget", "person", "name", "age"),
 			key:   "",
 			field: "",
-			err:   ErrInvalidArgNum("hget"),
+			err:   ErrInvalidArgNum,
 		},
 	}
 

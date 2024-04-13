@@ -15,7 +15,7 @@ type IncrByFloat struct {
 func parseIncrByFloat(b baseCmd) (*IncrByFloat, error) {
 	cmd := &IncrByFloat{baseCmd: b}
 	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	var err error
 	cmd.key = string(cmd.args[0])
@@ -29,7 +29,7 @@ func parseIncrByFloat(b baseCmd) (*IncrByFloat, error) {
 func (cmd *IncrByFloat) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().IncrFloat(cmd.key, cmd.delta)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteBulkString(strconv.FormatFloat(val, 'f', -1, 64))

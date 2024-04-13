@@ -17,7 +17,7 @@ func TestIncrParse(t *testing.T) {
 			name: "incr",
 			args: buildArgs("incr"),
 			want: Incr{},
-			err:  ErrInvalidArgNum("incr"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "incr age",
@@ -29,7 +29,7 @@ func TestIncrParse(t *testing.T) {
 			name: "incr age 42",
 			args: buildArgs("incr", "age", "42"),
 			want: Incr{},
-			err:  ErrInvalidArgNum("incr"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

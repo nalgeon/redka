@@ -11,7 +11,7 @@ type MSet struct {
 func parseMSet(b baseCmd) (*MSet, error) {
 	cmd := &MSet{baseCmd: b}
 	if len(cmd.args) < 2 || len(cmd.args)%2 != 0 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 
 	cmd.items = make(map[string]any, len(cmd.args)/2)
@@ -25,7 +25,7 @@ func parseMSet(b baseCmd) (*MSet, error) {
 func (cmd *MSet) Run(w Writer, red Redka) (any, error) {
 	err := red.Str().SetMany(cmd.items)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteString("OK")

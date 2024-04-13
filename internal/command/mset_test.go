@@ -17,13 +17,13 @@ func TestMSetParse(t *testing.T) {
 			name: "mset",
 			args: buildArgs("mset"),
 			want: MSet{},
-			err:  ErrInvalidArgNum("mset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "mset name",
 			args: buildArgs("mset", "name"),
 			want: MSet{},
-			err:  ErrInvalidArgNum("mset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "mset name alice",
@@ -35,7 +35,7 @@ func TestMSetParse(t *testing.T) {
 			name: "mset name alice age",
 			args: buildArgs("mset", "name", "alice", "age"),
 			want: MSet{},
-			err:  ErrInvalidArgNum("mset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "mset name alice age 25",

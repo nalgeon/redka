@@ -22,7 +22,7 @@ func TestScanParse(t *testing.T) {
 			cursor: 0,
 			match:  "*",
 			count:  0,
-			err:    ErrInvalidArgNum("scan"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "scan 15",

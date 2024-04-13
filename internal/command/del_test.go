@@ -17,7 +17,7 @@ func TestDelParse(t *testing.T) {
 			name: "del",
 			args: buildArgs("del"),
 			want: nil,
-			err:  ErrInvalidArgNum("del"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "del name",

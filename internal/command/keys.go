@@ -11,7 +11,7 @@ type Keys struct {
 func parseKeys(b baseCmd) (*Keys, error) {
 	cmd := &Keys{baseCmd: b}
 	if len(cmd.args) != 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.pattern = string(cmd.args[0])
 	return cmd, nil
@@ -20,7 +20,7 @@ func parseKeys(b baseCmd) (*Keys, error) {
 func (cmd *Keys) Run(w Writer, red Redka) (any, error) {
 	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteArray(len(keys))

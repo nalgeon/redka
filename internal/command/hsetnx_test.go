@@ -17,19 +17,19 @@ func TestHSetNXParse(t *testing.T) {
 			name: "hsetnx",
 			args: buildArgs("hsetnx"),
 			want: HSetNX{},
-			err:  ErrInvalidArgNum("hsetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hsetnx person",
 			args: buildArgs("hsetnx", "person"),
 			want: HSetNX{},
-			err:  ErrInvalidArgNum("hsetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hsetnx person name",
 			args: buildArgs("hsetnx", "person", "name"),
 			want: HSetNX{},
-			err:  ErrInvalidArgNum("hsetnx"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hsetnx person name alice",
@@ -41,7 +41,7 @@ func TestHSetNXParse(t *testing.T) {
 			name: "hsetnx person name alice age 25",
 			args: buildArgs("hsetnx", "person", "name", "alice", "age", "25"),
 			want: HSetNX{},
-			err:  ErrInvalidArgNum("hsetnx"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

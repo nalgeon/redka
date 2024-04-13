@@ -25,7 +25,7 @@ func TestHScanParse(t *testing.T) {
 			cursor: 0,
 			match:  "*",
 			count:  0,
-			err:    ErrInvalidArgNum("hscan"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hscan person",
@@ -34,7 +34,7 @@ func TestHScanParse(t *testing.T) {
 			cursor: 0,
 			match:  "*",
 			count:  0,
-			err:    ErrInvalidArgNum("hscan"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "hscan person 15",

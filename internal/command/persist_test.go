@@ -18,7 +18,7 @@ func TestPersistParse(t *testing.T) {
 			name: "persist",
 			args: buildArgs("persist"),
 			key:  "",
-			err:  ErrInvalidArgNum("persist"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "persist name",
@@ -30,7 +30,7 @@ func TestPersistParse(t *testing.T) {
 			name: "persist name age",
 			args: buildArgs("persist", "name", "age"),
 			key:  "",
-			err:  ErrInvalidArgNum("persist"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

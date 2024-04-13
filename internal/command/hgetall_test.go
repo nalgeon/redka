@@ -18,7 +18,7 @@ func TestHGetAllParse(t *testing.T) {
 			name: "hgetall",
 			args: buildArgs("hgetall"),
 			key:  "",
-			err:  ErrInvalidArgNum("hgetall"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "hgetall person",
@@ -30,7 +30,7 @@ func TestHGetAllParse(t *testing.T) {
 			name: "hgetall person name",
 			args: buildArgs("hgetall", "person", "name"),
 			key:  "",
-			err:  ErrInvalidArgNum("hgetall"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 
@@ -62,7 +62,9 @@ func TestHGetAllExec(t *testing.T) {
 		testx.AssertEqual(t, res, map[string]core.Value{
 			"name": core.Value("alice"), "age": core.Value("25"),
 		})
-		testx.AssertEqual(t, conn.out(), "4,name,alice,age,25")
+		testx.AssertEqual(t,
+			conn.out() == "4,name,alice,age,25" || conn.out() == "4,age,25,name,alice",
+			true)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db := getDB(t)

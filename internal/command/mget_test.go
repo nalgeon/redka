@@ -18,7 +18,7 @@ func TestMGetParse(t *testing.T) {
 			name: "mget",
 			args: buildArgs("mget"),
 			want: nil,
-			err:  ErrInvalidArgNum("mget"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "mget name",

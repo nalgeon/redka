@@ -18,13 +18,13 @@ func TestSetParse(t *testing.T) {
 			name: "set",
 			args: buildArgs("set"),
 			want: Set{},
-			err:  ErrInvalidArgNum("set"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "set name",
 			args: buildArgs("set", "name"),
 			want: Set{},
-			err:  ErrInvalidArgNum("set"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "set name alice",
@@ -61,7 +61,7 @@ func TestSetParse(t *testing.T) {
 			name: "set name alice px 10",
 			args: buildArgs("set", "name", "alice", "ex", "0"),
 			want: Set{},
-			err:  ErrInvalidExpireTime("set"),
+			err:  ErrInvalidExpireTime,
 		},
 		{
 			name: "set name alice px 10",

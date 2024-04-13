@@ -22,12 +22,12 @@ func TestRandomKeyParse(t *testing.T) {
 		{
 			name: "randomkey name",
 			args: buildArgs("randomkey", "name"),
-			err:  ErrInvalidArgNum("randomkey"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "randomkey name age",
 			args: buildArgs("randomkey", "name", "age"),
-			err:  ErrInvalidArgNum("randomkey"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

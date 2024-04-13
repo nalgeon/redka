@@ -18,13 +18,13 @@ func TestGetSetParse(t *testing.T) {
 			name: "getset",
 			args: buildArgs("getset"),
 			want: GetSet{},
-			err:  ErrInvalidArgNum("getset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "getset name",
 			args: buildArgs("getset", "name"),
 			want: GetSet{},
-			err:  ErrInvalidArgNum("getset"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "getset name alice",
@@ -36,7 +36,7 @@ func TestGetSetParse(t *testing.T) {
 			name: "getset name alice 60",
 			args: buildArgs("getset", "name", "alice", "60"),
 			want: GetSet{},
-			err:  ErrInvalidArgNum("getset"),
+			err:  ErrInvalidArgNum,
 		},
 	}
 

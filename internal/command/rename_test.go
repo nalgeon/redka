@@ -1,6 +1,7 @@
 package command
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -20,14 +21,14 @@ func TestRenameParse(t *testing.T) {
 			args:   buildArgs("rename"),
 			key:    "",
 			newKey: "",
-			err:    ErrInvalidArgNum("rename"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "rename name",
 			args:   buildArgs("rename", "name"),
 			key:    "",
 			newKey: "",
-			err:    ErrInvalidArgNum("rename"),
+			err:    ErrInvalidArgNum,
 		},
 		{
 			name:   "rename name title",
@@ -121,7 +122,7 @@ func TestRenameExec(t *testing.T) {
 		res, err := cmd.Run(conn, db)
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.out(), ErrNotFound.Error())
+		testx.AssertEqual(t, strings.HasPrefix(conn.out(), ErrNotFound.Error()), true)
 
 		key, _ := db.Key().Get("name")
 		testx.AssertEqual(t, key.Exists(), false)

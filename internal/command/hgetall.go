@@ -11,7 +11,7 @@ type HGetAll struct {
 func parseHGetAll(b baseCmd) (*HGetAll, error) {
 	cmd := &HGetAll{baseCmd: b}
 	if len(cmd.args) != 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.args[0])
 	return cmd, nil
@@ -20,7 +20,7 @@ func parseHGetAll(b baseCmd) (*HGetAll, error) {
 func (cmd *HGetAll) Run(w Writer, red Redka) (any, error) {
 	items, err := red.Hash().Items(cmd.key)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 	w.WriteArray(len(items) * 2)

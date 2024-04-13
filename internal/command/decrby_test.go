@@ -17,13 +17,13 @@ func TestDecrByParse(t *testing.T) {
 			name: "decrby",
 			args: buildArgs("decrby"),
 			want: IncrBy{},
-			err:  ErrInvalidArgNum("decrby"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "decrby age",
 			args: buildArgs("decrby", "age"),
 			want: IncrBy{},
-			err:  ErrInvalidArgNum("decrby"),
+			err:  ErrInvalidArgNum,
 		},
 		{
 			name: "decrby age 42",

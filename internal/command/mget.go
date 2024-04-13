@@ -13,7 +13,7 @@ type MGet struct {
 func parseMGet(b baseCmd) (*MGet, error) {
 	cmd := &MGet{baseCmd: b}
 	if len(cmd.args) < 1 {
-		return cmd, ErrInvalidArgNum(cmd.name)
+		return cmd, ErrInvalidArgNum
 	}
 	cmd.keys = make([]string, len(cmd.args))
 	for i, arg := range cmd.args {
@@ -26,7 +26,7 @@ func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
 	// Get the key-value map for requested keys.
 	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {
-		w.WriteError(translateError(err))
+		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 
