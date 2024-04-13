@@ -72,7 +72,7 @@ SUNION  SUNIONSTORE
 
 ### Hashes
 
-Hashes are record types modeled as collections of field-value pairs. Redka supports the following hash-related commands:
+Hashes are field-value (hash)maps. Redka supports the following hash-related commands:
 
 | Command        | Go API                   | Description                                      |
 | -------------- | ------------------------ | ------------------------------------------------ |
@@ -189,7 +189,7 @@ xattr -d com.apple.quarantine redka
 chmod +x redka
 ```
 
-Or pull with Docker as follows:
+Or pull with Docker as follows (x86/ARM):
 
 ```shell
 docker pull nalgeon/redka
@@ -357,6 +357,8 @@ updated count=2 err=<nil>
 
 See the full example in [example/tx/main.go](example/tx/main.go).
 
+See the [package documentation](https://pkg.go.dev/github.com/nalgeon/redka) for API reference.
+
 ## Persistence
 
 Redka stores data in a SQLite database using the following tables:
@@ -366,20 +368,19 @@ rkey
 ---
 id       integer primary key
 key      text not null
-type     integer not null    -- 1 string, 2 list, 3 set, 4 hash
-                             -- 5 sorted set
+type     integer not null    -- 1 string, 2 list, 3 set, 4 hash, 5 sorted set
 version  integer not null    -- incremented when the key value is updated
 etime    integer             -- expiration timestamp in unix milliseconds
 mtime    integer not null    -- modification timestamp in unix milliseconds
 
 rstring
 ---
-key_id   integer
+key_id   integer not null    -- FK -> key.id
 value    blob not null
 
 rhash
 ---
-key_id   integer
+key_id   integer not null    -- FK -> key.id
 field    text not null
 value    blob not null
 ```
