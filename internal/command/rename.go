@@ -20,11 +20,11 @@ func parseRename(b baseCmd) (*Rename, error) {
 }
 
 func (cmd *Rename) Run(w Writer, red Redka) (any, error) {
-	ok, err := red.Key().Rename(cmd.key, cmd.newKey)
+	err := red.Key().Rename(cmd.key, cmd.newKey)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return false, err
 	}
 	w.WriteString("OK")
-	return ok, nil
+	return true, nil
 }

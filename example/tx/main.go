@@ -1,3 +1,4 @@
+// An example of using Redka with transactions.
 package main
 
 import (

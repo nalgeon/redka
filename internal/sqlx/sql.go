@@ -1,4 +1,5 @@
-// SQL schema and query helpers.
+// Package sqlx provides base types and helper functions
+// to work with SQL databases.
 package sqlx
 
 import (

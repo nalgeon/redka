@@ -289,9 +289,8 @@ func TestRename(t *testing.T) {
 			_ = red.Str().Set("name", "alice")
 			_ = red.Str().Set("age", 25)
 
-			ok, err := db.Rename(test.key, test.newKey)
+			err := db.Rename(test.key, test.newKey)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, ok, true)
 
 			val, err := red.Str().Get(test.newKey)
 			testx.AssertNoErr(t, err)
@@ -303,19 +302,18 @@ func TestRename(t *testing.T) {
 		defer red.Close()
 
 		_ = red.Str().Set("name", "alice")
-		ok, err := db.Rename("key1", "name")
+		err := db.Rename("key1", "name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, ok, false)
 	})
 }
 
-func TestRenameNX(t *testing.T) {
+func TestRenameNotExists(t *testing.T) {
 	t.Run("rename", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
 		_ = red.Str().Set("name", "alice")
-		ok, err := db.RenameNX("name", "title")
+		ok, err := db.RenameNotExists("name", "title")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
 		title, _ := red.Str().Get("title")
@@ -326,7 +324,7 @@ func TestRenameNX(t *testing.T) {
 		defer red.Close()
 
 		_ = red.Str().Set("name", "alice")
-		ok, err := db.RenameNX("name", "name")
+		ok, err := db.RenameNotExists("name", "name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
 		name, _ := red.Str().Get("name")
@@ -336,7 +334,7 @@ func TestRenameNX(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
-		ok, err := db.RenameNX("key1", "key2")
+		ok, err := db.RenameNotExists("key1", "key2")
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
@@ -346,7 +344,7 @@ func TestRenameNX(t *testing.T) {
 
 		_ = red.Str().Set("name", "alice")
 		_ = red.Str().Set("age", 25)
-		ok, err := db.RenameNX("name", "age")
+		ok, err := db.RenameNotExists("name", "age")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
 		age, _ := red.Str().Get("age")

@@ -1,7 +1,11 @@
 // Redka server.
 // Example usage:
-// - server: ./redka -h localhost -p 6379 redka.db
-// - client: docker run --rm -it redis redis-cli -h host.docker.internal -p 6379
+//
+//	./redka -h localhost -p 6379 redka.db
+//
+// Example usage (client):
+//
+//	docker run --rm -it redis redis-cli -h host.docker.internal -p 6379
 package main
 
 import (

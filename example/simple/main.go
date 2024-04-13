@@ -1,3 +1,5 @@
+// A basic example of using Redka
+// with github.com/mattn/go-sqlite3 driver.
 package main
 
 import (
@@ -9,8 +11,6 @@ import (
 )
 
 func main() {
-	// A simple example of using Redka.
-
 	// Open a database.
 	db, err := redka.Open("data.db")
 	if err != nil {

@@ -52,21 +52,33 @@ func New[T any](db *sql.DB, newT func(Tx) T) *DB[T] {
 }
 
 // Update executes a function within a writable transaction.
+// See the [tx] example for details.
+//
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) Update(f func(tx T) error) error {
 	return d.UpdateContext(context.Background(), f)
 }
 
 // UpdateContext executes a function within a writable transaction.
+// See the [tx] example for details.
+//
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) UpdateContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, true, f)
 }
 
 // View executes a function within a read-only transaction.
+// See the [tx] example for details.
+//
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) View(f func(tx T) error) error {
 	return d.ViewContext(context.Background(), f)
 }
 
 // ViewContext executes a function within a read-only transaction.
+// See the [tx] example for details.
+//
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, false, f)
 }

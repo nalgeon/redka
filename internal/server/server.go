@@ -1,4 +1,4 @@
-// Redka server
+// Package server implements a Redis-compatible (RESP) server.
 package server
 
 import (

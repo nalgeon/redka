@@ -20,7 +20,7 @@ func parseRenameNX(b baseCmd) (*RenameNX, error) {
 }
 
 func (cmd *RenameNX) Run(w Writer, red Redka) (any, error) {
-	ok, err := red.Key().RenameNX(cmd.key, cmd.newKey)
+	ok, err := red.Key().RenameNotExists(cmd.key, cmd.newKey)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return false, err

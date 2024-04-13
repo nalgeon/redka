@@ -1,4 +1,3 @@
-// Redis-like key repository in SQLite.
 package rkey
 
 import (
@@ -87,7 +86,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx}
 }
 
-// Exists checks if the key exists.
+// Exists reports whether the key exists.
 func (tx *Tx) Exists(key string) (bool, error) {
 	count, err := Count(tx.tx, key)
 	return count > 0, err
@@ -99,6 +98,12 @@ func (tx *Tx) Count(keys ...string) (int, error) {
 }
 
 // Keys returns all keys matching pattern.
+// Supports glob-style patterns like these:
+//
+//	key*  k?y  k[bce]y  k[!a-c][y-z]
+//
+// Use this method only if you are sure that the number of keys is
+// limited. Otherwise, use the [Tx.Scan] or [Tx.Scanner] methods.
 func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("pattern", pattern), sql.Named("now", now)}
@@ -112,19 +117,21 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 	return keys, err
 }
 
-// Scan iterates over keys matching pattern by returning
-// the next page based on the current state of the cursor.
-// Count regulates the number of keys returned (count = 0 for default).
-func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
+// Scan iterates over keys matching pattern.
+// It returns the next pageSize keys based on the current state of the cursor.
+// Returns an empty slice when there are no more keys.
+// See [Tx.Keys] for pattern description.
+// Set pageSize = 0 for default page size.
+func (tx *Tx) Scan(cursor int, pattern string, pageSize int) (ScanResult, error) {
 	now := time.Now().UnixMilli()
-	if count == 0 {
-		count = scanPageSize
+	if pageSize == 0 {
+		pageSize = scanPageSize
 	}
 	args := []any{
 		sql.Named("cursor", cursor),
 		sql.Named("pattern", pattern),
 		sql.Named("now", now),
-		sql.Named("count", count),
+		sql.Named("count", pageSize),
 	}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
@@ -149,8 +156,10 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 }
 
 // Scanner returns an iterator for keys matching pattern.
-// The scanner returns keys one by one, fetching a new page
-// when the current one is exhausted. Set pageSize to 0 for default.
+// The scanner returns keys one by one, fetching keys from the
+// database in pageSize batches when necessary.
+// See [Tx.Keys] for pattern description.
+// Set pageSize = 0 for default page size.
 func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 	return newScanner(tx, pattern, pageSize)
 }
@@ -173,13 +182,17 @@ func (tx *Tx) Get(key string) (core.Key, error) {
 	return Get(tx.tx, key)
 }
 
-// Expire sets a timeout on the key using a relative duration.
+// Expire sets a time-to-live (ttl) for the key using a relative duration.
+// After the ttl passes, the key is expired and no longer exists.
+// Returns false is the key does not exist.
 func (tx *Tx) Expire(key string, ttl time.Duration) (bool, error) {
 	at := time.Now().Add(ttl)
 	return tx.ExpireAt(key, at)
 }
 
-// ExpireAt sets a timeout on the key using an absolute time.
+// ExpireAt sets an expiration time for the key. After this time,
+// the key is expired and no longer exists.
+// Returns false is the key does not exist.
 func (tx *Tx) ExpireAt(key string, at time.Time) (bool, error) {
 	now := time.Now().UnixMilli()
 	args := []any{
@@ -195,7 +208,8 @@ func (tx *Tx) ExpireAt(key string, at time.Time) (bool, error) {
 	return count > 0, nil
 }
 
-// Persist removes a timeout on the key.
+// Persist removes the expiration time for the key.
+// Returns false is the key does not exist.
 func (tx *Tx) Persist(key string) (bool, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -209,25 +223,25 @@ func (tx *Tx) Persist(key string) (bool, error) {
 
 // Rename changes the key name.
 // If there is an existing key with the new name, it is replaced.
-func (tx *Tx) Rename(key, newKey string) (bool, error) {
+func (tx *Tx) Rename(key, newKey string) error {
 	// Make sure the old key exists.
 	oldK, err := Get(tx.tx, key)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !oldK.Exists() {
-		return false, core.ErrNotFound
+		return core.ErrNotFound
 	}
 
 	// If the keys are the same, do nothing.
 	if key == newKey {
-		return true, nil
+		return nil
 	}
 
 	// Delete the new key if it exists.
 	_, err = tx.Delete(newKey)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Rename the old key to the new key.
@@ -238,12 +252,13 @@ func (tx *Tx) Rename(key, newKey string) (bool, error) {
 		sql.Named("now", now),
 	}
 	_, err = tx.tx.Exec(sqlRename, args...)
-	return err == nil, err
+	return err
 }
 
-// RenameNX changes the key name.
+// RenameNotExists changes the key name.
 // If there is an existing key with the new name, does nothing.
-func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
+// Returns true if the key was renamed, false otherwise.
+func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
 	oldK, err := Get(tx.tx, key)
 	if err != nil {
@@ -278,7 +293,7 @@ func (tx *Tx) RenameNX(key, newKey string) (bool, error) {
 	return err == nil, err
 }
 
-// Delete deletes keys and their values.
+// Delete deletes keys and their values, regardless of the type.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
 	return Delete(tx.tx, keys...)
@@ -310,7 +325,7 @@ func (tx *Tx) deleteExpired(n int) (int, error) {
 	return int(count), err
 }
 
-// ScanResult represents a result of the scan command.
+// ScanResult represents a result of the Scan call.
 type ScanResult struct {
 	Cursor int
 	Keys   []core.Key

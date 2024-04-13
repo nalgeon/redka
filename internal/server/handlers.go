@@ -9,10 +9,12 @@ import (
 	"github.com/tidwall/redcon"
 )
 
+// createHandlers returns the server command handlers.
 func createHandlers(db *redka.DB) redcon.HandlerFunc {
 	return logging(parse(multi(handle(db))))
 }
 
+// logging logs the command processing time.
 func logging(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		start := time.Now()
@@ -22,6 +24,7 @@ func logging(next redcon.HandlerFunc) redcon.HandlerFunc {
 	}
 }
 
+// parse parses the command arguments.
 func parse(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		pcmd, err := command.Parse(cmd.Args)
@@ -35,6 +38,8 @@ func parse(next redcon.HandlerFunc) redcon.HandlerFunc {
 	}
 }
 
+// multi handles the MULTI, EXEC, and DISCARD commands and delegates
+// the rest to the next handler either in multi or single mode.
 func multi(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		name := normName(cmd)
@@ -75,6 +80,7 @@ func multi(next redcon.HandlerFunc) redcon.HandlerFunc {
 	}
 }
 
+// handle processes the command in either multi or single mode.
 func handle(db *redka.DB) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		state := getState(conn)
@@ -87,6 +93,7 @@ func handle(db *redka.DB) redcon.HandlerFunc {
 	}
 }
 
+// handleMulti processes a batch of commands in a transaction.
 func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 	err := db.Update(func(tx *redka.Tx) error {
 		for _, pcmd := range state.cmds {
@@ -104,6 +111,7 @@ func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 	}
 }
 
+// handleSingle processes a single command.
 func handleSingle(conn redcon.Conn, state *connState, db *redka.DB) {
 	pcmd := state.pop()
 	_, err := pcmd.Run(conn, db)
@@ -112,5 +120,4 @@ func handleSingle(conn redcon.Conn, state *connState, db *redka.DB) {
 			"name", pcmd.Name(), "err", err)
 		return
 	}
-
 }

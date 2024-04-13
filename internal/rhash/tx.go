@@ -104,6 +104,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 }
 
 // Get returns the value of a field in a hash.
+// Returns nil if the key or field does not exist.
 func (tx *Tx) Get(key, field string) (core.Value, error) {
 	now := time.Now()
 	args := []any{
@@ -116,7 +117,9 @@ func (tx *Tx) Get(key, field string) (core.Value, error) {
 	return val, err
 }
 
-// GetMany returns the values of multiple fields in a hash.
+// GetMany returns a map of values for given fields.
+// Returns nil for fields that do not exist. If the key does not exist,
+// returns a map with nil values for all fields.
 func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
 	// Build a map of requested fields.
 	items := make(map[string]core.Value, len(fields))
@@ -153,12 +156,14 @@ func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, erro
 }
 
 // Exists checks if a field exists in a hash.
+// Returns false if the key does not exist.
 func (tx *Tx) Exists(key, field string) (bool, error) {
 	count, err := tx.count(key, field)
 	return count > 0, err
 }
 
-// Items returns all fields and values in a hash.
+// Items returns a map of all fields and values in a hash.
+// Returns an empty map if the key does not exist.
 func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -188,6 +193,7 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 }
 
 // Fields returns all fields in a hash.
+// Returns an empty slice if the key does not exist.
 func (tx *Tx) Fields(key string) ([]string, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -218,6 +224,7 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 }
 
 // Values returns all values in a hash.
+// Returns an empty slice if the key does not exist.
 func (tx *Tx) Values(key string) ([]core.Value, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -248,6 +255,7 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 }
 
 // Len returns the number of fields in a hash.
+// Returns 0 if the key does not exist.
 func (tx *Tx) Len(key string) (int, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -256,13 +264,20 @@ func (tx *Tx) Len(key string) (int, error) {
 	return n, err
 }
 
-// Scan iterates over items with fields matching pattern
-// by returning the next page based on the current state of the cursor.
-// Count regulates the page size (count = 0 for default value).
-func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
+// Scan iterates over hash items with fields matching pattern.
+// It returns the next pageSize of field-value pairs (see [HashItem])
+// based on the current state of the cursor. Returns an empty HashItem
+// slice when there are no more items or if the key does not exist.
+//
+// Supports glob-style patterns like these:
+//
+//	key*  k?y  k[bce]y  k[!a-c][y-z]
+//
+// Set pageSize = 0 for default page size.
+func (tx *Tx) Scan(key string, cursor int, pattern string, pageSize int) (ScanResult, error) {
 	now := time.Now().UnixMilli()
-	if count == 0 {
-		count = scanPageSize
+	if pageSize == 0 {
+		pageSize = scanPageSize
 	}
 
 	args := []any{
@@ -270,7 +285,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 		sql.Named("cursor", cursor),
 		sql.Named("pattern", pattern),
 		sql.Named("now", now),
-		sql.Named("count", count),
+		sql.Named("count", pageSize),
 	}
 
 	// Select hash items matching the pattern.
@@ -297,15 +312,18 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 	return ScanResult{maxID, items}, nil
 }
 
-// Scanner returns an iterator over items with fields matching pattern.
-// The scanner returns items one by one, fetching a new page
-// when the current one is exhausted. Set pageSize to 0 for default value.
+// Scanner returns an iterator for hash items with fields matching pattern.
+// The scanner returns items one by one, fetching them from the database
+// in pageSize batches when necessary.
+// See [Tx.Scan] for pattern description.
+// Set pageSize = 0 for default page size.
 func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
 	return newScanner(tx, key, pattern, pageSize)
 }
 
 // Set creates or updates the value of a field in a hash.
 // Returns true if the field was created, false if it was updated.
+// If the key does not exist, creates it.
 func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
@@ -322,6 +340,8 @@ func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 }
 
 // SetNotExists creates the value of a field in a hash if it does not exist.
+// Returns true if the field was created, false if it already exists.
+// If the key does not exist, creates it.
 func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
@@ -342,6 +362,7 @@ func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 
 // SetMany creates or updates the values of multiple fields in a hash.
 // Returns the number of fields created (as opposed to updated).
+// If the key does not exist, creates it.
 func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 	for _, val := range items {
 		if !core.IsValueType(val) {
@@ -371,6 +392,10 @@ func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 }
 
 // Incr increments the integer value of a field in a hash.
+// If the field does not exist, sets it to 0 before the increment.
+// If the key does not exist, creates it.
+// Returns the value after the increment.
+// Returns an error if the field value is not an integer.
 func (tx *Tx) Incr(key, field string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key, field)
@@ -395,6 +420,10 @@ func (tx *Tx) Incr(key, field string, delta int) (int, error) {
 }
 
 // IncrFloat increments the float value of a field in a hash.
+// If the field does not exist, sets it to 0 before the increment.
+// If the key does not exist, creates it.
+// Returns the value after the increment.
+// Returns an error if the field value is not a float.
 func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key, field)
@@ -419,6 +448,10 @@ func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 }
 
 // Delete deletes one or more items from a hash.
+// Non-existing fields are ignored.
+// If there are no fields left in the hash, deletes the key.
+// Returns the number of fields deleted.
+// Returns 0 if the key does not exist.
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 	now := time.Now().UnixMilli()
 

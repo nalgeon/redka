@@ -1,3 +1,5 @@
+// Package command implements Redis-compatible commands
+// for operations on data structures.
 package command
 
 import (
@@ -9,26 +11,30 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 )
 
-var ErrInvalidArgNum = errors.New("ERR wrong number of arguments")
-var ErrInvalidCursor = errors.New("ERR invalid cursor")
-var ErrInvalidExpireTime = errors.New("ERR invalid expire time")
-var ErrInvalidFloat = errors.New("ERR value is not a float")
-var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
-var ErrKeyType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
-var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
-var ErrNotFound = errors.New("ERR no such key")
-var ErrNotInMulti = errors.New("ERR EXEC without MULTI")
-var ErrSyntaxError = errors.New("ERR syntax error")
-var ErrUnknownCmd = errors.New("ERR unknown command")
-var ErrUnknownSubcmd = errors.New("ERR unknown subcommand")
+// Redis-like errors.
+var (
+	ErrInvalidArgNum     = errors.New("ERR wrong number of arguments")
+	ErrInvalidCursor     = errors.New("ERR invalid cursor")
+	ErrInvalidExpireTime = errors.New("ERR invalid expire time")
+	ErrInvalidFloat      = errors.New("ERR value is not a float")
+	ErrInvalidInt        = errors.New("ERR value is not an integer or out of range")
+	ErrKeyType           = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
+	ErrNestedMulti       = errors.New("ERR MULTI calls can not be nested")
+	ErrNotFound          = errors.New("ERR no such key")
+	ErrNotInMulti        = errors.New("ERR EXEC without MULTI")
+	ErrSyntaxError       = errors.New("ERR syntax error")
+	ErrUnknownCmd        = errors.New("ERR unknown command")
+	ErrUnknownSubcmd     = errors.New("ERR unknown subcommand")
+)
 
-// Redka is a Redis-like repository.
+// Redka is an interface to the Redka database engine.
 type Redka interface {
 	Key() redka.Keys
 	Str() redka.Strings
 	Hash() redka.Hashes
 }
 
+// Writer is an interface to write responses to the client.
 type Writer interface {
 	WriteError(msg string)
 	WriteString(str string)
