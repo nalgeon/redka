@@ -11,6 +11,7 @@ import (
 
 var ErrInvalidCursor = errors.New("ERR invalid cursor")
 var ErrInvalidInt = errors.New("ERR value is not an integer or out of range")
+var ErrInvalidFloat = errors.New("ERR value is not a float")
 var ErrNotFound = errors.New("ERR no such key")
 var ErrKeyType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 var ErrNestedMulti = errors.New("ERR MULTI calls can not be nested")
@@ -47,6 +48,7 @@ func translateError(err error) string {
 type Redka interface {
 	Key() redka.Keys
 	Str() redka.Strings
+	Hash() redka.Hashes
 }
 
 type Writer interface {
@@ -174,6 +176,36 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseSetEX(b, 1000)
 	case "setnx":
 		return parseSetNX(b)
+
+	// hash
+	case "hdel":
+		return parseHDel(b)
+	case "hexists":
+		return parseHExists(b)
+	case "hget":
+		return parseHGet(b)
+	case "hgetall":
+		return parseHGetAll(b)
+	case "hincrby":
+		return parseHIncrBy(b)
+	case "hincrbyfloat":
+		return parseHIncrByFloat(b)
+	case "hkeys":
+		return parseHKeys(b)
+	case "hlen":
+		return parseHLen(b)
+	case "hmget":
+		return parseHMGet(b)
+	case "hmset":
+		return parseHMSet(b)
+	case "hscan":
+		return parseHScan(b)
+	case "hset":
+		return parseHSet(b)
+	case "hsetnx":
+		return parseHSetNX(b)
+	case "hvals":
+		return parseHVals(b)
 
 	default:
 		return parseUnknown(b)

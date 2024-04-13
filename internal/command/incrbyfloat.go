@@ -21,7 +21,7 @@ func parseIncrByFloat(b baseCmd) (*IncrByFloat, error) {
 	cmd.key = string(cmd.args[0])
 	cmd.delta, err = strconv.ParseFloat(string(cmd.args[1]), 64)
 	if err != nil {
-		return cmd, ErrInvalidInt
+		return cmd, ErrInvalidFloat
 	}
 	return cmd, nil
 }

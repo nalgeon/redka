@@ -480,7 +480,7 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 }
 
 // set creates or updates the value of a field in a hash.
-func (tx Tx) set(key string, field string, value any) error {
+func (tx *Tx) set(key string, field string, value any) error {
 	now := time.Now()
 
 	args := []any{

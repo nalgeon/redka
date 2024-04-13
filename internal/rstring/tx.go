@@ -284,7 +284,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 }
 
 // set sets the key value and (optionally) its expiration time.
-func (tx Tx) set(key string, value any, ttl time.Duration) error {
+func (tx *Tx) set(key string, value any, ttl time.Duration) error {
 	now := time.Now()
 	var etime *int64
 	if ttl > 0 {
@@ -313,7 +313,7 @@ func (tx Tx) set(key string, value any, ttl time.Duration) error {
 // update updates the value of the existing key without changing its
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
-func (tx Tx) update(key string, value any) error {
+func (tx *Tx) update(key string, value any) error {
 	now := time.Now().UnixMilli()
 	args := []any{
 		sql.Named("key", key),
