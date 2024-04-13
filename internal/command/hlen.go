@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Returns the number of fields in a hash.
 // HLEN key
 // https://redis.io/commands/hlen
@@ -17,7 +19,7 @@ func parseHLen(b baseCmd) (*HLen, error) {
 	return cmd, nil
 }
 
-func (cmd *HLen) Run(w Writer, red Redka) (any, error) {
+func (cmd *HLen) Run(w Writer, red *redka.Tx) (any, error) {
 	count, err := red.Hash().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

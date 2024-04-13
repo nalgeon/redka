@@ -1,6 +1,10 @@
 package command
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/nalgeon/redka"
+)
 
 // Increments the integer value of a field in a hash by a number.
 // Uses 0 as initial value if the field doesn't exist.
@@ -28,7 +32,7 @@ func parseHIncrBy(b baseCmd) (*HIncrBy, error) {
 	return cmd, nil
 }
 
-func (cmd *HIncrBy) Run(w Writer, red Redka) (any, error) {
+func (cmd *HIncrBy) Run(w Writer, red *redka.Tx) (any, error) {
 	val, err := red.Hash().Incr(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

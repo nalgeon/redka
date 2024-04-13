@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Atomically modifies the string values of one
 // or more keys only when all keys don't exist.
 // MSETNX key value [key value ...]
@@ -23,7 +25,7 @@ func parseMSetNX(b baseCmd) (*MSetNX, error) {
 	return cmd, nil
 }
 
-func (cmd *MSetNX) Run(w Writer, red Redka) (any, error) {
+func (cmd *MSetNX) Run(w Writer, red *redka.Tx) (any, error) {
 	ok, err := red.Str().SetManyNX(cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

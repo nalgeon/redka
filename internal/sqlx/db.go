@@ -22,11 +22,6 @@ pragma foreign_keys = on;
 //go:embed schema.sql
 var sqlSchema string
 
-const sqlDeleteAll = `
-delete from rkey;
-vacuum;
-pragma integrity_check;`
-
 // DB is a generic database-backed repository
 // with a domain-specific transaction of type T.
 type DB[T any] struct {
@@ -52,41 +47,30 @@ func New[T any](db *sql.DB, newT func(Tx) T) *DB[T] {
 }
 
 // Update executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) Update(f func(tx T) error) error {
 	return d.UpdateContext(context.Background(), f)
 }
 
 // UpdateContext executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) UpdateContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, true, f)
 }
 
 // View executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) View(f func(tx T) error) error {
 	return d.ViewContext(context.Background(), f)
 }
 
 // ViewContext executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, false, f)
 }
 
-// DeleteAll deletes all data from the database.
-func (d *DB[T]) DeleteAll() error {
-	_, err := d.SQL.Exec(sqlDeleteAll)
-	return err
+// NoTx creates a new domain transaction without the underlying
+// database transaction. Used for implementing database methods
+// while reusing the domain transaction logic.
+func (d *DB[T]) NoTx() T {
+	return d.newT(d.SQL)
 }
 
 // Init sets the connection properties and creates the necessary tables.

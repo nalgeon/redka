@@ -11,6 +11,9 @@ import (
 )
 
 // DB is a database-backed key repository.
+// A key is a unique identifier for a data structure
+// (string, list, hash, etc.). Use the key repository
+// to manage all keys regardless of their type.
 type DB struct {
 	*sqlx.DB[*Tx]
 }
@@ -161,7 +164,8 @@ func (db *DB) DeleteExpired(n int) (count int, err error) {
 }
 
 // DeleteAll deletes all keys and their values, effectively resetting
-// the database. DeleteAll is not allowed inside a transaction.
+// the database. Should not be run inside a database transaction.
 func (db *DB) DeleteAll() error {
-	return db.DB.DeleteAll()
+	tx := NewTx(db.SQL)
+	return tx.DeleteAll()
 }

@@ -684,7 +684,7 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func getDB(tb testing.TB) (*redka.DB, redka.Hashes) {
+func getDB(tb testing.TB) (*redka.DB, *rhash.DB) {
 	tb.Helper()
 	db, err := redka.Open(":memory:")
 	if err != nil {

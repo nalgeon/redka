@@ -60,12 +60,12 @@ func TestHSetNXParse(t *testing.T) {
 
 func TestHSetNXExec(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HSetNX]("hsetnx person name alice")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -75,14 +75,14 @@ func TestHSetNXExec(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HSetNX]("hsetnx person name bob")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")

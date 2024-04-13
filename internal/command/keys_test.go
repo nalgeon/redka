@@ -52,7 +52,7 @@ func TestKeysParse(t *testing.T) {
 }
 
 func TestKeysExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	_ = db.Str().Set("k11", "11")
@@ -96,7 +96,7 @@ func TestKeysExec(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
-			keys, err := test.cmd.Run(conn, db)
+			keys, err := test.cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 			for i, key := range keys.([]core.Key) {
 				testx.AssertEqual(t, key.Key, test.res[i])

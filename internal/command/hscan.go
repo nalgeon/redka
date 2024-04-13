@@ -2,6 +2,8 @@ package command
 
 import (
 	"strconv"
+
+	"github.com/nalgeon/redka"
 )
 
 // Iterates over fields and values of a hash.
@@ -83,7 +85,7 @@ func parseHScan(b baseCmd) (*HScan, error) {
 	return cmd, nil
 }
 
-func (cmd *HScan) Run(w Writer, red Redka) (any, error) {
+func (cmd *HScan) Run(w Writer, red *redka.Tx) (any, error) {
 	res, err := red.Hash().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

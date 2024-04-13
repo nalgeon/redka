@@ -41,7 +41,7 @@ func TestRandomKeyParse(t *testing.T) {
 
 func TestRandomKeyExec(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -50,17 +50,17 @@ func TestRandomKeyExec(t *testing.T) {
 
 		conn := new(fakeConn)
 		cmd := mustParse[*RandomKey]("randomkey")
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, slices.Contains(keys, res.(core.Key).Key), true)
 		testx.AssertEqual(t, slices.Contains(keys, conn.out()), true)
 	})
 	t.Run("not found", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 		conn := new(fakeConn)
 		cmd := mustParse[*RandomKey]("randomkey")
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, nil)
 		testx.AssertEqual(t, conn.out(), "(nil)")

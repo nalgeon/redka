@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Returns a random key name from the database.
 // RANDOMKEY
 // https://redis.io/commands/randomkey
@@ -15,7 +17,7 @@ func parseRandomKey(b baseCmd) (*RandomKey, error) {
 	return cmd, nil
 }
 
-func (cmd *RandomKey) Run(w Writer, red Redka) (any, error) {
+func (cmd *RandomKey) Run(w Writer, red *redka.Tx) (any, error) {
 	key, err := red.Key().Random()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

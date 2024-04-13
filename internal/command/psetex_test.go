@@ -62,12 +62,12 @@ func TestPSetEXParse(t *testing.T) {
 
 func TestPSetEXExec(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*SetEX]("psetex name 60000 alice")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
@@ -81,14 +81,14 @@ func TestPSetEXExec(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*SetEX]("psetex name 60000 bob")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
@@ -102,14 +102,14 @@ func TestPSetEXExec(t *testing.T) {
 	})
 
 	t.Run("change ttl", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := mustParse[*SetEX]("psetex name 10000 bob")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")

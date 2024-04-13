@@ -60,7 +60,7 @@ func TestHMGetParse(t *testing.T) {
 
 func TestHMGetExec(t *testing.T) {
 	t.Run("one field", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
@@ -68,7 +68,7 @@ func TestHMGetExec(t *testing.T) {
 
 		cmd := mustParse[*HMGet]("hmget person name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, conn.out(), "1,alice")
@@ -77,7 +77,7 @@ func TestHMGetExec(t *testing.T) {
 		testx.AssertEqual(t, items[0], core.Value("alice"))
 	})
 	t.Run("some fields", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
@@ -86,7 +86,7 @@ func TestHMGetExec(t *testing.T) {
 
 		cmd := mustParse[*HMGet]("hmget person name happy city")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, conn.out(), "3,alice,1,(nil)")
@@ -97,7 +97,7 @@ func TestHMGetExec(t *testing.T) {
 		testx.AssertEqual(t, items[2], core.Value(nil))
 	})
 	t.Run("all fields", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
@@ -105,7 +105,7 @@ func TestHMGetExec(t *testing.T) {
 
 		cmd := mustParse[*HMGet]("hmget person name age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, conn.out(), "2,alice,25")

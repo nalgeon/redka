@@ -27,13 +27,6 @@ var (
 	ErrUnknownSubcmd     = errors.New("ERR unknown subcommand")
 )
 
-// Redka is an interface to the Redka database engine.
-type Redka interface {
-	Key() redka.Keys
-	Str() redka.Strings
-	Hash() redka.Hashes
-}
-
 // Writer is an interface to write responses to the client.
 type Writer interface {
 	WriteError(msg string)
@@ -62,7 +55,7 @@ type Cmd interface {
 	Error(err error) string
 
 	// Run executes the command and writes the result to the writer.
-	Run(w Writer, red Redka) (any, error)
+	Run(w Writer, red *redka.Tx) (any, error)
 }
 
 type baseCmd struct {

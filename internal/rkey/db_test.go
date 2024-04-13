@@ -431,7 +431,7 @@ func TestDeleteAll(t *testing.T) {
 	testx.AssertEqual(t, count, 0)
 }
 
-func getDB(tb testing.TB) (*redka.DB, redka.Keys) {
+func getDB(tb testing.TB) (*redka.DB, *rkey.DB) {
 	tb.Helper()
 	red, err := redka.Open(":memory:")
 	if err != nil {

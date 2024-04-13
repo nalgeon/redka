@@ -1,6 +1,10 @@
 package command
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/nalgeon/redka"
+)
 
 // Increment the floating point value of a key by a number.
 // Uses 0 as initial value if the key doesn't exist.
@@ -26,7 +30,7 @@ func parseIncrByFloat(b baseCmd) (*IncrByFloat, error) {
 	return cmd, nil
 }
 
-func (cmd *IncrByFloat) Run(w Writer, red Redka) (any, error) {
+func (cmd *IncrByFloat) Run(w Writer, red *redka.Tx) (any, error) {
 	val, err := red.Str().IncrFloat(cmd.key, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

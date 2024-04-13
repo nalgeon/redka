@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Deletes one or more keys.
 // DEL key [key ...]
 // https://redis.io/commands/del
@@ -20,7 +22,7 @@ func parseDel(b baseCmd) (*Del, error) {
 	return cmd, nil
 }
 
-func (cmd *Del) Run(w Writer, red Redka) (any, error) {
+func (cmd *Del) Run(w Writer, red *redka.Tx) (any, error) {
 	count, err := red.Key().Delete(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

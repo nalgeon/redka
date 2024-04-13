@@ -3,6 +3,8 @@ package command
 import (
 	"strconv"
 	"time"
+
+	"github.com/nalgeon/redka"
 )
 
 // Sets the string value and expiration time of a key.
@@ -34,7 +36,7 @@ func parseSetEX(b baseCmd, multi int) (*SetEX, error) {
 	return cmd, nil
 }
 
-func (cmd *SetEX) Run(w Writer, red Redka) (any, error) {
+func (cmd *SetEX) Run(w Writer, red *redka.Tx) (any, error) {
 	err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

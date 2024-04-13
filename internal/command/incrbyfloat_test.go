@@ -59,7 +59,7 @@ func TestIncrByFloatParse(t *testing.T) {
 }
 
 func TestIncrByFloatExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	tests := []struct {
@@ -99,7 +99,7 @@ func TestIncrByFloatExec(t *testing.T) {
 			_ = db.Str().Set("age", 25)
 
 			conn := new(fakeConn)
-			res, err := test.cmd.Run(conn, db)
+			res, err := test.cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.out(), test.out)

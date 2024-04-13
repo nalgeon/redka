@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka"
+
 // Returns the previous string value of a key after setting it to a new value.
 // GETSET key value
 // https://redis.io/commands/getset
@@ -19,7 +21,7 @@ func parseGetSet(b baseCmd) (*GetSet, error) {
 	return cmd, nil
 }
 
-func (cmd *GetSet) Run(w Writer, red Redka) (any, error) {
+func (cmd *GetSet) Run(w Writer, red *redka.Tx) (any, error) {
 	val, err := red.Str().GetSet(cmd.key, cmd.value, 0)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

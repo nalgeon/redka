@@ -1,6 +1,9 @@
 package command
 
-import "github.com/nalgeon/redka/internal/core"
+import (
+	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/core"
+)
 
 // Returns the values of multiple fields in a hash.
 // HMGET key field [field ...]
@@ -24,7 +27,7 @@ func parseHMGet(b baseCmd) (*HMGet, error) {
 	return cmd, nil
 }
 
-func (cmd *HMGet) Run(w Writer, red Redka) (any, error) {
+func (cmd *HMGet) Run(w Writer, red *redka.Tx) (any, error) {
 	// Get the field-value map for requested fields.
 	items, err := red.Hash().GetMany(cmd.key, cmd.fields...)
 	if err != nil {

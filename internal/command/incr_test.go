@@ -47,13 +47,13 @@ func TestIncrParse(t *testing.T) {
 }
 
 func TestIncrExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	t.Run("create", func(t *testing.T) {
 		cmd := mustParse[*Incr]("incr age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 1)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -67,7 +67,7 @@ func TestIncrExec(t *testing.T) {
 
 		cmd := mustParse[*Incr]("incr age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 26)
 		testx.AssertEqual(t, conn.out(), "26")

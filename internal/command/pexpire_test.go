@@ -65,7 +65,7 @@ func TestPExpireParse(t *testing.T) {
 }
 
 func TestPExpireExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	t.Run("create pexpire", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestPExpireExec(t *testing.T) {
 
 		cmd := mustParse[*Expire]("pexpire name 60000")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -88,7 +88,7 @@ func TestPExpireExec(t *testing.T) {
 
 		cmd := mustParse[*Expire]("pexpire name 30000")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -103,7 +103,7 @@ func TestPExpireExec(t *testing.T) {
 
 		cmd := mustParse[*Expire]("pexpire name 0")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -117,7 +117,7 @@ func TestPExpireExec(t *testing.T) {
 
 		cmd := mustParse[*Expire]("pexpire name -1000")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -131,7 +131,7 @@ func TestPExpireExec(t *testing.T) {
 
 		cmd := mustParse[*Expire]("pexpire age 1000")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")

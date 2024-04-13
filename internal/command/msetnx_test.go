@@ -62,12 +62,12 @@ func TestMSetNXParse(t *testing.T) {
 
 func TestMSetNXExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*MSetNX]("msetnx name alice")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -77,12 +77,12 @@ func TestMSetNXExec(t *testing.T) {
 	})
 
 	t.Run("create multiple", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*MSetNX]("msetnx name alice age 25")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -94,14 +94,14 @@ func TestMSetNXExec(t *testing.T) {
 	})
 
 	t.Run("create/update", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*MSetNX]("msetnx name bob age 50")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")
@@ -113,7 +113,7 @@ func TestMSetNXExec(t *testing.T) {
 	})
 
 	t.Run("update multiple", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
@@ -121,7 +121,7 @@ func TestMSetNXExec(t *testing.T) {
 
 		cmd := mustParse[*MSetNX]("msetnx name bob age 50")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")

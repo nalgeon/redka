@@ -63,14 +63,14 @@ func TestHIncrByParse(t *testing.T) {
 
 func TestHIncrByExec(t *testing.T) {
 	t.Run("incr field", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "age", 25)
 
 		cmd := mustParse[*HIncrBy]("hincrby person age 10")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 35)
@@ -80,14 +80,14 @@ func TestHIncrByExec(t *testing.T) {
 		testx.AssertEqual(t, age, core.Value("35"))
 	})
 	t.Run("decr field", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "age", 25)
 
 		cmd := mustParse[*HIncrBy]("hincrby person age -10")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 15)
@@ -97,14 +97,14 @@ func TestHIncrByExec(t *testing.T) {
 		testx.AssertEqual(t, age, core.Value("15"))
 	})
 	t.Run("create field", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HIncrBy]("hincrby person age 10")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 10)
@@ -114,12 +114,12 @@ func TestHIncrByExec(t *testing.T) {
 		testx.AssertEqual(t, age, core.Value("10"))
 	})
 	t.Run("create key", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HIncrBy]("hincrby person age 10")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 10)

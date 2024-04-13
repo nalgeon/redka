@@ -11,6 +11,8 @@ import (
 )
 
 // DB is a database-backed string repository.
+// A string is a slice of bytes associated with a key.
+// Use the string repository to work with individual strings.
 type DB struct {
 	*sqlx.DB[*Tx]
 }

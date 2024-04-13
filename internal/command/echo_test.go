@@ -45,7 +45,7 @@ func TestEchoParse(t *testing.T) {
 }
 
 func TestEchoExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	tests := []struct {
@@ -71,7 +71,7 @@ func TestEchoExec(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
-			res, err := test.cmd.Run(conn, db)
+			res, err := test.cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.out(), test.out)

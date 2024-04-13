@@ -52,14 +52,14 @@ func TestRenameNXParse(t *testing.T) {
 
 func TestRenameNXExec(t *testing.T) {
 	t.Run("create new", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*RenameNX]("renamenx name title")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -71,7 +71,7 @@ func TestRenameNXExec(t *testing.T) {
 	})
 
 	t.Run("replace existing", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
@@ -79,7 +79,7 @@ func TestRenameNXExec(t *testing.T) {
 
 		cmd := mustParse[*RenameNX]("renamenx name title")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")
@@ -95,14 +95,14 @@ func TestRenameNXExec(t *testing.T) {
 	})
 
 	t.Run("rename to self", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*RenameNX]("renamenx name name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")
@@ -114,14 +114,14 @@ func TestRenameNXExec(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db := getDB(t)
+		db, tx := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("title", "bob")
 
 		cmd := mustParse[*RenameNX]("renamenx name title")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, strings.HasPrefix(conn.out(), ErrNotFound.Error()), true)

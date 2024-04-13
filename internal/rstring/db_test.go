@@ -6,6 +6,7 @@ import (
 
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -505,7 +506,7 @@ func TestIncrFloat(t *testing.T) {
 	})
 }
 
-func getDB(tb testing.TB) (*redka.DB, redka.Strings) {
+func getDB(tb testing.TB) (*redka.DB, *rstring.DB) {
 	tb.Helper()
 	db, err := redka.Open(":memory:")
 	if err != nil {

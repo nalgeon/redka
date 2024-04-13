@@ -126,7 +126,7 @@ func TestHScanParse(t *testing.T) {
 }
 
 func TestHScanExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	_, _ = db.Hash().Set("key", "f11", "11")
@@ -140,7 +140,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 0")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)
@@ -156,7 +156,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 5")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)
@@ -170,7 +170,7 @@ func TestHScanExec(t *testing.T) {
 		cmd := mustParse[*HScan]("hscan key 0 match f2*")
 		conn := new(fakeConn)
 
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 
 		sres := res.(rhash.ScanResult)
@@ -189,7 +189,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 0 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)
@@ -206,7 +206,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 2 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)
@@ -223,7 +223,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 4 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)
@@ -238,7 +238,7 @@ func TestHScanExec(t *testing.T) {
 			cmd := mustParse[*HScan]("hscan key 5 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, db)
+			res, err := cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rhash.ScanResult)

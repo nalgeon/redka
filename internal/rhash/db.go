@@ -10,6 +10,9 @@ import (
 )
 
 // DB is a database-backed hash repository.
+// A hash (hashmap) is a field-value map associated with a key.
+// Use the hash repository to work with individual hashmaps
+// and their fields.
 type DB struct {
 	*sqlx.DB[*Tx]
 }

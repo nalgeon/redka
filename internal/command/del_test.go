@@ -73,7 +73,7 @@ func TestDelExec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db := getDB(t)
+			db, tx := getDB(t)
 			defer db.Close()
 
 			_ = db.Str().Set("name", "alice")
@@ -81,7 +81,7 @@ func TestDelExec(t *testing.T) {
 			_ = db.Str().Set("city", "paris")
 
 			conn := new(fakeConn)
-			res, err := test.cmd.Run(conn, db)
+			res, err := test.cmd.Run(conn, tx)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.out(), test.out)

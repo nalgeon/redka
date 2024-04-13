@@ -47,13 +47,13 @@ func TestIncrByParse(t *testing.T) {
 }
 
 func TestIncrByExec(t *testing.T) {
-	db := getDB(t)
+	db, tx := getDB(t)
 	defer db.Close()
 
 	t.Run("create", func(t *testing.T) {
 		cmd := mustParse[*IncrBy]("incrby age 42")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 42)
 		testx.AssertEqual(t, conn.out(), "42")
@@ -67,7 +67,7 @@ func TestIncrByExec(t *testing.T) {
 
 		cmd := mustParse[*IncrBy]("incrby age 42")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, db)
+		res, err := cmd.Run(conn, tx)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 67)
 		testx.AssertEqual(t, conn.out(), "67")

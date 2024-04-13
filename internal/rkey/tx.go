@@ -61,6 +61,11 @@ const sqlDelete = `
 delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
+const sqlDeleteAll = `
+  delete from rkey;
+  vacuum;
+  pragma integrity_check;`
+
 const sqlDeleteAllExpired = `
 delete from rkey
 where etime <= :now`
@@ -299,11 +304,11 @@ func (tx *Tx) Delete(keys ...string) (int, error) {
 	return Delete(tx.tx, keys...)
 }
 
-// DeleteAll deletes all keys and their values,
-// effectively resetting the database.
+// DeleteAll deletes all keys and their values, effectively resetting
+// the database. Should not be run inside a database transaction.
 func (tx *Tx) DeleteAll() error {
-	// This operation is not allowed inside a transaction.
-	return core.ErrNotAllowed
+	_, err := tx.tx.Exec(sqlDeleteAll)
+	return err
 }
 
 // deleteExpired deletes keys with expired TTL, but no more than n keys.
