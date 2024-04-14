@@ -33,5 +33,8 @@ test:
 build:
 	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.version=$(build_ver) -X main.commit=$(build_rev) -X main.date=$(build_date)" -trimpath -o build/redka -v cmd/redka/main.go
 
+build-cli:
+	@CGO_ENABLED=1 go build -ldflags "-s -w" -trimpath -o build/redka-cli -v cmd/cli/main.go
+
 run:
 	@./build/redka
