@@ -25,6 +25,18 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
+            - name: Docker meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: |
+                      ${{ secrets.DOCKERHUB_USERNAME }}/redka
+                  tags: |
+                      type=semver,pattern={{version}}
+                      type=semver,pattern={{major}}.{{minor}}
+                      type=semver,pattern={{major}}
+                      type=raw,value=latest
+                      type=sha
+
             - name: Build and push
               uses: docker/build-push-action@v5
               with:
@@ -32,4 +44,5 @@ jobs:
                   platforms: linux/amd64,linux/arm64
                   file: ./Dockerfile
                   push: true
-                  tags: ${{ secrets.DOCKERHUB_USERNAME }}/redka:latest
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}

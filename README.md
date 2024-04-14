@@ -375,12 +375,12 @@ mtime    integer not null    -- modification timestamp in unix milliseconds
 
 rstring
 ---
-key_id   integer not null    -- FK -> key.id
+key_id   integer not null    -- FK -> rkey.id
 value    blob not null
 
 rhash
 ---
-key_id   integer not null    -- FK -> key.id
+key_id   integer not null    -- FK -> rkey.id
 field    text not null
 value    blob not null
 ```
