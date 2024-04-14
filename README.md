@@ -87,7 +87,7 @@ Hashes are field-value (hash)maps. Redka supports the following hash-related com
 | `HMGET`        | `DB.Hash().GetMany`      | Returns the values of multiple fields.           |
 | `HMSET`        | `DB.Hash().SetMany`      | Sets the values of multiple fields.              |
 | `HSCAN`        | `DB.Hash().Scanner`      | Iterates over fields and values.                 |
-| `HSET`         | `DB.Hash().SetMany`      | Sets the values of one ore more fields.          |
+| `HSET`         | `DB.Hash().SetMany`      | Sets the values of one or more fields.           |
 | `HSETNX`       | `DB.Hash().SetNotExists` | Sets the value of a field when it doesn't exist. |
 | `HVALS`        | `DB.Hash().Exists`       | Returns all values.                              |
 
