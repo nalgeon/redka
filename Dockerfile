@@ -1,5 +1,5 @@
 FROM alpine:edge AS build
-RUN apk add --no-cache --update gcc g++ go make
+RUN apk add --no-cache --allow-untrusted --update gcc g++ go make
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
