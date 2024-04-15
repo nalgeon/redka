@@ -28,22 +28,24 @@ Redka aims to support five core Redis data types: strings, lists, sets, hashes, 
 
 Strings are the most basic Redis type, representing a sequence of bytes. Redka supports the following string-related commands:
 
-| Command       | Go API                  | Description                                                    |
-| ------------- | ----------------------- | -------------------------------------------------------------- |
-| `DECR`        | `DB.Str().Incr`         | Decrements the integer value of a key by one.                  |
-| `DECRBY`      | `DB.Str().Incr`         | Decrements a number from the integer value of a key.           |
-| `GET`         | `DB.Str().Get`          | Returns the value of a key.                                    |
-| `GETSET`      | `DB.Str().GetSet`       | Sets the key to a new value and returns the prev value.        |
-| `INCR`        | `DB.Str().Incr`         | Increments the integer value of a key by one.                  |
-| `INCRBY`      | `DB.Str().Incr`         | Increments the integer value of a key by a number.             |
-| `INCRBYFLOAT` | `DB.Str().IncrFloat`    | Increments the float value of a key by a number.               |
-| `MGET`        | `DB.Str().GetMany`      | Returns the values of one or more keys.                        |
-| `MSET`        | `DB.Str().SetMany`      | Sets the values of one or more keys.                           |
-| `MSETNX`      | `DB.Str().SetManyNX`    | Sets the values of one or more keys when all keys don't exist. |
-| `PSETEX`      | `DB.Str().SetExpires`   | Sets the value and expiration time (in ms) of a key.           |
-| `SET`         | `DB.Str().Set`          | Sets the value of a key.                                       |
-| `SETEX`       | `DB.Str().SetExpires`   | Sets the value and expiration (in sec) time of a key.          |
-| `SETNX`       | `DB.Str().SetNotExists` | Sets the value of a key when the key doesn't exist.            |
+```
+Command      Go API                 Description
+-------      ------                 -----------
+DECR         DB.Str().Incr          Decrements the integer value of a key by one.
+DECRBY       DB.Str().Incr          Decrements a number from the integer value of a key.
+GET          DB.Str().Get           Returns the value of a key.
+GETSET       DB.Str().GetSet        Sets the key to a new value and returns the prev value.
+INCR         DB.Str().Incr          Increments the integer value of a key by one.
+INCRBY       DB.Str().Incr          Increments the integer value of a key by a number.
+INCRBYFLOAT  DB.Str().IncrFloat     Increments the float value of a key by a number.
+MGET         DB.Str().GetMany       Returns the values of one or more keys.
+MSET         DB.Str().SetMany       Sets the values of one or more keys.
+MSETNX       DB.Str().SetManyNX     Sets the values of one or more keys when all keys don't exist.
+PSETEX       DB.Str().SetExpires    Sets the value and expiration time (in ms) of a key.
+SET          DB.Str().Set           Sets the value of a key.
+SETEX        DB.Str().SetExpires    Sets the value and expiration (in sec) time of a key.
+SETNX        DB.Str().SetNotExists  Sets the value of a key when the key doesn't exist.
+```
 
 The following string-related commands are not planned for 1.0:
 
@@ -74,22 +76,24 @@ SUNION  SUNIONSTORE
 
 Hashes are field-value (hash)maps. Redka supports the following hash-related commands:
 
-| Command        | Go API                   | Description                                      |
-| -------------- | ------------------------ | ------------------------------------------------ |
-| `HDEL`         | `DB.Hash().Delete`       | Deletes one or more fields and their values.     |
-| `HEXISTS`      | `DB.Hash().Exists`       | Determines whether a field exists.               |
-| `HGET`         | `DB.Hash().Get`          | Returns the value of a field.                    |
-| `HGETALL`      | `DB.Hash().Items`        | Returns all fields and values.                   |
-| `HINCRBY`      | `DB.Hash().Incr`         | Increments the integer value of a field.         |
-| `HINCRBYFLOAT` | `DB.Hash().IncrFloat`    | Increments the float value of a field.           |
-| `HKEYS`        | `DB.Hash().Keys`         | Returns all fields.                              |
-| `HLEN`         | `DB.Hash().Len`          | Returns the number of fields.                    |
-| `HMGET`        | `DB.Hash().GetMany`      | Returns the values of multiple fields.           |
-| `HMSET`        | `DB.Hash().SetMany`      | Sets the values of multiple fields.              |
-| `HSCAN`        | `DB.Hash().Scanner`      | Iterates over fields and values.                 |
-| `HSET`         | `DB.Hash().SetMany`      | Sets the values of one or more fields.           |
-| `HSETNX`       | `DB.Hash().SetNotExists` | Sets the value of a field when it doesn't exist. |
-| `HVALS`        | `DB.Hash().Exists`       | Returns all values.                              |
+```
+Command       Go API                  Description
+-------       ------------------      -----------
+HDEL          DB.Hash().Delete        Deletes one or more fields and their values.
+HEXISTS       DB.Hash().Exists        Determines whether a field exists.
+HGET          DB.Hash().Get           Returns the value of a field.
+HGETALL       DB.Hash().Items         Returns all fields and values.
+HINCRBY       DB.Hash().Incr          Increments the integer value of a field.
+HINCRBYFLOAT  DB.Hash().IncrFloat     Increments the float value of a field.
+HKEYS         DB.Hash().Keys          Returns all fields.
+HLEN          DB.Hash().Len           Returns the number of fields.
+HMGET         DB.Hash().GetMany       Returns the values of multiple fields.
+HMSET         DB.Hash().SetMany       Sets the values of multiple fields.
+HSCAN         DB.Hash().Scanner       Iterates over fields and values.
+HSET          DB.Hash().SetMany       Sets the values of one or more fields.
+HSETNX        DB.Hash().SetNotExists  Sets the value of a field when it doesn't exist.
+HVALS         DB.Hash().Exists        Returns all values.
+```
 
 The following hash-related commands are not planned for 1.0:
 
@@ -110,20 +114,22 @@ ZRANK  ZREM  ZSCORE
 
 Redka supports the following key management (generic) commands:
 
-| Command     | Go API                     | Description                                                |
-| ----------- | -------------------------- | ---------------------------------------------------------- |
-| `DEL`       | `DB.Key().Delete`          | Deletes one or more keys.                                  |
-| `EXISTS`    | `DB.Key().Count`           | Determines whether one or more keys exist.                 |
-| `EXPIRE`    | `DB.Key().Expire`          | Sets the expiration time of a key (in seconds).            |
-| `EXPIREAT`  | `DB.Key().ExpireAt`        | Sets the expiration time of a key to a Unix timestamp.     |
-| `KEYS`      | `DB.Key().Keys`            | Returns all key names that match a pattern.                |
-| `PERSIST`   | `DB.Key().Persist`         | Removes the expiration time of a key.                      |
-| `PEXPIRE`   | `DB.Key().Expire`          | Sets the expiration time of a key in ms.                   |
-| `PEXPIREAT` | `DB.Key().ExpireAt`        | Sets the expiration time of a key to a Unix ms timestamp.  |
-| `RANDOMKEY` | `DB.Key().Random`          | Returns a random key name from the database.               |
-| `RENAME`    | `DB.Key().Rename`          | Renames a key and overwrites the destination.              |
-| `RENAMENX`  | `DB.Key().RenameNotExists` | Renames a key only when the target key name doesn't exist. |
-| `SCAN`      | `DB.Key().Scanner`         | Iterates over the key names in the database.               |
+```
+Command    Go API                    Description
+-------    ------                    -----------
+DEL        DB.Key().Delete           Deletes one or more keys.
+EXISTS     DB.Key().Count            Determines whether one or more keys exist.
+EXPIRE     DB.Key().Expire           Sets the expiration time of a key (in seconds).
+EXPIREAT   DB.Key().ExpireAt         Sets the expiration time of a key to a Unix timestamp.
+KEYS       DB.Key().Keys             Returns all key names that match a pattern.
+PERSIST    DB.Key().Persist          Removes the expiration time of a key.
+PEXPIRE    DB.Key().Expire           Sets the expiration time of a key in ms.
+PEXPIREAT  DB.Key().ExpireAt         Sets the expiration time of a key to a Unix ms timestamp.
+RANDOMKEY  DB.Key().Random           Returns a random key name from the database.
+RENAME     DB.Key().Rename           Renames a key and overwrites the destination.
+RENAMENX   DB.Key().RenameNotExists  Renames a key only when the target key name doesn't exist.
+SCAN       DB.Key().Scanner          Iterates over the key names in the database.
+```
 
 The following generic commands are not planned for 1.0:
 
@@ -137,11 +143,13 @@ WAIT  WAITAOF
 
 Redka supports the following transaction commands:
 
-| Command   | Go API                  | Description                             |
-| --------- | ----------------------- | --------------------------------------- |
-| `DISCARD` | `DB.View` / `DB.Update` | Discards a transaction.                 |
-| `EXEC`    | `DB.View` / `DB.Update` | Executes all commands in a transaction. |
-| `MULTI`   | `DB.View` / `DB.Update` | Starts a transaction.                   |
+```
+Command    Go API                 Description
+-------    ------                 -----------
+DISCARD    DB.View / DB.Update    Discards a transaction.
+EXEC       DB.View / DB.Update    Executes all commands in a transaction.
+MULTI      DB.View / DB.Update    Starts a transaction.
+```
 
 Unlike Redis, Redka's transactions are fully ACID, providing automatic rollback in case of failure.
 
@@ -155,10 +163,12 @@ UNWATCH  WATCH
 
 Redka supports only a couple of server and connection management commands:
 
-| Command   | Go API               | Description                        |
-| --------- | -------------------- | ---------------------------------- |
-| `ECHO`    | —                    | Returns the given string.          |
-| `FLUSHDB` | `DB.Key().DeleteAll` | Remove all keys from the database. |
+```
+Command    Go API                Description
+-------    ------                -----------
+ECHO       -                     Returns the given string.
+FLUSHDB    DB.Key().DeleteAll    Remove all keys from the database.
+```
 
 The rest of the server and connection management commands are not planned for 1.0.
 
