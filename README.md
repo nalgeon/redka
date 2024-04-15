@@ -439,7 +439,7 @@ pragma foreign_keys = on;
 
 Hardware: Apple M1 8-core CPU, 16GB RAM
 
-Results:
+Redis:
 
 ```
 redis-server --appendonly no
@@ -449,15 +449,24 @@ SET: 133262.25 requests per second, p50=0.055 msec
 GET: 139217.59 requests per second, p50=0.055 msec
 ```
 
+Redka (in-memory):
+
+```
+SET: 30084.24 requests per second, p50=0.255 msec
+GET: 63011.97 requests per second, p50=0.103 msec
+```
+
+Redka (persisted to disk):
+
 ```
 ./redka -p 6380 data.db
 redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 22551.47 requests per second, p50=0.255 msec
-GET: 56802.05 requests per second, p50=0.119 msec
+SET: 21913.01 requests per second, p50=0.335 msec
+GET: 56795.59 requests per second, p50=0.119 msec
 ```
 
-So while Redka is 2-6 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 23K writes/sec and 57K reads/sec, which is pretty good if you ask me.
+So while Redka is 2-6 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 22K writes/sec and 57K reads/sec, which is pretty good if you ask me.
 
 Note that running in a container may result in poorer performance.
 
