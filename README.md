@@ -452,6 +452,9 @@ GET: 139217.59 requests per second, p50=0.055 msec
 Redka (in-memory):
 
 ```
+./redka -p 6380
+redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
+
 SET: 30084.24 requests per second, p50=0.255 msec
 GET: 63011.97 requests per second, p50=0.103 msec
 ```
