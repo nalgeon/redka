@@ -11,11 +11,11 @@ import (
 type TypeID int
 
 const (
-	TypeString    = TypeID(1)
-	TypeList      = TypeID(2)
-	TypeSet       = TypeID(3)
-	TypeHash      = TypeID(4)
-	TypeSortedSet = TypeID(5)
+	TypeString TypeID = iota + 1
+	TypeList
+	TypeSet
+	TypeHash
+	TypeSortedSet
 )
 
 // InitialVersion is the initial version of the key.
