@@ -22,7 +22,7 @@ func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 	cmd.key = string(cmd.args[0])
 	at, err := strconv.Atoi(string(cmd.args[1]))
 	if err != nil {
-		return cmd, err
+		return cmd, ErrInvalidInt
 	}
 	cmd.at = time.UnixMilli(int64(multi * at))
 	return cmd, nil
