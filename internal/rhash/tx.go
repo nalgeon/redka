@@ -110,7 +110,7 @@ func (tx *Tx) Get(key, field string) (core.Value, error) {
 	args := []any{
 		sql.Named("key", key),
 		sql.Named("field", field),
-		sql.Named("mtime", now.UnixMilli()),
+		sql.Named("now", now.UnixMilli()),
 	}
 	row := tx.tx.QueryRow(sqlGet, args...)
 	_, val, err := scanValue(row)
