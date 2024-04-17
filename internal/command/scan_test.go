@@ -105,7 +105,7 @@ func TestScanParse(t *testing.T) {
 }
 
 func TestScanExec(t *testing.T) {
-	db, tx := getDB(t)
+	db, red := getDB(t)
 	defer db.Close()
 
 	_ = db.Str().Set("k11", "11")
@@ -119,7 +119,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 0")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)
@@ -133,7 +133,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 5")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)
@@ -147,7 +147,7 @@ func TestScanExec(t *testing.T) {
 		cmd := mustParse[*Scan]("scan 0 match k2*")
 		conn := new(fakeConn)
 
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 
 		sres := res.(rkey.ScanResult)
@@ -164,7 +164,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 0 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)
@@ -179,7 +179,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 2 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)
@@ -194,7 +194,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 4 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)
@@ -208,7 +208,7 @@ func TestScanExec(t *testing.T) {
 			cmd := mustParse[*Scan]("scan 5 match * count 2")
 			conn := new(fakeConn)
 
-			res, err := cmd.Run(conn, tx)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 
 			sres := res.(rkey.ScanResult)

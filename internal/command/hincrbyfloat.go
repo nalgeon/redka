@@ -2,8 +2,6 @@ package command
 
 import (
 	"strconv"
-
-	"github.com/nalgeon/redka"
 )
 
 // Increments the floating point value of a field by a number.
@@ -32,7 +30,7 @@ func parseHIncrByFloat(b baseCmd) (*HIncrByFloat, error) {
 	return cmd, nil
 }
 
-func (cmd *HIncrByFloat) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HIncrByFloat) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Hash().IncrFloat(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

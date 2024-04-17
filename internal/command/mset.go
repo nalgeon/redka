@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Atomically creates or modifies the string values of one or more keys.
 // MSET key value [key value ...]
 // https://redis.io/commands/mset
@@ -24,7 +22,7 @@ func parseMSet(b baseCmd) (*MSet, error) {
 	return cmd, nil
 }
 
-func (cmd *MSet) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *MSet) Run(w Writer, red Redka) (any, error) {
 	err := red.Str().SetMany(cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

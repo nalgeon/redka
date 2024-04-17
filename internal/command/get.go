@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Get returns the string value of a key.
 // GET key
 // https://redis.io/commands/get
@@ -19,7 +17,7 @@ func parseGet(b baseCmd) (*Get, error) {
 	return cmd, nil
 }
 
-func (cmd *Get) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Get) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Str().Get(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

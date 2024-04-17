@@ -3,8 +3,6 @@ package command
 import (
 	"strconv"
 	"time"
-
-	"github.com/nalgeon/redka"
 )
 
 // Set sets the string value of a key, ignoring its type.
@@ -86,7 +84,7 @@ func parseSet(b baseCmd) (*Set, error) {
 	return cmd, nil
 }
 
-func (cmd *Set) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 	var ok bool
 	var err error
 	if cmd.ifXX {
@@ -100,7 +98,7 @@ func (cmd *Set) Run(w Writer, red *redka.Tx) (any, error) {
 	return cmd.run(w, ok, err)
 }
 
-func (cmd *Set) RunTx(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Set) RunTx(w Writer, red Redka) (any, error) {
 	var ok bool
 	var err error
 	if cmd.ifXX {

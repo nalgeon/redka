@@ -47,7 +47,7 @@ func TestMGetParse(t *testing.T) {
 }
 
 func TestMGetExec(t *testing.T) {
-	db, tx := getDB(t)
+	db, red := getDB(t)
 	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
@@ -88,7 +88,7 @@ func TestMGetExec(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			conn := new(fakeConn)
-			res, err := test.cmd.Run(conn, tx)
+			res, err := test.cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.out(), test.out)

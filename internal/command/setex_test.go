@@ -62,12 +62,12 @@ func TestSetEXParse(t *testing.T) {
 
 func TestSetEXExec(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*SetEX]("setex name 60 alice")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
@@ -81,14 +81,14 @@ func TestSetEXExec(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*SetEX]("setex name 60 bob")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
@@ -102,14 +102,14 @@ func TestSetEXExec(t *testing.T) {
 	})
 
 	t.Run("change ttl", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := mustParse[*SetEX]("setex name 10 bob")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")

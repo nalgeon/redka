@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/rhash"
+	"github.com/nalgeon/redka/internal/rkey"
 )
 
 // Redis-like errors.
@@ -55,7 +58,100 @@ type Cmd interface {
 	Error(err error) string
 
 	// Run executes the command and writes the result to the writer.
-	Run(w Writer, red *redka.Tx) (any, error)
+	Run(w Writer, red Redka) (any, error)
+}
+
+// RKey is a key repository.
+type RKey interface {
+	Exists(key string) (bool, error)
+	Count(keys ...string) (int, error)
+	Keys(pattern string) ([]core.Key, error)
+	Scan(cursor int, pattern string, pageSize int) (rkey.ScanResult, error)
+	Scanner(pattern string, pageSize int) *rkey.Scanner
+	Random() (core.Key, error)
+	Get(key string) (core.Key, error)
+	Expire(key string, ttl time.Duration) (bool, error)
+	ExpireAt(key string, at time.Time) (bool, error)
+	Persist(key string) (bool, error)
+	Rename(key, newKey string) error
+	RenameNotExists(key, newKey string) (bool, error)
+	Delete(keys ...string) (int, error)
+	DeleteAll() error
+}
+
+// RStr is a string repository.
+type RStr interface {
+	Get(key string) (core.Value, error)
+	GetMany(keys ...string) (map[string]core.Value, error)
+	Set(key string, value any) error
+	SetExpires(key string, value any, ttl time.Duration) error
+	SetNotExists(key string, value any, ttl time.Duration) (bool, error)
+	SetExists(key string, value any, ttl time.Duration) (bool, error)
+	GetSet(key string, value any, ttl time.Duration) (core.Value, error)
+	SetMany(items map[string]any) error
+	SetManyNX(items map[string]any) (bool, error)
+	Incr(key string, delta int) (int, error)
+	IncrFloat(key string, delta float64) (float64, error)
+}
+
+// RHash is a hash repository.
+type RHash interface {
+	Get(key, field string) (core.Value, error)
+	GetMany(key string, fields ...string) (map[string]core.Value, error)
+	Exists(key, field string) (bool, error)
+	Items(key string) (map[string]core.Value, error)
+	Fields(key string) ([]string, error)
+	Values(key string) ([]core.Value, error)
+	Len(key string) (int, error)
+	Scan(key string, cursor int, pattern string, pageSize int) (rhash.ScanResult, error)
+	Scanner(key, pattern string, pageSize int) *rhash.Scanner
+	Set(key, field string, value any) (bool, error)
+	SetNotExists(key, field string, value any) (bool, error)
+	SetMany(key string, items map[string]any) (int, error)
+	Incr(key, field string, delta int) (int, error)
+	IncrFloat(key, field string, delta float64) (float64, error)
+	Delete(key string, fields ...string) (int, error)
+}
+
+// Redka is an abstraction for *redka.DB and *redka.Tx.
+// Used to execute commands in a unified way.
+type Redka struct {
+	key  RKey
+	str  RStr
+	hash RHash
+}
+
+// RedkaDB creates a new Redka instance for a database.
+func RedkaDB(db *redka.DB) Redka {
+	return Redka{
+		key:  db.Key(),
+		str:  db.Str(),
+		hash: db.Hash(),
+	}
+}
+
+// RedkaTx creates a new Redka instance for a transaction.
+func RedkaTx(tx *redka.Tx) Redka {
+	return Redka{
+		key:  tx.Key(),
+		str:  tx.Str(),
+		hash: tx.Hash(),
+	}
+}
+
+// Key returns the key repository.
+func (r Redka) Key() RKey {
+	return r.key
+}
+
+// Str returns the string repository.
+func (r Redka) Str() RStr {
+	return r.str
+}
+
+// Hash returns the hash repository.
+func (r Redka) Hash() RHash {
+	return r.hash
 }
 
 type baseCmd struct {

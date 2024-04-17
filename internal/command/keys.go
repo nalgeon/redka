@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Returns all key names that match a pattern.
 // KEYS pattern
 // https://redis.io/commands/keys
@@ -19,7 +17,7 @@ func parseKeys(b baseCmd) (*Keys, error) {
 	return cmd, nil
 }
 
-func (cmd *Keys) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Keys) Run(w Writer, red Redka) (any, error) {
 	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

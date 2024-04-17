@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Determines whether one or more keys exist.
 // EXISTS key [key ...]
 // https://redis.io/commands/exists
@@ -22,7 +20,7 @@ func parseExists(b baseCmd) (*Exists, error) {
 	return cmd, nil
 }
 
-func (cmd *Exists) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Exists) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Key().Count(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

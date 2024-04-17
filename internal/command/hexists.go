@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Determines whether a field exists in a hash.
 // HEXISTS key field
 // https://redis.io/commands/hexists
@@ -21,7 +19,7 @@ func parseHExists(b baseCmd) (*HExists, error) {
 	return cmd, nil
 }
 
-func (cmd *HExists) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HExists) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Hash().Exists(cmd.key, cmd.field)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

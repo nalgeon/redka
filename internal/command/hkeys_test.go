@@ -47,7 +47,7 @@ func TestHKeysParse(t *testing.T) {
 
 func TestHKeysExec(t *testing.T) {
 	t.Run("key found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
@@ -55,7 +55,7 @@ func TestHKeysExec(t *testing.T) {
 
 		cmd := mustParse[*HKeys]("hkeys person")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, []string{"age", "name"})
@@ -64,12 +64,12 @@ func TestHKeysExec(t *testing.T) {
 			true)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HKeys]("hkeys person")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, []string{})

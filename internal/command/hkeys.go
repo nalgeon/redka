@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Returns all fields in a hash.
 // HKEYS key
 // https://redis.io/commands/hkeys
@@ -19,7 +17,7 @@ func parseHKeys(b baseCmd) (*HKeys, error) {
 	return cmd, nil
 }
 
-func (cmd *HKeys) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HKeys) Run(w Writer, red Redka) (any, error) {
 	fields, err := red.Hash().Fields(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

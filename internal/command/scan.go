@@ -2,8 +2,6 @@ package command
 
 import (
 	"strconv"
-
-	"github.com/nalgeon/redka"
 )
 
 // Iterates over the key names in the database.
@@ -83,7 +81,7 @@ func parseScan(b baseCmd) (*Scan, error) {
 	return cmd, nil
 }
 
-func (cmd *Scan) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Scan) Run(w Writer, red Redka) (any, error) {
 	res, err := red.Key().Scan(cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

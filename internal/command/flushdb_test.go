@@ -39,7 +39,7 @@ func TestFlushDBParse(t *testing.T) {
 
 func TestFlushDBExec(t *testing.T) {
 	t.Run("full", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
@@ -47,7 +47,7 @@ func TestFlushDBExec(t *testing.T) {
 
 		cmd := mustParse[*FlushDB]("flushdb")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")
@@ -57,12 +57,12 @@ func TestFlushDBExec(t *testing.T) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*FlushDB]("flushdb")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "OK")

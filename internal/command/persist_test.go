@@ -47,14 +47,14 @@ func TestPersistParse(t *testing.T) {
 
 func TestPersistExec(t *testing.T) {
 	t.Run("persist to persist", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*Persist]("persist name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -64,14 +64,14 @@ func TestPersistExec(t *testing.T) {
 	})
 
 	t.Run("volatile to persist", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := mustParse[*Persist]("persist name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -81,14 +81,14 @@ func TestPersistExec(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
 		cmd := mustParse[*Persist]("persist age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")

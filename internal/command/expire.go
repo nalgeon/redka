@@ -3,8 +3,6 @@ package command
 import (
 	"strconv"
 	"time"
-
-	"github.com/nalgeon/redka"
 )
 
 // Sets the expiration time of a key in seconds.
@@ -30,7 +28,7 @@ func parseExpire(b baseCmd, multi int) (*Expire, error) {
 	return cmd, nil
 }
 
-func (cmd *Expire) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *Expire) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().Expire(cmd.key, cmd.ttl)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

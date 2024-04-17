@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Sets the values of one ore more fields in a hash.
 // HSET key field value [field value ...]
 // https://redis.io/commands/hset
@@ -24,7 +22,7 @@ func parseHSet(b baseCmd) (*HSet, error) {
 	return cmd, nil
 }
 
-func (cmd *HSet) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HSet) Run(w Writer, red Redka) (any, error) {
 	count, err := red.Hash().SetMany(cmd.key, cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

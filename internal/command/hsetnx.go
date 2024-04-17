@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Sets the value of a field in a hash only when the field doesn't exist.
 // HSETNX key field value
 // https://redis.io/commands/hsetnx
@@ -23,7 +21,7 @@ func parseHSetNX(b baseCmd) (*HSetNX, error) {
 	return cmd, nil
 }
 
-func (cmd *HSetNX) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HSetNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Hash().SetNotExists(cmd.key, cmd.field, cmd.value)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

@@ -68,12 +68,12 @@ func TestHSetParse(t *testing.T) {
 
 func TestHSetExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HSet]("hset person name alice")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 1)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -83,12 +83,12 @@ func TestHSetExec(t *testing.T) {
 	})
 
 	t.Run("create multiple", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HSet]("hset person name alice age 25")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 2)
 		testx.AssertEqual(t, conn.out(), "2")
@@ -100,14 +100,14 @@ func TestHSetExec(t *testing.T) {
 	})
 
 	t.Run("create/update", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HSet]("hset person name bob age 50")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 1)
 		testx.AssertEqual(t, conn.out(), "1")
@@ -119,7 +119,7 @@ func TestHSetExec(t *testing.T) {
 	})
 
 	t.Run("update multiple", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
@@ -127,7 +127,7 @@ func TestHSetExec(t *testing.T) {
 
 		cmd := mustParse[*HSet]("hset person name bob age 50")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, 0)
 		testx.AssertEqual(t, conn.out(), "0")

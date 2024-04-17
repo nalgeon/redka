@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Set the string value of a key only when the key doesn't exist.
 // SETNX key value
 // https://redis.io/commands/setnx
@@ -21,7 +19,7 @@ func parseSetNX(b baseCmd) (*SetNX, error) {
 	return cmd, nil
 }
 
-func (cmd *SetNX) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *SetNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Str().SetNotExists(cmd.key, cmd.value, 0)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

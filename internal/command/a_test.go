@@ -11,13 +11,13 @@ import (
 	"github.com/tidwall/redcon"
 )
 
-func getDB(tb testing.TB) (*redka.DB, *redka.Tx) {
+func getDB(tb testing.TB) (*redka.DB, Redka) {
 	tb.Helper()
 	db, err := redka.Open(":memory:", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return db, db.NoTx()
+	return db, RedkaDB(db)
 }
 
 func mustParse[T Cmd](s string) T {

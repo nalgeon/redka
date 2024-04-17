@@ -97,7 +97,7 @@ func handle(db *redka.DB) redcon.HandlerFunc {
 func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 	err := db.Update(func(tx *redka.Tx) error {
 		for _, pcmd := range state.cmds {
-			_, err := pcmd.Run(conn, tx)
+			_, err := pcmd.Run(conn, command.RedkaTx(tx))
 			if err != nil {
 				slog.Warn("run multi command", "client", conn.RemoteAddr(),
 					"name", pcmd.Name(), "err", err)
@@ -114,7 +114,7 @@ func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 // handleSingle processes a single command.
 func handleSingle(conn redcon.Conn, state *connState, db *redka.DB) {
 	pcmd := state.pop()
-	_, err := pcmd.Run(conn, db.NoTx())
+	_, err := pcmd.Run(conn, command.RedkaDB(db))
 	if err != nil {
 		slog.Warn("run single command", "client", conn.RemoteAddr(),
 			"name", pcmd.Name(), "err", err)

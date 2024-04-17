@@ -1,7 +1,5 @@
 package command
 
-import "github.com/nalgeon/redka"
-
 // Returns all values in a hash.
 // HVALS key
 // https://redis.io/commands/hvals
@@ -19,7 +17,7 @@ func parseHVals(b baseCmd) (*HVals, error) {
 	return cmd, nil
 }
 
-func (cmd *HVals) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *HVals) Run(w Writer, red Redka) (any, error) {
 	vals, err := red.Hash().Values(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

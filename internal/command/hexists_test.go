@@ -59,40 +59,40 @@ func TestHExistsParse(t *testing.T) {
 
 func TestHExistsExec(t *testing.T) {
 	t.Run("field found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HExists]("hexists person name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.out(), "1")
 	})
 	t.Run("field not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HExists]("hexists person age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)
 		testx.AssertEqual(t, conn.out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HExists]("hexists person name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, false)

@@ -60,40 +60,40 @@ func TestHGetParse(t *testing.T) {
 
 func TestHGetExec(t *testing.T) {
 	t.Run("field found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HGet]("hget person name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, core.Value("alice"))
 		testx.AssertEqual(t, conn.out(), "alice")
 	})
 	t.Run("field not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		cmd := mustParse[*HGet]("hget person age")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, core.Value(nil))
 		testx.AssertEqual(t, conn.out(), "(nil)")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, tx := getDB(t)
+		db, red := getDB(t)
 		defer db.Close()
 
 		cmd := mustParse[*HGet]("hget person name")
 		conn := new(fakeConn)
-		res, err := cmd.Run(conn, tx)
+		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, core.Value(nil))

@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/core"
 )
 
@@ -25,7 +24,7 @@ func parseMGet(b baseCmd) (*MGet, error) {
 	return cmd, nil
 }
 
-func (cmd *MGet) Run(w Writer, red *redka.Tx) (any, error) {
+func (cmd *MGet) Run(w Writer, red Redka) (any, error) {
 	// Get the key-value map for requested keys.
 	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {
