@@ -66,13 +66,6 @@ func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 	return d.execTx(ctx, false, f)
 }
 
-// NoTx creates a new domain transaction without the underlying
-// database transaction. Used for implementing database methods
-// while reusing the domain transaction logic.
-func (d *DB[T]) NoTx() T {
-	return d.newT(d.SQL)
-}
-
 // Init sets the connection properties and creates the necessary tables.
 func (d *DB[T]) init() error {
 	// SQLite only allows one writer at a time, so concurrent writes

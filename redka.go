@@ -125,12 +125,6 @@ func (db *DB) Key() *rkey.DB {
 	return db.keyDB
 }
 
-// // NoTx creates a new domain transaction without the underlying
-// // database transaction. You probably don't need this method.
-// func (db *DB) NoTx() *Tx {
-// 	return db.DB.NoTx()
-// }
-
 // Update executes a function within a writable transaction.
 // See the [tx] example for details.
 //
