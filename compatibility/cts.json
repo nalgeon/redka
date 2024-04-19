@@ -1,0 +1,7518 @@
+[
+  {
+    "name": "del command",
+    "command": [
+      "set k v",
+      "del k"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "unlink command",
+    "command": [
+      "set k v",
+      "unlink k"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "4.0.0"
+  },
+  {
+    "name": "rename command",
+    "command": [
+      "set k v",
+      "rename k kk"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "rename command",
+    "command": [
+      "set k v",
+      "rename k {k}k"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "renamenx command",
+    "command": [
+      "set k v",
+      "renamenx k kk"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "renamenx command",
+    "command": [
+      "set k v",
+      "renamenx k {k}k"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "randomkey command",
+    "command": [
+      "set k v",
+      "randomkey"
+    ],
+    "result": [
+      "OK",
+      "k"
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "exists command",
+    "command": [
+      "set k v",
+      "exists k"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "ttl command",
+    "command": [
+      "ttl non-exists"
+    ],
+    "result": [
+      -2
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "pttl command",
+    "command": [
+      "pttl non-exists"
+    ],
+    "result": [
+      -2
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "expire command",
+    "command": [
+      "expire non-exists 10"
+    ],
+    "result": [
+      0
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "expire with NX / XX",
+    "command": [
+      "set k v",
+      "expire k 10 NX",
+      "expire k 10 XX"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "expire with GT / LT",
+    "command": [
+      "set k v",
+      "expire k 10 lt",
+      "expire k 20 gt"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "expireat command",
+    "command": [
+      "expireat non-exists 10"
+    ],
+    "result": [
+      0
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "expireat with NX / XX",
+    "command": [
+      "set k v",
+      "expireat k 9999999998 NX",
+      "expireat k 9999999999 XX"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "expireat with GT / LT",
+    "command": [
+      "set k v",
+      "expireat k 9999999998 lt",
+      "expireat k 9999999999 gt"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pexpire command",
+    "command": [
+      "pexpire non-exists 10"
+    ],
+    "result": [
+      0
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "pexpire with NX / XX",
+    "command": [
+      "set k v",
+      "pexpire k 1000 NX",
+      "pexpire k 1000 XX"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pexpire with GT / LT",
+    "command": [
+      "set k v",
+      "pexpire k 1000 lt",
+      "pexpire k 2000 gt"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pexpireat command",
+    "command": [
+      "pexpireat non-exists 10"
+    ],
+    "result": [
+      0
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "pexpireat with NX / XX",
+    "command": [
+      "set k v",
+      "pexpireat k 9999999999998 NX",
+      "pexpireat k 9999999999999 XX"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pexpireat with GT / LT",
+    "command": [
+      "set k v",
+      "pexpireat k 9999999999998 lt",
+      "pexpireat k 9999999999999 gt"
+    ],
+    "result": [
+      "OK",
+      1,
+      1
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "expiretime command",
+    "command": [
+      "expiretime non-exists"
+    ],
+    "result": [
+      -2
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pexpiretime command",
+    "command": [
+      "pexpiretime non-exists"
+    ],
+    "result": [
+      -2
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "persist command",
+    "command": [
+      "persist non-exists"
+    ],
+    "result": [
+      0
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "dump command",
+    "command": [
+      "dump not-exists"
+    ],
+    "result": [
+      null
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "touch command",
+    "command": [
+      "touch not-exists"
+    ],
+    "result": [
+      0
+    ],
+    "since": "3.2.1"
+  },
+  {
+    "name": "restore command",
+    "command": [
+      "restore k 0 \\x00\\x01v\\x06\\x00\\a\\xe5\\xa62\\xecm\\xb6]"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "2.6.0",
+    "command_binary": true
+  },
+  {
+    "name": "restore with REPLACE",
+    "command": [
+      "set k v",
+      "restore k 0 \\x00\\x01v\\x06\\x00\\a\\xe5\\xa62\\xecm\\xb6] REPLACE"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "3.0.0",
+    "command_binary": true
+  },
+  {
+    "name": "restore with ABSTTL",
+    "command": [
+      "restore k 0 \\x00\\x01v\\x06\\x00\\a\\xe5\\xa62\\xecm\\xb6] ABSTTL",
+      "ttl k"
+    ],
+    "result": [
+      "OK",
+      -1
+    ],
+    "since": "5.0.0",
+    "command_binary": true
+  },
+  {
+    "name": "restore with IDLETIME",
+    "command": [
+      "restore k 0 \\x00\\x01v\\x06\\x00\\a\\xe5\\xa62\\xecm\\xb6] IDLETIME 1000"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "5.0.0",
+    "command_binary": true
+  },
+  {
+    "name": "scan command",
+    "command": [
+      "set k v",
+      "scan 0"
+    ],
+    "result": [
+      "OK",
+      [
+        "0",
+        [
+          "k"
+        ]
+      ]
+    ],
+    "since": "2.8.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "scan with TYPE",
+    "command": [
+      "geoadd geokey 0 0 value",
+      "scan 0 type zset"
+    ],
+    "result": [
+      1,
+      [
+        "0",
+        [
+          "geokey"
+        ]
+      ]
+    ],
+    "since": "6.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "keys command",
+    "command": [
+      "mset firstname Jack lastname Stuntman age 35",
+      "keys a??"
+    ],
+    "result": [
+      "OK",
+      [
+        "age"
+      ]
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "move command",
+    "command": [
+      "set k v",
+      "move k 1"
+    ],
+    "result": [
+      "OK",
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "copy command",
+    "command": [
+      "set k v",
+      "copy k kk",
+      "get kk"
+    ],
+    "result": [
+      "OK",
+      1,
+      "v"
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "copy command",
+    "command": [
+      "set k v",
+      "copy k {k}k",
+      "get {k}k"
+    ],
+    "result": [
+      "OK",
+      1,
+      "v"
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "type command",
+    "command": [
+      "set k v",
+      "type k"
+    ],
+    "result": [
+      "OK",
+      "string"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "sort command",
+    "command": [
+      "lpush list 5 3 4 1 2",
+      "sort list"
+    ],
+    "result": [
+      5,
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "sort_ro command",
+    "command": [
+      "lpush list 5 3 4 1 2",
+      "sort_ro list"
+    ],
+    "result": [
+      5,
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ]
+    ],
+    "since": "7.0.0",
+    "skipped": true
+  },
+  {
+    "name": "set command",
+    "command": [
+      "set k v"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "blmove command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist1 3",
+      "lpush mylist1 4",
+      "lpush mylist1 5",
+      "blmove mylist mylist1 left right 3.14",
+      "lrange mylist1 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      1,
+      2,
+      3,
+      "2",
+      [
+        "5",
+        "4",
+        "3",
+        "2"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "blmove command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush {mylist}1 3",
+      "lpush {mylist}1 4",
+      "lpush {mylist}1 5",
+      "blmove mylist {mylist}1 left right 3.14",
+      "lrange {mylist}1 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      1,
+      2,
+      3,
+      "2",
+      [
+        "5",
+        "4",
+        "3",
+        "2"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "blmpop command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "blmpop 3.14 1 mylist LEFT"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "mylist",
+        [
+          "1"
+        ]
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "blmpop with COUNT",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist 3",
+      "lpush mylist 4",
+      "lpush mylist1 0",
+      "lpush mylist1 1",
+      "lpush mylist1 2",
+      "lpush mylist1 3",
+      "lpush mylist1 4",
+      "blmpop 3.14 2 mylist mylist1 right count 5",
+      "blmpop 3.14 2 mylist mylist1 right count 2",
+      "exists mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "mylist",
+        [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      ],
+      [
+        "mylist1",
+        [
+          "0",
+          "1"
+        ]
+      ],
+      0
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "blmpop with COUNT",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist 3",
+      "lpush mylist 4",
+      "lpush {mylist}1 0",
+      "lpush {mylist}1 1",
+      "lpush {mylist}1 2",
+      "lpush {mylist}1 3",
+      "lpush {mylist}1 4",
+      "blmpop 3.14 2 mylist {mylist}1 right count 5",
+      "blmpop 3.14 2 mylist {mylist}1 right count 2",
+      "exists mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "mylist",
+        [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      ],
+      [
+        "{mylist}1",
+        [
+          "0",
+          "1"
+        ]
+      ],
+      0
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "blpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist1 2",
+      "rpush mylist1 3",
+      "blpop mylist mylist1 0"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "0"
+      ]
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "blpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush {mylist}1 2",
+      "rpush {mylist}1 3",
+      "blpop mylist {mylist}1 0"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "0"
+      ]
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "blpop with double timeout",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist1 2",
+      "rpush mylist1 3",
+      "blpop mylist mylist 3.14"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "0"
+      ]
+    ],
+    "since": "6.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "blpop with double timeout",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush {mylist}1 2",
+      "rpush {mylist}1 3",
+      "blpop mylist {mylist}1 3.14"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "0"
+      ]
+    ],
+    "since": "6.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "brpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist1 2",
+      "rpush mylist1 3",
+      "brpop mylist mylist1 0"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "1"
+      ]
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "brpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush {mylist}1 2",
+      "rpush {mylist}1 3",
+      "brpop mylist {mylist}1 0"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "1"
+      ]
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "brpop with double timeout",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist1 2",
+      "rpush mylist1 3",
+      "brpop mylist mylist1 3.14"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "1"
+      ]
+    ],
+    "since": "6.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "brpop with double timeout",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush {mylist}1 2",
+      "rpush {mylist}1 3",
+      "brpop mylist {mylist}1 3.14"
+    ],
+    "result": [
+      1,
+      2,
+      1,
+      2,
+      [
+        "mylist",
+        "1"
+      ]
+    ],
+    "since": "6.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "brpoplpush command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist1 1",
+      "brpoplpush mylist mylist1 0"
+    ],
+    "result": [
+      1,
+      1,
+      "0"
+    ],
+    "since": "2.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "brpoplpush command",
+    "command": [
+      "lpush mylist 0",
+      "lpush {mylist}1 1",
+      "brpoplpush mylist {mylist}1 0"
+    ],
+    "result": [
+      1,
+      1,
+      "0"
+    ],
+    "since": "2.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "brpoplpush with double timeout",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist1 1",
+      "brpoplpush mylist mylist1 3.14"
+    ],
+    "result": [
+      1,
+      1,
+      "0"
+    ],
+    "since": "6.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "brpoplpush with double timeout",
+    "command": [
+      "lpush mylist 0",
+      "lpush {mylist}1 1",
+      "brpoplpush mylist {mylist}1 3.14"
+    ],
+    "result": [
+      1,
+      1,
+      "0"
+    ],
+    "since": "6.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lindex command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lindex mylist -1"
+    ],
+    "result": [
+      1,
+      2,
+      "0"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "linsert command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 2",
+      "linsert mylist before 2 1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      [
+        "0",
+        "1",
+        "2"
+      ]
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "llen command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "llen mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      3
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "lmove command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist1 3",
+      "lpush mylist1 4",
+      "lpush mylist1 5",
+      "lmove mylist mylist1 left right",
+      "lrange mylist1 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      1,
+      2,
+      3,
+      "2",
+      [
+        "5",
+        "4",
+        "3",
+        "2"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lmove command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush {mylist}1 3",
+      "lpush {mylist}1 4",
+      "lpush {mylist}1 5",
+      "lmove mylist {mylist}1 left right",
+      "lrange {mylist}1 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      1,
+      2,
+      3,
+      "2",
+      [
+        "5",
+        "4",
+        "3",
+        "2"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lmpop command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lmpop 1 mylist LEFT"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "mylist",
+        [
+          "1"
+        ]
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "lmpop with COUNT",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist 3",
+      "lpush mylist 4",
+      "lpush mylist1 0",
+      "lpush mylist1 1",
+      "lpush mylist1 2",
+      "lpush mylist1 3",
+      "lpush mylist1 4",
+      "lmpop 2 mylist mylist1 right count 5",
+      "lmpop 2 mylist mylist1 right count 2",
+      "exists mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "mylist",
+        [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      ],
+      [
+        "mylist1",
+        [
+          "0",
+          "1"
+        ]
+      ],
+      0
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lmpop with COUNT",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpush mylist 2",
+      "lpush mylist 3",
+      "lpush mylist 4",
+      "lpush {mylist}1 0",
+      "lpush {mylist}1 1",
+      "lpush {mylist}1 2",
+      "lpush {mylist}1 3",
+      "lpush {mylist}1 4",
+      "lmpop 2 mylist {mylist}1 right count 5",
+      "lmpop 2 mylist {mylist}1 right count 2",
+      "exists mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "mylist",
+        [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      ],
+      [
+        "{mylist}1",
+        [
+          "0",
+          "1"
+        ]
+      ],
+      0
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist 4",
+      "lpop mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      "0"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "lpop with COUNT",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist 4",
+      "lpop mylist 2"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "lpos command",
+    "command": [
+      "rpush mylist a",
+      "rpush mylist b",
+      "rpush mylist c",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist c",
+      "rpush mylist c",
+      "lpos mylist c"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      2
+    ],
+    "since": "6.0.6"
+  },
+  {
+    "name": "lpos with RANK",
+    "command": [
+      "rpush mylist a",
+      "rpush mylist b",
+      "rpush mylist c",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist c",
+      "rpush mylist c",
+      "lpos mylist c rank -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      7
+    ],
+    "since": "6.0.6"
+  },
+  {
+    "name": "lpos with COUNT",
+    "command": [
+      "rpush mylist a",
+      "rpush mylist b",
+      "rpush mylist c",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist c",
+      "rpush mylist c",
+      "lpos mylist c count 2"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      [
+        2,
+        6
+      ]
+    ],
+    "since": "6.0.6"
+  },
+  {
+    "name": "lpos with MAXLEN",
+    "command": [
+      "rpush mylist a",
+      "rpush mylist b",
+      "rpush mylist c",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist c",
+      "rpush mylist c",
+      "lpos mylist c maxlen 2"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      null
+    ],
+    "since": "6.0.6"
+  },
+  {
+    "name": "lpos with RANK, COUNT and MAXLEN",
+    "command": [
+      "rpush mylist a",
+      "rpush mylist b",
+      "rpush mylist c",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist c",
+      "rpush mylist c",
+      "lpos mylist c rank -1 count 0 maxlen 10"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      [
+        7,
+        6,
+        2
+      ]
+    ],
+    "since": "6.0.6"
+  },
+  {
+    "name": "lpush command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "1",
+        "0"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "lpush with multiple element",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "1",
+        "0"
+      ]
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "lpushx command",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpushx mylist 2",
+      "lpushx myotherlist 0"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      0
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "lpushx with multiple element",
+    "command": [
+      "lpush mylist 0",
+      "lpush mylist 1",
+      "lpushx mylist 2 3",
+      "lpushx myotherlist 0 1"
+    ],
+    "result": [
+      1,
+      2,
+      4,
+      0
+    ],
+    "since": "4.0.0"
+  },
+  {
+    "name": "lrange command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      [
+        "0",
+        "1",
+        "2"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "lrem command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist 3",
+      "rpush mylist 3",
+      "rpush mylist 4",
+      "rpush mylist 5",
+      "lrem mylist -1 0",
+      "lrem mylist 1 2",
+      "lrem mylist 0 3"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      1,
+      1,
+      3
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "lset command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "lset mylist 0 3",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      "OK",
+      [
+        "3",
+        "1",
+        "2"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "ltrim command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "ltrim mylist 1 -1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      "OK",
+      [
+        "1",
+        "2"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "rpop command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist 4",
+      "rpop mylist"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      "4"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "rpop with COUNT",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpush mylist 2",
+      "rpush mylist 3",
+      "rpush mylist 4",
+      "rpop mylist 2"
+    ],
+    "result": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      [
+        "4",
+        "3"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "rpoplpush command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpoplpush mylist myotherlist",
+      "lrange myotherlist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      "1",
+      [
+        "1"
+      ]
+    ],
+    "since": "1.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "rpoplpush command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "rpoplpush mylist {mylist}otherlist",
+      "lrange {mylist}otherlist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      "1",
+      [
+        "1"
+      ]
+    ],
+    "since": "1.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "rpush command",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "rpush with multiple element",
+    "command": [
+      "rpush mylist 0",
+      "rpush mylist 1",
+      "lrange mylist 0 -1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "rpushx command",
+    "command": [
+      "rpush mylist 0",
+      "rpushx mylist 1",
+      "rpushx myotherlist 0"
+    ],
+    "result": [
+      1,
+      2,
+      0
+    ],
+    "since": "2.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "rpushx command",
+    "command": [
+      "rpush mylist 0",
+      "rpushx mylist 1",
+      "rpushx {mylist}otherlist 0"
+    ],
+    "result": [
+      1,
+      2,
+      0
+    ],
+    "since": "2.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "rpushx with multiple element",
+    "command": [
+      "rpush mylist 0",
+      "rpushx mylist 1 2",
+      "rpushx myotherlist 0 1"
+    ],
+    "result": [
+      1,
+      3,
+      0
+    ],
+    "since": "4.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "rpushx with multiple element",
+    "command": [
+      "rpush mylist 0",
+      "rpushx mylist 1 2",
+      "rpushx {mylist}otherlist 0 1"
+    ],
+    "result": [
+      1,
+      3,
+      0
+    ],
+    "since": "4.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sadd command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset 0"
+    ],
+    "result": [
+      1,
+      1,
+      0
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "sadd command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1, 2, 3",
+      "sadd myset 0"
+    ],
+    "result": [
+      1,
+      3,
+      0
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "scard command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "scard myset"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "sdiff command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset 2",
+      "sadd myset1 2",
+      "sadd myset1 3",
+      "sadd myset1 4",
+      "sdiff myset myset1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "sort_result": true,
+    "tags": "standalone"
+  },
+  {
+    "name": "sdiff command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset 2",
+      "sadd {myset}1 2",
+      "sadd {myset}1 3",
+      "sadd {myset}1 4",
+      "sdiff myset {myset}1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "sort_result": true,
+    "tags": "cluster"
+  },
+  {
+    "name": "sdiffstore command",
+    "command": [
+      "sadd myset1 0",
+      "sadd myset1 1",
+      "sadd myset1 2",
+      "sadd myset2 2",
+      "sadd myset2 3",
+      "sadd myset2 4",
+      "sdiffstore myset myset1 myset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sdiffstore command",
+    "command": [
+      "sadd {myset}1 0",
+      "sadd {myset}1 1",
+      "sadd {myset}1 2",
+      "sadd {myset}2 2",
+      "sadd {myset}2 3",
+      "sadd {myset}2 4",
+      "sdiffstore myset {myset}1 {myset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sinter command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset1 1",
+      "sadd myset1 2",
+      "sinter myset myset1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sinter command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd {myset}1 1",
+      "sadd {myset}1 2",
+      "sinter myset {myset}1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sintercard command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset1 1",
+      "sadd myset1 2",
+      "sintercard 2 myset myset1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sintercard command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd {myset}1 1",
+      "sadd {myset}1 2",
+      "sintercard 2 myset {myset}1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sintercard with LIMIT",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myset1 1",
+      "sadd myset1 2",
+      "sintercard 2 myset myset1 limit 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sintercard with LIMIT",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd {myset}1 1",
+      "sadd {myset}1 2",
+      "sintercard 2 myset {myset}1 limit 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sinterstore command",
+    "command": [
+      "sadd myset1 0",
+      "sadd myset1 1",
+      "sadd myset2 1",
+      "sadd myset2 2",
+      "sinterstore myset myset1 myset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sinterstore command",
+    "command": [
+      "sadd {myset}1 0",
+      "sadd {myset}1 1",
+      "sadd {myset}2 1",
+      "sadd {myset}2 2",
+      "sinterstore myset {myset}1 {myset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "sismember command",
+    "command": [
+      "sadd myset 0",
+      "sismember myset 0",
+      "sismember myset 1"
+    ],
+    "result": [
+      1,
+      1,
+      0
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "smembers command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "smembers myset"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "sort_result": true
+  },
+  {
+    "name": "smismember command",
+    "command": [
+      "sadd myset 0",
+      "smismember myset 0 1"
+    ],
+    "result": [
+      1,
+      [
+        1,
+        0
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "smove command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd myotherset 2",
+      "smove myset myotherset 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "smove command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sadd {myset}otherset 2",
+      "smove myset {myset}otherset 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "spop command",
+    "command": [
+      "sadd myset 0",
+      "spop myset"
+    ],
+    "result": [
+      1,
+      "0"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "spop with COUNT",
+    "command": [
+      "sadd myset 0",
+      "spop myset 1"
+    ],
+    "result": [
+      1,
+      [
+        "0"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "srandmember command",
+    "command": [
+      "sadd myset 0",
+      "srandmember myset"
+    ],
+    "result": [
+      1,
+      "0"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "srandmember with COUNT",
+    "command": [
+      "sadd myset 0",
+      "srandmember myset 1"
+    ],
+    "result": [
+      1,
+      [
+        "0"
+      ]
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "srem command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "srem myset 0",
+      "srem myset 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      0
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "srem with multiple member",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "srem myset 0 1",
+      "srem myset 2"
+    ],
+    "result": [
+      1,
+      1,
+      2,
+      0
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "sscan command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sscan myset 0"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        [
+          "0",
+          "1"
+        ]
+      ]
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "sscan with MATCH and COUNT",
+    "command": [
+      "sadd myset 0",
+      "sadd myset 1",
+      "sscan myset 0 match * count 10"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        [
+          "0",
+          "1"
+        ]
+      ]
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "sunion command",
+    "command": [
+      "sadd myset 0",
+      "sadd myset1 1",
+      "sunion myset myset1"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "sort_result": true,
+    "tags": "standalone"
+  },
+  {
+    "name": "sunion command",
+    "command": [
+      "sadd myset 0",
+      "sadd {myset}1 1",
+      "sunion myset {myset}1"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "1.0.0",
+    "sort_result": true,
+    "tags": "cluster"
+  },
+  {
+    "name": "sunionstore command",
+    "command": [
+      "sadd myset1 0",
+      "sadd myset2 1",
+      "sunionstore myset myset1 myset2"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sunionstore command",
+    "command": [
+      "sadd {myset}1 0",
+      "sadd {myset}2 1",
+      "sunionstore myset {myset}1 {myset}2"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "bzmpop command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 3 three",
+      "bzmpop 0 2 myzset myzset1 MIN"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "bzmpop command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 3 three",
+      "bzmpop 0 2 myzset {myzset}1 MIN"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "bzmpop with COUNT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 3 three",
+      "bzmpop 3.14 2 myzset myzset1 MIN count 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ],
+          [
+            "two",
+            "2"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "bzmpop with COUNT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 3 three",
+      "bzmpop 3.14 2 myzset {myzset}1 MIN count 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ],
+          [
+            "two",
+            "2"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "bzpopmax command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "bzpopmax myzset 0"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        "three",
+        "3"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "bzpopmax with double timeout",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "bzpopmax myzset 3.14"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        "three",
+        "3"
+      ]
+    ],
+    "since": "6.0.0"
+  },
+  {
+    "name": "bzpopmin command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "bzpopmin myzset 0"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        "one",
+        "1"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "bzpopmin with double timeout",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "bzpopmin myzset 3.14"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        "one",
+        "1"
+      ]
+    ],
+    "since": "6.0.0"
+  },
+  {
+    "name": "zadd command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 1 uno",
+      "zrange myzset 0 -1"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "one",
+        "uno"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zadd with multiple elements",
+    "command": [
+      "zadd myzset 1 one 1 uno",
+      "zrange myzset 0 -1"
+    ],
+    "result": [
+      2,
+      [
+        "one",
+        "uno"
+      ]
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "zadd with XX / NX / CH / INCR",
+    "command": [
+      "zadd myzset 1 one 1 uno",
+      "zadd myzset xx 2 one 2 two",
+      "zadd myzset nx 3 uno 3 three",
+      "zadd myzset ch 1 one 1 uno 3 three",
+      "zadd myzset 3 five",
+      "zadd incr 2 five"
+    ],
+    "result": [
+      2,
+      0,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "3.0.2"
+  },
+  {
+    "name": "zadd with GT / LT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset gt 10 one",
+      "zadd myzset 10 uno",
+      "zadd myzset lt 1 uno",
+      "zrange myzset 0 -1 withscores"
+    ],
+    "result": [
+      1,
+      0,
+      1,
+      0,
+      [
+        "uno",
+        "1",
+        "one",
+        "10"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zcard command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 uno",
+      "zcard myzset"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zcount command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 uno",
+      "zcount myzset -inf +inf"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "zdiff command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zdiff 2 myzset1 myzset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zdiff command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zdiff 2 {myzset}1 {myzset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zdiffstore command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zdiffstore myzset 2 myzset1 myzset2",
+      "zrange myzset 0 -1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zdiffstore command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zdiffstore myzset 2 {myzset}1 {myzset}2",
+      "zrange myzset 0 -1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zincrby command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zincrby myzset 2 one",
+      "zrange myzset 0 -1 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      "3",
+      [
+        "two",
+        "2",
+        "one",
+        "3"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zinter command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinter 2 myzset1 myzset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinter command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinter 2 {myzset}1 {myzset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinter with WEIGHTS",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinter 2 myzset1 myzset2 weights 2 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinter with WEIGHTS",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinter 2 {myzset}1 {myzset}2 weights 2 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinter with AGGREGATE",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinter 2 myzset1 myzset2 aggregate sum"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinter with AGGREGATE",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinter 2 {myzset}1 {myzset}2 aggregate sum"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinter WITHSCORES",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinter 2 myzset1 myzset2 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "2",
+        "two",
+        "4"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinter WITHSCORES",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinter 2 {myzset}1 {myzset}2 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "2",
+        "two",
+        "4"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zintercard command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zintercard 2 myzset1 myzset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zintercard command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zintercard 2 {myzset}1 {myzset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zintercard with LIMIT",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zintercard 2 myzset1 myzset2 limit 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zintercard with LIMIT",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zintercard 2 {myzset}1 {myzset}2 limit 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinterstore command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinterstore myzset 2 myzset1 myzset2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinterstore command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinterstore myzset 2 {myzset}1 {myzset}2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinterstore with WEIGHTS",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinterstore myzset 2 myzset1 myzset2 weights 2 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinterstore with WEIGHTS",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinterstore myzset 2 {myzset}1 {myzset}2 weights 2 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zinterstore with AGGREGATE",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset2 1 one",
+      "zadd myzset2 2 two",
+      "zadd myzset2 3 three",
+      "zinterstore myzset 2 myzset1 myzset2 aggregate sum"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zinterstore with AGGREGATE",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}2 1 one",
+      "zadd {myzset}2 2 two",
+      "zadd {myzset}2 3 three",
+      "zinterstore myzset 2 {myzset}1 {myzset}2 aggregate sum"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zlexcount command",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c",
+      "zlexcount myzset - +"
+    ],
+    "result": [
+      3,
+      3
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zmpop command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 3 three",
+      "zmpop 1 myzset MIN"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "zmpop with COUNT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 3 three",
+      "zmpop 1 myzset MIN count 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "myzset",
+        [
+          [
+            "one",
+            "1"
+          ],
+          [
+            "two",
+            "2"
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "zmscore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zmscore myzset one two three"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "1",
+        "2",
+        null
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zpopmax command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zpopmax myzset"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "three",
+        "3"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "zpopmax with COUNT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zpopmax myzset 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "three",
+        "3",
+        "two",
+        "2"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "zpopmin command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zpopmin myzset"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "zpopmin command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zpopmin myzset 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1",
+        "two",
+        "2"
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "zrandmember command",
+    "command": [
+      "zadd myzset 0 a",
+      "zrandmember myzset"
+    ],
+    "result": [
+      1,
+      "a"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrandmember with COUNT",
+    "command": [
+      "zadd myzset 0 a",
+      "zrandmember myzset -2"
+    ],
+    "result": [
+      1,
+      [
+        "a",
+        "a"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrandmember with WITHSCORES",
+    "command": [
+      "zadd myzset 0 a",
+      "zrandmember myzset -1 withscores"
+    ],
+    "result": [
+      1,
+      [
+        "a",
+        "0"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrange command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrange myzset 0 -1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two",
+        "three"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrange with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrange myzset 0 -1 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1",
+        "two",
+        "2",
+        "three",
+        "3"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrange with BYSCORE / BYLEX",
+    "command": [
+      "zadd myzset 1 a",
+      "zadd myzset 2 b",
+      "zadd myzset 3 c",
+      "zrange myzset 0 1 byscore",
+      "zrange myzset [a [b bylex"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "a"
+      ],
+      [
+        "a",
+        "b"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrange with REV",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrange myzset 0 1 rev"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "three",
+        "two"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrange with LIMIT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrange myzset 0 1 byscore limit 0 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "zrangebylex command",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e",
+      "zrangebylex myzset - [c"
+    ],
+    "result": [
+      5,
+      [
+        "a",
+        "b",
+        "c"
+      ]
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zrangebylex with LIMIT",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e",
+      "zrangebylex myzset - [c limit 0 3"
+    ],
+    "result": [
+      5,
+      [
+        "a",
+        "b",
+        "c"
+      ]
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zrangebyscore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrangebyscore myzset -inf +inf"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two",
+        "three"
+      ]
+    ],
+    "since": "1.0.5"
+  },
+  {
+    "name": "zrangebyscore with LIMIT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrangebyscore myzset -inf +inf limit 0 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "since": "1.0.5"
+  },
+  {
+    "name": "zrangebyscore with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrangebyscore myzset -inf +inf withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1",
+        "two",
+        "2",
+        "three",
+        "3"
+      ]
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "zrangestore command",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zrangestore myzset myzset1 0 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zrangestore command",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zrangestore myzset {myzset}1 0 1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zrangestore with BYSCORE / BYLEX",
+    "command": [
+      "zadd myzset1 1 a",
+      "zadd myzset1 2 b",
+      "zadd myzset1 3 c",
+      "zrangestore myzset myzset1 0 1 byscore",
+      "zrangestore myzset myzset1 [a [b bylex"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zrangestore with BYSCORE / BYLEX",
+    "command": [
+      "zadd {myzset}1 1 a",
+      "zadd {myzset}1 2 b",
+      "zadd {myzset}1 3 c",
+      "zrangestore myzset {myzset}1 0 1 byscore",
+      "zrangestore myzset {myzset}1 [a [b bylex"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zrangestore with REV",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zrangestore myzset myzset1 0 1 rev"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zrangestore with REV",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zrangestore myzset {myzset}1 0 1 rev"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zrangestore with LIMIT",
+    "command": [
+      "zadd myzset1 1 one",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zrangestore myzset myzset1 1 3 byscore limit 1 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zrangestore with LIMIT",
+    "command": [
+      "zadd {myzset}1 1 one",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zrangestore myzset {myzset}1 1 3 byscore limit 1 2"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zrank command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrank myzset two"
+    ],
+    "result": [
+      1,
+      1,
+      1
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "zrank with WITHSCORE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrank myzset two withscore"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        1,
+        "2"
+      ]
+    ],
+    "since": "7.2.0"
+  },
+  {
+    "name": "zrem command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrem myzset two"
+    ],
+    "result": [
+      1,
+      1,
+      1
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrem with multiple elements",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrem myzset two one"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "zremrangebylex command",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e",
+      "zremrangebylex myzset [a [b"
+    ],
+    "result": [
+      5,
+      2
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zremrangebyrank command",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e",
+      "zremrangebyrank myzset 0 1"
+    ],
+    "result": [
+      5,
+      2
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "zremrangebyscore command",
+    "command": [
+      "zadd myzset 0 a 1 b 2 c 3 d 4 e",
+      "zremrangebylex myzset [a [b"
+    ],
+    "result": [
+      5,
+      2
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrevrange command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrevrange myzset 0 -1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "three",
+        "two",
+        "one"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrevrange with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset 3 three",
+      "zrevrange myzset 0 -1 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      [
+        "three",
+        "3",
+        "two",
+        "2",
+        "one",
+        "1"
+      ]
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zrevrangebylex command",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e 0 f 0 g",
+      "zrevrangebylex myzset [c -"
+    ],
+    "result": [
+      7,
+      [
+        "c",
+        "b",
+        "a"
+      ]
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zrevrangebylex with LIMIT",
+    "command": [
+      "zadd myzset 0 a 0 b 0 c 0 d 0 e 0 f 0 g",
+      "zrevrangebylex myzset [c - limit 2 2"
+    ],
+    "result": [
+      7,
+      [
+        "a"
+      ]
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "zrevrangebyscore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrangebyscore myzset +inf -inf"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "two",
+        "one"
+      ]
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "zrevrangebyscore with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrangebyscore myzset +inf -inf withscores"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "two",
+        "2",
+        "one",
+        "1"
+      ]
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "zrevrangebyscore with LIMIT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrangebyscore myzset +inf -inf limit 1 1"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "one"
+      ]
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "zrevrangebyscore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrangebyscore myzset +inf -inf"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "two",
+        "one"
+      ]
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "zrevrank command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrank myzset one"
+    ],
+    "result": [
+      1,
+      1,
+      1
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "zrevrank with WITHSCORE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zrevrank myzset one withscore"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        1,
+        "1"
+      ]
+    ],
+    "since": "7.2.0"
+  },
+  {
+    "name": "zscan command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zscan myzset 0"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        [
+          "one",
+          "1",
+          "two",
+          "2"
+        ]
+      ]
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "zscan with MATCH and COUNT",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zscan myzset 0 match * count 10"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        [
+          "one",
+          "1",
+          "two",
+          "2"
+        ]
+      ]
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "zscore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zscore myzset one"
+    ],
+    "result": [
+      1,
+      "1"
+    ],
+    "since": "1.2.0"
+  },
+  {
+    "name": "zunion command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zunion 2 myzset myzset1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "three",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zunion command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zunion 2 myzset {myzset}1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "three",
+        "two"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zunion with WEIGHTS and AGGREGATE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zunion 2 myzset myzset1 weights 2 2 aggregate max"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two",
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zunion with WEIGHTS and AGGREGATE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zunion 2 myzset {myzset}1 weights 2 2 aggregate max"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "two",
+        "three"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zunion with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zunion 2 myzset myzset1 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1",
+        "three",
+        "3",
+        "two",
+        "4"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zunion with WITHSCORES",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zunion 2 myzset {myzset}1 withscores"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      [
+        "one",
+        "1",
+        "three",
+        "3",
+        "two",
+        "4"
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zunionstore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zunionstore out 2 myzset myzset1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      3
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zunionstore command",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zunionstore {myzset}out 2 myzset {myzset}1"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      3
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "zunionstore with WEIGHTS and AGGREGATE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd myzset1 2 two",
+      "zadd myzset1 3 three",
+      "zunionstore out 2 myzset myzset1 weights 1 1 aggregate max"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      3
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "zunionstore with WEIGHTS and AGGREGATE",
+    "command": [
+      "zadd myzset 1 one",
+      "zadd myzset 2 two",
+      "zadd {myzset}1 2 two",
+      "zadd {myzset}1 3 three",
+      "zunionstore {myzset}out 2 myzset {myzset}1 weights 1 1 aggregate max"
+    ],
+    "result": [
+      1,
+      1,
+      1,
+      1,
+      3
+    ],
+    "since": "2.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "append command",
+    "command": [
+      "append mykey real",
+      "append mykey daz",
+      "getrange mykey 0 -1"
+    ],
+    "result": [
+      4,
+      7,
+      "realdaz"
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "decr command",
+    "command": [
+      "set mykey 10",
+      "decr mykey"
+    ],
+    "result": [
+      "OK",
+      9
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "decrby command",
+    "command": [
+      "set mykey 10",
+      "decrby mykey 3"
+    ],
+    "result": [
+      "OK",
+      7
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "get command",
+    "command": [
+      "set mykey 10",
+      "get mykey"
+    ],
+    "result": [
+      "OK",
+      "10"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "getdel command",
+    "command": [
+      "set mykey 10",
+      "getdel mykey",
+      "getdel mykey"
+    ],
+    "result": [
+      "OK",
+      "10",
+      null
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex command",
+    "command": [
+      "set mykey hello",
+      "getex mykey",
+      "ttl mykey"
+    ],
+    "result": [
+      "OK",
+      "hello",
+      -1
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex with EX",
+    "command": [
+      "set mykey hello",
+      "getex mykey ex 1"
+    ],
+    "result": [
+      "OK",
+      "hello"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex with PX",
+    "command": [
+      "set mykey hello",
+      "getex mykey px 1000"
+    ],
+    "result": [
+      "OK",
+      "hello"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex with EXAT",
+    "command": [
+      "set mykey hello",
+      "getex mykey exat 1",
+      "ttl mykey"
+    ],
+    "result": [
+      "OK",
+      "hello",
+      -2
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex with PXAT",
+    "command": [
+      "set mykey hello",
+      "getex mykey pxat 1",
+      "ttl mykey"
+    ],
+    "result": [
+      "OK",
+      "hello",
+      -2
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getex with PERSIST",
+    "command": [
+      "setex mykey 10 hello",
+      "getex mykey persist",
+      "ttl mykey"
+    ],
+    "result": [
+      "OK",
+      "hello",
+      -1
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "getrange command",
+    "command": [
+      "set mylist abcd",
+      "getrange mylist 0 3"
+    ],
+    "result": [
+      "OK",
+      "abcd"
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "getset command",
+    "command": [
+      "set mylist abcd",
+      "getset mylist bcde",
+      "get mylist"
+    ],
+    "result": [
+      "OK",
+      "abcd",
+      "bcde"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "incr command",
+    "command": [
+      "set mykey 10",
+      "incr mykey",
+      "get mykey"
+    ],
+    "result": [
+      "OK",
+      11,
+      "11"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "incrby command",
+    "command": [
+      "set mykey 10",
+      "incrby mykey 5",
+      "get mykey"
+    ],
+    "result": [
+      "OK",
+      15,
+      "15"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "incrbyfloat command",
+    "command": [
+      "set mykey 0.5",
+      "incrbyfloat mykey 1.123",
+      "get mykey",
+      "del mykey"
+    ],
+    "result": [
+      "OK",
+      "1.623",
+      "1.623",
+      1
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "lcs command",
+    "command": [
+      "mset key1 myoldtext key2 mynewtext",
+      "lcs key1 key2"
+    ],
+    "result": [
+      "OK",
+      "mytext"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lcs command",
+    "command": [
+      "mset {key}1 myoldtext {key}2 mynewtext",
+      "lcs {key}1 {key}2"
+    ],
+    "result": [
+      "OK",
+      "mytext"
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lcs with LEN",
+    "command": [
+      "mset key1 myoldtext key2 mynewtext",
+      "lcs key1 key2 len"
+    ],
+    "result": [
+      "OK",
+      6
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lcs with LEN",
+    "command": [
+      "mset {key}1 myoldtext {key}2 mynewtext",
+      "lcs {key}1 {key}2 len"
+    ],
+    "result": [
+      "OK",
+      6
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lcs with IDX",
+    "command": [
+      "mset key1 oh key2 och",
+      "lcs key1 key2 idx"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lcs with IDX",
+    "command": [
+      "mset {key}1 oh {key}2 och",
+      "lcs {key}1 {key}2 idx"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lcs with MINMATCHLEN",
+    "command": [
+      "mset key1 oh key2 och",
+      "lcs key1 key2 idx minmatchlen 1"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lcs with MINMATCHLEN",
+    "command": [
+      "mset {key}1 oh {key}2 och",
+      "lcs {key}1 {key}2 idx minmatchlen 1"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "lcs with WITHMATCHLEN",
+    "command": [
+      "mset key1 oh key2 och",
+      "lcs key1 key2 idx minmatchlen 1 withmatchlen"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ],
+            1
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            1
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "lcs with WITHMATCHLEN",
+    "command": [
+      "mset {key}1 oh {key}2 och",
+      "lcs {key}1 {key}2 idx minmatchlen 1 withmatchlen"
+    ],
+    "result": [
+      "OK",
+      [
+        "matches",
+        [
+          [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ],
+            1
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            1
+          ]
+        ],
+        "len",
+        2
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "mget command",
+    "command": [
+      "set mykey0 1",
+      "set mykey1 2",
+      "mget mykey0 mykey1 mykey2"
+    ],
+    "result": [
+      "OK",
+      "OK",
+      [
+        "1",
+        "2",
+        null
+      ]
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "mget command",
+    "command": [
+      "set {mykey}0 1",
+      "set {mykey}1 2",
+      "mget {mykey}0 {mykey}1 {mykey}2"
+    ],
+    "result": [
+      "OK",
+      "OK",
+      [
+        "1",
+        "2",
+        null
+      ]
+    ],
+    "since": "1.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "mset command",
+    "command": [
+      "mset mykey0 0 mykey1 1",
+      "get mykey0",
+      "get mykey1"
+    ],
+    "result": [
+      "OK",
+      "0",
+      "1"
+    ],
+    "since": "1.0.1",
+    "tags": "standalone"
+  },
+  {
+    "name": "mset command",
+    "command": [
+      "mset {mykey}0 0 {mykey}1 1",
+      "get {mykey}0",
+      "get {mykey}1"
+    ],
+    "result": [
+      "OK",
+      "0",
+      "1"
+    ],
+    "since": "1.0.1",
+    "tags": "cluster"
+  },
+  {
+    "name": "msetnx command",
+    "command": [
+      "msetnx mykey0 0 mykey1 1",
+      "msetnx mykey1 2 mykey2 2",
+      "mget mykey0 mykey1 mykey2"
+    ],
+    "result": [
+      1,
+      0,
+      [
+        "0",
+        "1",
+        null
+      ]
+    ],
+    "since": "1.0.1",
+    "tags": "standalone"
+  },
+  {
+    "name": "msetnx command",
+    "command": [
+      "msetnx {mykey}0 0 {mykey}1 1",
+      "msetnx {mykey}1 2 {mykey}2 2",
+      "mget {mykey}0 {mykey}1 {mykey}2"
+    ],
+    "result": [
+      1,
+      0,
+      [
+        "0",
+        "1",
+        null
+      ]
+    ],
+    "since": "1.0.1",
+    "tags": "cluster"
+  },
+  {
+    "name": "psetex command",
+    "command": [
+      "psetex mykey 1 hello"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "set command",
+    "command": [
+      "set mykey 0",
+      "get mykey"
+    ],
+    "result": [
+      "OK",
+      "0"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "set with EX / PX",
+    "command": [
+      "set mykey0 0 ex 10",
+      "set mykey1 1 px 10"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "2.6.12"
+  },
+  {
+    "name": "set with NX / XX",
+    "command": [
+      "set mykey0 0 nx",
+      "set mykey0 1 xx"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "2.6.12"
+  },
+  {
+    "name": "set with KEEPTTL",
+    "command": [
+      "set mykey 0 keepttl"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "6.0.0"
+  },
+  {
+    "name": "set with GET",
+    "command": [
+      "set mykey 0",
+      "set mykey 1 get"
+    ],
+    "result": [
+      "OK",
+      "0"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "set with EXAT / PXAT",
+    "command": [
+      "set mykey0 0 exat 1",
+      "set mykey1 1 pxat 1"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "set with NX and GET",
+    "command": [
+      "set mykey 1 nx get"
+    ],
+    "result": [
+      null
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "setex command",
+    "command": [
+      "setex mykey0 10 0"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "setnx command",
+    "command": [
+      "setnx mykey0 0",
+      "setnx mykey0 1"
+    ],
+    "result": [
+      1,
+      0
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "setrange command",
+    "command": [
+      "set mykey 023",
+      "setrange mykey 1 12",
+      "get mykey"
+    ],
+    "result": [
+      "OK",
+      3,
+      "012"
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "strlen command",
+    "command": [
+      "set mykey 123",
+      "strlen mykey"
+    ],
+    "result": [
+      "OK",
+      3
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "substr command",
+    "command": [
+      "set mykey 012",
+      "substr mykey 0 -1"
+    ],
+    "result": [
+      "OK",
+      "012"
+    ],
+    "since": "1.0.0"
+  },
+  {
+    "name": "hdel command",
+    "command": [
+      "hset myhash field1 foo",
+      "hdel myhash field1",
+      "hdel myhash field2"
+    ],
+    "result": [
+      1,
+      1,
+      0
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hdel with multiple field",
+    "command": [
+      "hset myhash field1 foo",
+      "hdel myhash field1 field2"
+    ],
+    "result": [
+      1,
+      1,
+      0
+    ],
+    "since": "2.4.0"
+  },
+  {
+    "name": "hexists command",
+    "command": [
+      "hset myhash field1 foo",
+      "hexists myhash field1",
+      "hexists myhash field2"
+    ],
+    "result": [
+      1,
+      1,
+      0
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hget command",
+    "command": [
+      "hset myhash field1 foo",
+      "hget myhash field1",
+      "hget myhash field2"
+    ],
+    "result": [
+      1,
+      "foo",
+      null
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hgetall command",
+    "command": [
+      "hset myhash field0 0",
+      "hset myhash field1 1",
+      "hgetall myhash"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "field0",
+        "0",
+        "field1",
+        "1"
+      ]
+    ],
+    "since": "2.0.0",
+    "sort_result": true
+  },
+  {
+    "name": "hincrby command",
+    "command": [
+      "hset myhash field 0",
+      "hincrby myhash field 1"
+    ],
+    "result": [
+      1,
+      1
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hincrbyfloat command",
+    "command": [
+      "hset myhash field 0.5",
+      "hincrbyfloat myhash field 1.123"
+    ],
+    "result": [
+      1,
+      "1.623"
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "hkeys command",
+    "command": [
+      "hset myhash field0 0",
+      "hset myhash field1 1",
+      "hkeys myhash"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "field0",
+        "field1"
+      ]
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hlen command",
+    "command": [
+      "hset myhash field0 0",
+      "hset myhash field1 1",
+      "hlen myhash"
+    ],
+    "result": [
+      1,
+      1,
+      2
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hmget command",
+    "command": [
+      "hset myhash field0 0",
+      "hset myhash field1 1",
+      "hmget myhash field0 field1 nonfield"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        "1",
+        null
+      ]
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hmset command",
+    "command": [
+      "hmset myhash field0 0 field1 1",
+      "hget myhash field0",
+      "hget myhash field1"
+    ],
+    "result": [
+      "OK",
+      "0",
+      "1"
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hrandfield command",
+    "command": [
+      "hset myhash field0 0",
+      "hrandfield myhash"
+    ],
+    "result": [
+      1,
+      "field0"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "hrandfield with COUNT",
+    "command": [
+      "hset myhash field0 0",
+      "hrandfield myhash -2"
+    ],
+    "result": [
+      1,
+      [
+        "field0",
+        "field0"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "hrandfield with WITHVALUES",
+    "command": [
+      "hset myhash field0 0",
+      "hrandfield myhash -2 WITHVALUES"
+    ],
+    "result": [
+      1,
+      [
+        "field0",
+        "0",
+        "field0",
+        "0"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "hscan command",
+    "command": [
+      "hmset myhash name daz age 20",
+      "hscan myhash 0"
+    ],
+    "result": [
+      "OK",
+      [
+        "0",
+        [
+          "name",
+          "daz",
+          "age",
+          "20"
+        ]
+      ]
+    ],
+    "since": "2.8.0",
+    "sort_result": true
+  },
+  {
+    "name": "hscan with MATCH and COUNT",
+    "command": [
+      "hmset myhash name daz age 20",
+      "hscan myhash 0 match * count 10"
+    ],
+    "result": [
+      "OK",
+      [
+        "0",
+        [
+          "name",
+          "daz",
+          "age",
+          "20"
+        ]
+      ]
+    ],
+    "since": "2.8.0",
+    "sort_result": true
+  },
+  {
+    "name": "hset command",
+    "command": [
+      "hset myhash field0 0",
+      "hget myhash field0"
+    ],
+    "result": [
+      1,
+      "0"
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hset command with multiple field and value",
+    "command": [
+      "hset myhash field0 0 field1 1",
+      "hget myhash field0",
+      "hgetall myhash"
+    ],
+    "result": [
+      2,
+      "0",
+      [
+        "field0",
+        "0",
+        "field1",
+        "1"
+      ]
+    ],
+    "since": "4.0.0",
+    "sort_result": true
+  },
+  {
+    "name": "hsetnx command",
+    "command": [
+      "hsetnx myhash field0 0",
+      "hsetnx myhash field0 1",
+      "hget myhash field0"
+    ],
+    "result": [
+      1,
+      0,
+      "0"
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "hstrlen command",
+    "command": [
+      "hmset myhash field0 0123 field1 123456",
+      "hstrlen myhash field0",
+      "hstrlen myhash field1"
+    ],
+    "result": [
+      "OK",
+      4,
+      6
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "hvals command",
+    "command": [
+      "hset myhash field0 0",
+      "hset myhash field1 1",
+      "hvals myhash"
+    ],
+    "result": [
+      1,
+      1,
+      [
+        "0",
+        "1"
+      ]
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "bitcount command",
+    "command": [
+      "set mykey foobar",
+      "bitcount mykey",
+      "bitcount mykey 0 0"
+    ],
+    "result": [
+      "OK",
+      26,
+      4
+    ],
+    "since": "2.6.0"
+  },
+  {
+    "name": "bitcount with BYTE / BIT",
+    "command": [
+      "set mykey foobar",
+      "bitcount mykey 1 1 BYTE",
+      "bitcount mykey 5 30 BIT"
+    ],
+    "result": [
+      "OK",
+      6,
+      17
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "bitfield command",
+    "command": [
+      "bitfield mykey incrby u2 100 1 OVERFLOW SAT incrby u2 102 1",
+      "bitfield mykey incrby u2 100 1 OVERFLOW SAT incrby u2 102 1"
+    ],
+    "result": [
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        2
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "bitfield_ro command",
+    "command": [
+      "bitfield_ro hello GET i8 16"
+    ],
+    "result": [
+      [
+        0
+      ]
+    ],
+    "since": "6.0.0"
+  },
+  {
+    "name": "bitop command",
+    "command": [
+      "set key0 foobar",
+      "set key1 abcdef",
+      "bitop and dest key0 key1",
+      "bitop or dest key0 key1",
+      "bitop xor dest key0 key1"
+    ],
+    "result": [
+      "OK",
+      "OK",
+      6,
+      6,
+      6
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "bitop command",
+    "command": [
+      "set {key}0 foobar",
+      "set {key}1 abcdef",
+      "bitop and {key}dest {key}0 {key}1",
+      "bitop or {key}dest {key}0 {key}1",
+      "bitop xor {key}dest {key}0 {key}1"
+    ],
+    "result": [
+      "OK",
+      "OK",
+      6,
+      6,
+      6
+    ],
+    "since": "2.6.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "bitpos command",
+    "command": [
+      "SET mykey \\xff\\xf0\\x00",
+      "bitpos mykey 0"
+    ],
+    "result": [
+      "OK",
+      0
+    ],
+    "since": "2.8.7"
+  },
+  {
+    "name": "bitpos with BYTE / BIT",
+    "command": [
+      "SET mykey \\x00\\xff\\xf0",
+      "bitpos mykey 1 2 -1 BYTE",
+      "bitpos mykey 1 7 15 BIT"
+    ],
+    "result": [
+      "OK",
+      18,
+      9
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "getbit command",
+    "command": [
+      "setbit mykey 7 1",
+      "getbit mykey 0"
+    ],
+    "result": [
+      0,
+      0
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "setbit command",
+    "command": [
+      "setbit mykey 7 1",
+      "setbit mykey 7 0"
+    ],
+    "result": [
+      0,
+      1
+    ],
+    "since": "2.2.0"
+  },
+  {
+    "name": "pfadd command",
+    "command": [
+      "pfadd hll a b c d e",
+      "pfcount hll"
+    ],
+    "result": [
+      1,
+      5
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "pfcount command",
+    "command": [
+      "pfadd hll a b c d e",
+      "pfcount hll"
+    ],
+    "result": [
+      1,
+      5
+    ],
+    "since": "2.8.9"
+  },
+  {
+    "name": "pfmerge command",
+    "command": [
+      "pfadd hll1 0 1",
+      "pfadd hll2 2 3",
+      "pfmerge hll0 hll1 hll2",
+      "pfcount hll0"
+    ],
+    "result": [
+      1,
+      1,
+      "OK",
+      4
+    ],
+    "since": "2.8.9",
+    "tags": "standalone"
+  },
+  {
+    "name": "pfmerge command",
+    "command": [
+      "pfadd {hll}1 0 1",
+      "pfadd {hll}2 2 3",
+      "pfmerge {hll}0 {hll}1 {hll}2",
+      "pfcount {hll}0"
+    ],
+    "result": [
+      1,
+      1,
+      "OK",
+      4
+    ],
+    "since": "2.8.9",
+    "tags": "cluster"
+  },
+  {
+    "name": "geoadd command",
+    "command": [
+      "GEOADD Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania"
+    ],
+    "result": [
+      2
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "geoadd with CH / NX / XX",
+    "command": [
+      "geoadd Sicily nx ch 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geoadd Sicily xx 13.361389 38.115556 Palermo 15.087269 37.502669 Catania"
+    ],
+    "result": [
+      2,
+      0
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geodist command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geodist Sicily Palermo Catania"
+    ],
+    "result": [
+      2,
+      "166274.1516"
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "geodist with M / KM / FT / MI",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geodist Sicily Palermo Catania m",
+      "geodist Sicily Palermo Catania km",
+      "geodist Sicily Palermo Catania ft",
+      "geodist Sicily Palermo Catania mi"
+    ],
+    "result": [
+      2,
+      "166274.1516",
+      "166.2742",
+      "545518.8700",
+      "103.3182",
+      "103.3182"
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "geohash command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geohash Sicily Palermo Catania"
+    ],
+    "result": [
+      2,
+      [
+        "sqc8b49rny0",
+        "sqdtr74hyu0"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "geopos command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geopos Sicily Palermo Catania NonExisting"
+    ],
+    "result": [
+      2,
+      [
+        [
+          "13.36138933897018433",
+          "38.11555639549629859"
+        ],
+        [
+          "15.08726745843887329",
+          "37.50266842333162032"
+        ],
+        null
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 m",
+      "georadius Sicily 15 37 200 km",
+      "georadius Sicily 15 37 200 ft",
+      "georadius Sicily 15 37 200 mi"
+    ],
+    "result": [
+      2,
+      [],
+      [
+        "Palermo",
+        "Catania"
+      ],
+      [],
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius with WITHCOORD / WITHDIST / WITHHASH",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km withcoord",
+      "georadius Sicily 15 37 200 km withdist",
+      "georadius Sicily 15 37 200 km withhash"
+    ],
+    "result": [
+      2,
+      [
+        [
+          "Palermo",
+          [
+            "13.36138933897018433",
+            "38.11555639549629859"
+          ]
+        ],
+        [
+          "Catania",
+          [
+            "15.08726745843887329",
+            "37.50266842333162032"
+          ]
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          "190.4424"
+        ],
+        [
+          "Catania",
+          "56.4413"
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          3479099956230698
+        ],
+        [
+          "Catania",
+          3479447370796909
+        ]
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius with COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km count 1"
+    ],
+    "result": [
+      2,
+      [
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km asc",
+      "georadius Sicily 15 37 200 km desc"
+    ],
+    "result": [
+      2,
+      [
+        "Catania",
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius with STORE / STOREDIST",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km store here",
+      "georadius Sicily 15 37 200 km storedist here"
+    ],
+    "result": [
+      2,
+      2,
+      2
+    ],
+    "since": "3.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "georadius with STORE / STOREDIST",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km store {Sicily}here",
+      "georadius Sicily 15 37 200 km storedist {Sicily}here"
+    ],
+    "result": [
+      2,
+      2,
+      2
+    ],
+    "since": "3.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "georadius with ANY option for COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 km count 1 any"
+    ],
+    "result": [
+      2,
+      [
+        "Palermo"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "georadius with support for uppercase unit names",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius Sicily 15 37 200 KM count 1"
+    ],
+    "result": [
+      2,
+      [
+        "Catania"
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "georadius_ro command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius_ro Sicily 15 37 200 m",
+      "georadius_ro Sicily 15 37 200 km",
+      "georadius_ro Sicily 15 37 200 ft",
+      "georadius_ro Sicily 15 37 200 mi"
+    ],
+    "result": [
+      2,
+      [],
+      [
+        "Palermo",
+        "Catania"
+      ],
+      [],
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius_ro with WITHCOORD / WITHDIST / WITHHASH",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius_ro Sicily 15 37 200 km withcoord",
+      "georadius_ro Sicily 15 37 200 km withdist",
+      "georadius_ro Sicily 15 37 200 km withhash"
+    ],
+    "result": [
+      2,
+      [
+        [
+          "Palermo",
+          [
+            "13.36138933897018433",
+            "38.11555639549629859"
+          ]
+        ],
+        [
+          "Catania",
+          [
+            "15.08726745843887329",
+            "37.50266842333162032"
+          ]
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          "190.4424"
+        ],
+        [
+          "Catania",
+          "56.4413"
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          3479099956230698
+        ],
+        [
+          "Catania",
+          3479447370796909
+        ]
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius_ro with COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius_ro Sicily 15 37 200 km count 1"
+    ],
+    "result": [
+      2,
+      [
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius_ro with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius_ro Sicily 15 37 200 km asc",
+      "georadius_ro Sicily 15 37 200 km desc"
+    ],
+    "result": [
+      2,
+      [
+        "Catania",
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadius_ro with ANY option for COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadius_ro Sicily 15 37 200 km count 1 any"
+    ],
+    "result": [
+      2,
+      [
+        "Palermo"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "georadiusbymember command",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 m",
+      "georadiusbymember Sicily Agrigento 100 km",
+      "georadiusbymember Sicily Agrigento 100 ft",
+      "georadiusbymember Sicily Agrigento 100 mi"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ],
+      [
+        "Agrigento",
+        "Palermo"
+      ],
+      [
+        "Agrigento"
+      ],
+      [
+        "Agrigento",
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadiusbymember with WITHCOORD / WITHDIST / WITHHASH",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km withcoord",
+      "georadiusbymember Sicily Agrigento 100 km withdist",
+      "georadiusbymember Sicily Agrigento 100 km withhash"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        [
+          "Agrigento",
+          [
+            "13.5833314061164856",
+            "37.31666804993816555"
+          ]
+        ],
+        [
+          "Palermo",
+          [
+            "13.36138933897018433",
+            "38.11555639549629859"
+          ]
+        ]
+      ],
+      [
+        [
+          "Agrigento",
+          "0.0000"
+        ],
+        [
+          "Palermo",
+          "90.9778"
+        ]
+      ],
+      [
+        [
+          "Agrigento",
+          3479030013248308
+        ],
+        [
+          "Palermo",
+          3479099956230698
+        ]
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadiusbymember with COUNT",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km count 1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadiusbymember with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km asc",
+      "georadiusbymember Sicily Agrigento 100 km desc"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento",
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "Agrigento"
+      ]
+    ],
+    "since": "3.2.0"
+  },
+  {
+    "name": "georadiusbymember with STORE / STOREDIST",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km store here",
+      "georadiusbymember Sicily Agrigento 100 km storedist here"
+    ],
+    "result": [
+      1,
+      2,
+      2,
+      2
+    ],
+    "since": "3.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "georadiusbymember with STORE / STOREDIST",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km store {Sicily}here",
+      "georadiusbymember Sicily Agrigento 100 km storedist {Sicily}here"
+    ],
+    "result": [
+      1,
+      2,
+      2,
+      2
+    ],
+    "since": "3.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "georadiusbymember with ANY option for COUNT",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 km count 1 any"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "georadiusbymember with support for uppercase unit names",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember Sicily Agrigento 100 KM"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento",
+        "Palermo"
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "georadiusbymember_ro command",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember_ro Sicily Agrigento 100 m",
+      "georadiusbymember_ro Sicily Agrigento 100 km",
+      "georadiusbymember_ro Sicily Agrigento 100 ft",
+      "georadiusbymember_ro Sicily Agrigento 100 mi"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ],
+      [
+        "Agrigento",
+        "Palermo"
+      ],
+      [
+        "Agrigento"
+      ],
+      [
+        "Agrigento",
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "3.2.10"
+  },
+  {
+    "name": "georadiusbymember_ro with WITHCOORD / WITHDIST / WITHHASH",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember_ro Sicily Agrigento 100 km withcoord",
+      "georadiusbymember_ro Sicily Agrigento 100 km withdist",
+      "georadiusbymember_ro Sicily Agrigento 100 km withhash"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        [
+          "Agrigento",
+          [
+            "13.5833314061164856",
+            "37.31666804993816555"
+          ]
+        ],
+        [
+          "Palermo",
+          [
+            "13.36138933897018433",
+            "38.11555639549629859"
+          ]
+        ]
+      ],
+      [
+        [
+          "Agrigento",
+          "0.0000"
+        ],
+        [
+          "Palermo",
+          "90.9778"
+        ]
+      ],
+      [
+        [
+          "Agrigento",
+          3479030013248308
+        ],
+        [
+          "Palermo",
+          3479099956230698
+        ]
+      ]
+    ],
+    "since": "3.2.10"
+  },
+  {
+    "name": "georadiusbymember_ro with COUNT",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember_ro Sicily Agrigento 100 km count 1"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ]
+    ],
+    "since": "3.2.10"
+  },
+  {
+    "name": "georadiusbymember_ro with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember_ro Sicily Agrigento 100 km asc",
+      "georadiusbymember_ro Sicily Agrigento 100 km desc"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento",
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "Agrigento"
+      ]
+    ],
+    "since": "3.2.10"
+  },
+  {
+    "name": "georadiusbymember_ro with ANY option for COUNT",
+    "command": [
+      "geoadd Sicily 13.583333 37.316667 Agrigento",
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "georadiusbymember_ro Sicily Agrigento 100 km count 1 any"
+    ],
+    "result": [
+      1,
+      2,
+      [
+        "Agrigento"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geosearch command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geoadd Sicily 12.758489 38.788135 edge1 17.241510 38.788135 edge2",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 m",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 ft",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 mi",
+      "geosearch Sicily fromlonlat 15 37 bybox 400 400 m",
+      "geosearch Sicily fromlonlat 15 37 bybox 400 400 km",
+      "geosearch Sicily fromlonlat 15 37 bybox 400 400 ft",
+      "geosearch Sicily fromlonlat 15 37 bybox 400 400 mi",
+      "geosearch Sicily frommember Palermo byradius 200 m",
+      "geosearch Sicily frommember Palermo byradius 200 km",
+      "geosearch Sicily frommember Palermo byradius 200 ft",
+      "geosearch Sicily frommember Palermo byradius 200 mi",
+      "geosearch Sicily frommember Palermo bybox 400 400 m",
+      "geosearch Sicily frommember Palermo bybox 400 400 km",
+      "geosearch Sicily frommember Palermo bybox 400 400 ft",
+      "geosearch Sicily frommember Palermo bybox 400 400 mi"
+    ],
+    "result": [
+      2,
+      2,
+      [],
+      [
+        "Palermo",
+        "Catania"
+      ],
+      [],
+      [
+        "Palermo",
+        "edge1",
+        "Catania",
+        "edge2"
+      ],
+      [],
+      [
+        "Palermo",
+        "edge1",
+        "Catania",
+        "edge2"
+      ],
+      [],
+      [
+        "Palermo",
+        "edge1",
+        "Catania",
+        "edge2"
+      ],
+      [
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "edge1",
+        "Catania"
+      ],
+      [
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "edge1",
+        "Catania"
+      ],
+      [
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "edge1",
+        "Catania"
+      ],
+      [
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "edge1",
+        "Catania"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geosearch with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km asc",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km desc"
+    ],
+    "result": [
+      2,
+      [
+        "Catania",
+        "Palermo"
+      ],
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geosearch with COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km count 1",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km count 1 any"
+    ],
+    "result": [
+      2,
+      [
+        "Catania"
+      ],
+      [
+        "Palermo"
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geosearch with WITHCOORD / WITHDIST / WITHHASH",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km withcoord",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km withdist",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 km withhash"
+    ],
+    "result": [
+      2,
+      [
+        [
+          "Palermo",
+          [
+            "13.36138933897018433",
+            "38.11555639549629859"
+          ]
+        ],
+        [
+          "Catania",
+          [
+            "15.08726745843887329",
+            "37.50266842333162032"
+          ]
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          "190.4424"
+        ],
+        [
+          "Catania",
+          "56.4413"
+        ]
+      ],
+      [
+        [
+          "Palermo",
+          3479099956230698
+        ],
+        [
+          "Catania",
+          3479447370796909
+        ]
+      ]
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "geosearch with support for uppercase unit names",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearch Sicily fromlonlat 15 37 byradius 200 KM"
+    ],
+    "result": [
+      2,
+      [
+        "Palermo",
+        "Catania"
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "geosearchstore command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geoadd Sicily 12.758489 38.788135 edge1 17.241510 38.788135 edge2",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 m",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 ft",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 mi",
+      "geosearchstore here Sicily fromlonlat 15 37 bybox 400 400 m",
+      "geosearchstore here Sicily fromlonlat 15 37 bybox 400 400 km",
+      "geosearchstore here Sicily fromlonlat 15 37 bybox 400 400 ft",
+      "geosearchstore here Sicily fromlonlat 15 37 bybox 400 400 mi",
+      "geosearchstore here Sicily frommember Palermo byradius 200 m",
+      "geosearchstore here Sicily frommember Palermo byradius 200 km",
+      "geosearchstore here Sicily frommember Palermo byradius 200 ft",
+      "geosearchstore here icily frommember Palermo byradius 200 mi",
+      "geosearchstore here Sicily frommember Palermo bybox 400 400 m",
+      "geosearchstore here Sicily frommember Palermo bybox 400 400 km",
+      "geosearchstore here Sicily frommember Palermo bybox 400 400 ft",
+      "geosearchstore here Sicily frommember Palermo bybox 400 400 mi"
+    ],
+    "result": [
+      2,
+      2,
+      0,
+      2,
+      0,
+      4,
+      0,
+      4,
+      0,
+      4,
+      1,
+      3,
+      1,
+      0,
+      1,
+      3,
+      1,
+      3
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "geosearchstore command",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geoadd Sicily 12.758489 38.788135 edge1 17.241510 38.788135 edge2",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 m",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 ft",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 mi",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 bybox 400 400 m",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 bybox 400 400 km",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 bybox 400 400 ft",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 bybox 400 400 mi",
+      "geosearchstore here{Sicily} Sicily frommember Palermo byradius 200 m",
+      "geosearchstore here{Sicily} Sicily frommember Palermo byradius 200 km",
+      "geosearchstore here{Sicily} Sicily frommember Palermo byradius 200 ft",
+      "geosearchstore here{Sicily} Sicily frommember Palermo byradius 200 mi",
+      "geosearchstore here{Sicily} Sicily frommember Palermo bybox 400 400 m",
+      "geosearchstore here{Sicily} Sicily frommember Palermo bybox 400 400 km",
+      "geosearchstore here{Sicily} Sicily frommember Palermo bybox 400 400 ft",
+      "geosearchstore here{Sicily} Sicily frommember Palermo bybox 400 400 mi"
+    ],
+    "result": [
+      2,
+      2,
+      0,
+      2,
+      0,
+      4,
+      0,
+      4,
+      0,
+      4,
+      1,
+      3,
+      1,
+      3,
+      1,
+      3,
+      1,
+      3
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "geosearchstore with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km asc",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km desc"
+    ],
+    "result": [
+      2,
+      2,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "geosearchstore with ASC / DESC",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km asc",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km desc"
+    ],
+    "result": [
+      2,
+      2,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "geosearchstore with COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km count 1",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km count 1 any"
+    ],
+    "result": [
+      2,
+      1,
+      1
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "geosearchstore with COUNT",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km count 1",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km count 1 any"
+    ],
+    "result": [
+      2,
+      1,
+      1
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "geosearchstore with STOREDIST",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 km storedist"
+    ],
+    "result": [
+      2,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "geosearchstore with STOREDIST",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 km storedist"
+    ],
+    "result": [
+      2,
+      2
+    ],
+    "since": "6.2.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "geosearchstore with support for uppercase unit names",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here Sicily fromlonlat 15 37 byradius 200 KM"
+    ],
+    "result": [
+      2,
+      2
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "geosearchstore with support for uppercase unit names",
+    "command": [
+      "geoadd Sicily 13.361389 38.115556 Palermo 15.087269 37.502669 Catania",
+      "geosearchstore here{Sicily} Sicily fromlonlat 15 37 byradius 200 KM"
+    ],
+    "result": [
+      2,
+      2
+    ],
+    "since": "7.0.0",
+    "tags": "cluster"
+  },
+  {
+    "name": "dbsize command",
+    "command": [
+      "dbsize"
+    ],
+    "result": [
+      0
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushall command",
+    "command": [
+      "flushall"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushall with async",
+    "command": [
+      "flushall async"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "4.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushall with sync",
+    "command": [
+      "flushall sync"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushdb command",
+    "command": [
+      "flushdb"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "1.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushdb with async",
+    "command": [
+      "flushdb async"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "4.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "flushdb with sync",
+    "command": [
+      "flushdb sync"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "swapdb command",
+    "command": [
+      "swapdb 0 1"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "4.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "discard command",
+    "command": [
+      "multi",
+      "set k v",
+      "discard"
+    ],
+    "result": [
+      "OK",
+      "QUEUED",
+      "OK"
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "exec command",
+    "command": [
+      "multi",
+      "set k v",
+      "exec"
+    ],
+    "result": [
+      "OK",
+      "QUEUED",
+      [
+        "OK"
+      ]
+    ],
+    "since": "1.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "multi command",
+    "command": [
+      "multi",
+      "set k v",
+      "discard"
+    ],
+    "result": [
+      "OK",
+      "QUEUED",
+      "OK"
+    ],
+    "since": "1.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "unwatch command",
+    "command": [
+      "watch key",
+      "unwatch"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "2.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "watch command",
+    "command": [
+      "watch key",
+      "unwatch"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "2.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "eval command",
+    "command": [
+      "eval return 0 hello"
+    ],
+    "result": [
+      null
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "eval_ro command",
+    "command": [
+      "eval_ro return 0 hello"
+    ],
+    "result": [
+      null
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "evalsha command",
+    "command": [
+      "script load return",
+      "evalsha 63143b6f8007b98c53ca2149822777b3566f9241 0",
+      "script flush"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      null,
+      "OK"
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "evalsha_ro command",
+    "command": [
+      "script load return",
+      "evalsha_ro 63143b6f8007b98c53ca2149822777b3566f9241 0",
+      "script flush"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      null,
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "fcall command",
+    "command": [
+      "function flush",
+      "function load \"#!lua name=mylib \n redis.register_function('myfunc', function(keys, args) return args[1] end)\"",
+      "fcall myfunc 0 hello",
+      "function flush"
+    ],
+    "result": [
+      "OK",
+      "mylib",
+      "hello",
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "fcall_ro command",
+    "command": [
+      "function flush",
+      "function load \"#!lua name=mylib \n local function ret(keys, args) return args[1] end \n redis.register_function{function_name='ret', callback=ret, flags={ 'no-writes' }}\"",
+      "fcall_ro ret 0 hello",
+      "function flush"
+    ],
+    "result": [
+      "OK",
+      "mylib",
+      "hello",
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function delete command",
+    "command": [
+      "function flush",
+      "function load \"#!lua name=mylib \n redis.register_function('myfunc', function(keys, args) return args[1] end)\"",
+      "function delete mylib",
+      "function flush"
+    ],
+    "result": [
+      "OK",
+      "mylib",
+      "OK",
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function flush command",
+    "command": [
+      "function flush"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function flush with SYNC",
+    "command": [
+      "function flush sync"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function flush with ASYNC",
+    "command": [
+      "function flush async"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function list command",
+    "command": [
+      "function flush",
+      "function load \"#!lua name=mylib \n redis.register_function('myfunc', function(keys, args) return args[1] end)\"",
+      "function list",
+      "function flush"
+    ],
+    "result": [
+      "OK",
+      "mylib",
+      [
+        [
+          "library_name",
+          "mylib",
+          "engine",
+          "LUA",
+          "functions",
+          [
+            [
+              "name",
+              "myfunc",
+              "description",
+              null,
+              "flags",
+              []
+            ]
+          ]
+        ]
+      ],
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function load command",
+    "command": [
+      "function flush",
+      "function load \"#!lua name=mylib \n redis.register_function('myfunc', function(keys, args) return args[1] end)\"",
+      "fcall myfunc 0 hello",
+      "function flush"
+    ],
+    "result": [
+      "OK",
+      "mylib",
+      "hello",
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "function restore command",
+    "command": [
+      "function flush",
+      "function restore \"\\xf5\\xc3@X@]\\x1f#!lua name=mylib \\n redis.registe\\rr_function('my@\\x0b\\x02', @\\x06`\\x12\\nkeys, args) 6\\x03turn`\\x0c\\a[1] end)\\n\\x00q\\xee\\xf6b\\xe9$\\xbaN\" flush"
+    ],
+    "result": [
+      "OK",
+      "OK"
+    ],
+    "since": "7.0.0",
+    "command_binary": true,
+    "tags": "standalone"
+  },
+  {
+    "name": "function stats command",
+    "command": [
+      "function flush",
+      "function stats"
+    ],
+    "result": [
+      "OK",
+      [
+        "running_script",
+        null,
+        "engines",
+        [
+          "LUA",
+          [
+            "libraries_count",
+            0,
+            "functions_count",
+            0
+          ]
+        ]
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "script exists command",
+    "command": [
+      "script load return",
+      "script exists 63143b6f8007b98c53ca2149822777b3566f9241",
+      "script flush"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      [
+        1
+      ],
+      "OK"
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "script flush command",
+    "command": [
+      "script load return",
+      "script flush"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      "OK"
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "script flush with SYNC",
+    "command": [
+      "script load return",
+      "script flush sync"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      "OK"
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "script flush with ASYNC",
+    "command": [
+      "script load return",
+      "script flush async"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      "OK"
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "script load command",
+    "command": [
+      "script load return",
+      "script flush"
+    ],
+    "result": [
+      "63143b6f8007b98c53ca2149822777b3566f9241",
+      "OK"
+    ],
+    "since": "2.6.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "xack command",
+    "command": [
+      "XACK mystream mygroup 1526569495631-0"
+    ],
+    "result": [
+      0
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xadd command",
+    "command": [
+      "xadd mystream 1 myfield mydata"
+    ],
+    "result": [
+      "1-0"
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xadd with NOMKSTREAM/MINID/LIMIT",
+    "command": [
+      "xadd mystream nomkstream * message \"test\"",
+      "xadd mystream minid 0 1 message \"test\"",
+      "xadd mystream maxlen ~ 2 2 message \"test\""
+    ],
+    "result": [
+      null,
+      "1-0",
+      "2-0"
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "xadd with EXPLICIT ID",
+    "command": [
+      "xadd mystream 1526919030474-0 message \"Hello,\"",
+      "xadd mystream 1526919030474-* message \" World!\""
+    ],
+    "result": [
+      "1526919030474-0",
+      "1526919030474-1"
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "xclaim command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "XCLAIM mystream mygroup Alice 3600000 1-0"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      []
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xdel command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xdel mystream 1-0"
+    ],
+    "result": [
+      "1-0",
+      1
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup create command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0"
+    ],
+    "result": [
+      "1-0",
+      "OK"
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup create with MKSTREAM",
+    "command": [
+      "xgroup create mystream mygroup 0 mkstream"
+    ],
+    "result": [
+      "OK"
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup create with ENTRIESREAD",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 1-0 entriesread 1"
+    ],
+    "result": [
+      "1-0",
+      "OK"
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "xgroup createconsumer command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xgroup createconsumer mystream mygroup myconsumer"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      1
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "xgroup delconsumer command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xgroup delconsumer mystream mygroup myconsumer"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      0
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup destroy command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xgroup destroy mystream mygroup"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      1
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup setid command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xgroup setid mystream mygroup 1-0"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      "OK"
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xgroup setid with ENTRIESREAD",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xgroup setid mystream mygroup 1-0 entriesread 0"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      "OK"
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "xlen command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xlen mystream"
+    ],
+    "result": [
+      "1-0",
+      1
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xpending command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xreadgroup group mygroup myconsumer streams mystream >",
+      "xpending mystream mygroup"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      [
+        [
+          "mystream",
+          [
+            [
+              "1-0",
+              [
+                "myfield",
+                "mydata"
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        1,
+        "1-0",
+        "1-0",
+        [
+          [
+            "myconsumer",
+            "1"
+          ]
+        ]
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xrange command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xrange mystream - +"
+    ],
+    "result": [
+      "1-0",
+      [
+        [
+          "1-0",
+          [
+            "myfield",
+            "mydata"
+          ]
+        ]
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xread command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xread count 2 block 1 streams mystream 1-0"
+    ],
+    "result": [
+      "1-0",
+      null
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xreadgroup command",
+    "command": [
+      "xadd mystream 1 myfield mydata",
+      "xgroup create mystream mygroup 0",
+      "xreadgroup group mygroup myconsumer streams mystream >"
+    ],
+    "result": [
+      "1-0",
+      "OK",
+      [
+        [
+          "mystream",
+          [
+            [
+              "1-0",
+              [
+                "myfield",
+                "mydata"
+              ]
+            ]
+          ]
+        ]
+      ]
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xrevrange command",
+    "command": [
+      "xrevrange somestream + -"
+    ],
+    "result": [
+      []
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xrevrange command with EXCLUSIVE RANGES",
+    "command": [
+      "xrevrange somestream + - count 10"
+    ],
+    "result": [
+      []
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "xtrim command",
+    "command": [
+      "xtrim mystream maxlen ~ 1000"
+    ],
+    "result": [
+      0
+    ],
+    "since": "5.0.0"
+  },
+  {
+    "name": "xtrim command with MINID/LIMIT",
+    "command": [
+      "xtrim mystream minid ~ 649085820",
+      "xtrim mystream minid ~ 1000 limit 10"
+    ],
+    "result": [
+      0,
+      0
+    ],
+    "since": "6.2.0"
+  },
+  {
+    "name": "psubscribe command",
+    "command": [
+      "psubscribe hello",
+      "quit"
+    ],
+    "result": [
+      [
+        "psubscribe",
+        "hello",
+        1
+      ],
+      "OK"
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "psubscribe with RESET",
+    "command": [
+      "psubscribe hello RESET"
+    ],
+    "result": [
+      [
+        "psubscribe",
+        "hello",
+        1
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "publish command",
+    "command": [
+      "publish hello world"
+    ],
+    "result": [
+      0
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "pubsub channels command",
+    "command": [
+      "pubsub channels hello"
+    ],
+    "result": [
+      []
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "pubsub numpat command",
+    "command": [
+      "pubsub numpat"
+    ],
+    "result": [
+      0
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "pubsub numsub command",
+    "command": [
+      "pubsub numsub hello"
+    ],
+    "result": [
+      [
+        "hello",
+        0
+      ]
+    ],
+    "since": "2.8.0"
+  },
+  {
+    "name": "pubsub shardchannels command",
+    "command": [
+      "pubsub shardchannels hello"
+    ],
+    "result": [
+      []
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "pubsub shardnumsub command",
+    "command": [
+      "pubsub shardnumsub hello"
+    ],
+    "result": [
+      [
+        "hello",
+        0
+      ]
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "punsubscribe command",
+    "command": [
+      "punsubscribe hello"
+    ],
+    "result": [
+      [
+        "punsubscribe",
+        "hello",
+        0
+      ]
+    ],
+    "since": "2.0.0"
+  },
+  {
+    "name": "spublish command",
+    "command": [
+      "spublish hello world"
+    ],
+    "result": [
+      0
+    ],
+    "since": "7.0.0"
+  },
+  {
+    "name": "ssubscribe command",
+    "command": [
+      "ssubscribe hello",
+      "quit"
+    ],
+    "result": [
+      [
+        "ssubscribe",
+        "hello",
+        1
+      ],
+      "OK"
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "subscribe command",
+    "command": [
+      "subscribe hello",
+      "quit"
+    ],
+    "result": [
+      [
+        "subscribe",
+        "hello",
+        1
+      ],
+      "OK"
+    ],
+    "since": "2.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "subscribe with RESET",
+    "command": [
+      "subscribe hello RESET"
+    ],
+    "result": [
+      [
+        "subscribe",
+        "hello",
+        1
+      ]
+    ],
+    "since": "6.2.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "sunsubscribe command",
+    "command": [
+      "sunsubscribe hello"
+    ],
+    "result": [
+      [
+        "sunsubscribe",
+        "hello",
+        0
+      ]
+    ],
+    "since": "7.0.0",
+    "tags": "standalone"
+  },
+  {
+    "name": "unsubscribe command",
+    "command": [
+      "unsubscribe hello"
+    ],
+    "result": [
+      [
+        "unsubscribe",
+        "hello",
+        0
+      ]
+    ],
+    "since": "2.0.0"
+  }
+]
