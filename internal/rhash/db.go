@@ -25,10 +25,10 @@ func New(db *sql.DB) *DB {
 }
 
 // Delete deletes one or more items from a hash.
-// Non-existing fields are ignored.
-// If there are no fields left in the hash, deletes the key.
 // Returns the number of fields deleted.
-// Returns 0 if the key does not exist.
+// Ignores non-existing fields.
+// Does nothing if the key does not exist or is not a hash.
+// Does not delete the key if the hash becomes empty.
 func (d *DB) Delete(key string, fields ...string) (int, error) {
 	var count int
 	err := d.Update(func(tx *Tx) error {

@@ -12,24 +12,7 @@ import (
 )
 
 func TestDelete(t *testing.T) {
-	t.Run("delete key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("person", "age", 25)
-
-		delCount, err := db.Delete("person")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, delCount, 2)
-
-		exist, _ := db.Exists("person", "name")
-		testx.AssertEqual(t, exist, false)
-
-		exist, _ = red.Key().Exists("person")
-		testx.AssertEqual(t, exist, false)
-	})
-	t.Run("delete some fields", func(t *testing.T) {
+	t.Run("some", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
@@ -48,7 +31,7 @@ func TestDelete(t *testing.T) {
 		exist, _ = db.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
 	})
-	t.Run("delete all fields", func(t *testing.T) {
+	t.Run("all", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
@@ -66,11 +49,27 @@ func TestDelete(t *testing.T) {
 		testx.AssertEqual(t, exist, false)
 		exist, _ = db.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
-
-		exist, _ = red.Key().Exists("person")
-		testx.AssertEqual(t, exist, false)
 	})
-	t.Run("delete non-existent key", func(t *testing.T) {
+	t.Run("none", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_, _ = db.Set("person", "name", "alice")
+		_, _ = db.Set("person", "age", 25)
+		_, _ = db.Set("person", "city", "paris")
+
+		delCount, err := db.Delete("person", "country", "street")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, delCount, 0)
+
+		name, _ := db.Get("person", "name")
+		testx.AssertEqual(t, name.String(), "alice")
+		age, _ := db.Get("person", "age")
+		testx.AssertEqual(t, age.String(), "25")
+		city, _ := db.Get("person", "city")
+		testx.AssertEqual(t, city.String(), "paris")
+	})
+	t.Run("key not found", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
@@ -81,31 +80,13 @@ func TestDelete(t *testing.T) {
 		exist, _ := red.Key().Exists("person")
 		testx.AssertEqual(t, exist, false)
 	})
-	t.Run("delete non-existent field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("person", "city", "paris")
-
-		delCount, err := db.Delete("person", "age", "city")
-		testx.AssertEqual(t, delCount, 1)
-
-		testx.AssertNoErr(t, err)
-		exist, _ := db.Exists("person", "name")
-		testx.AssertEqual(t, exist, true)
-		exist, _ = db.Exists("person", "age")
-		testx.AssertEqual(t, exist, false)
-		exist, _ = db.Exists("person", "city")
-		testx.AssertEqual(t, exist, false)
-	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("person", "alice")
-		val, err := db.Delete("person", "name")
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, 0)
+		count, err := db.Delete("person", "name")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 0)
 	})
 }
 

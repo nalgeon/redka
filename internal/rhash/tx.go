@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
-	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -96,58 +95,20 @@ func NewTx(tx sqlx.Tx) *Tx {
 }
 
 // Delete deletes one or more items from a hash.
-// Non-existing fields are ignored.
-// If there are no fields left in the hash, deletes the key.
 // Returns the number of fields deleted.
-// Returns 0 if the key does not exist.
+// Ignores non-existing fields.
+// Does nothing if the key does not exist or is not a hash.
+// Does not delete the key if the hash becomes empty.
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 	now := time.Now().UnixMilli()
-
-	// Check if the hash exists.
-	k, err := rkey.Get(tx.tx, key)
-	if err != nil {
-		return 0, err
-	}
-	if !k.Exists() {
-		return 0, nil
-	}
-	if k.Type != core.TypeHash {
-		return 0, core.ErrKeyType
-	}
-
-	// Count the number of existing fields.
-	existCount, err := tx.Len(key)
-	if err != nil {
-		return 0, err
-	}
-
-	if len(fields) == 0 {
-		// Delete the hash if no fields are specified.
-		_, err := rkey.Delete(tx.tx, key)
-		if err != nil {
-			return 0, err
-		}
-		return existCount, nil
-	}
-
-	// Delete the fields.
 	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
 	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
-	delCount, _ := res.RowsAffected()
-
-	if int(delCount) == existCount {
-		// Delete the hash if no fields remain.
-		_, err = rkey.Delete(tx.tx, key)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return int(delCount), nil
+	count, _ := res.RowsAffected()
+	return int(count), nil
 }
 
 // Exists checks if a field exists in a hash.
