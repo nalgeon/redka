@@ -54,7 +54,7 @@ func TestScanParse(t *testing.T) {
 			cursor: 15,
 			match:  "*",
 			count:  5,
-			err:    nil,
+			err:    ErrSyntaxError,
 		},
 		{
 			name:   "scan 15 match k2* count 5",
