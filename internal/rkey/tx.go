@@ -9,83 +9,85 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlCount = `
-select count(id) from rkey
-where key in (:keys) and (etime is null or etime > :now)`
+const (
+	sqlCount = `
+	select count(id) from rkey
+	where key in (:keys) and (etime is null or etime > :now)`
 
-const sqlCountType = `
-select count(id) from rkey
-where key in (:keys) and (etime is null or etime > :now) and type = :type`
+	sqlCountType = `
+	select count(id) from rkey
+	where key in (:keys) and (etime is null or etime > :now) and type = :type`
 
-const sqlDelete = `
-delete from rkey where key in (:keys)
-  and (etime is null or etime > :now)`
+	sqlDelete = `
+	delete from rkey where key in (:keys)
+	and (etime is null or etime > :now)`
 
-const sqlDeleteAll = `
-  delete from rkey;
-  vacuum;
-  pragma integrity_check;`
+	sqlDeleteAll = `
+	delete from rkey;
+	vacuum;
+	pragma integrity_check;`
 
-const sqlDeleteAllExpired = `
-delete from rkey
-where etime <= :now`
+	sqlDeleteAllExpired = `
+	delete from rkey
+	where etime <= :now`
 
-const sqlDeleteNExpired = `
-delete from rkey
-where rowid in (
-  select rowid from rkey
-  where etime <= :now
-  limit :n
-)`
+	sqlDeleteNExpired = `
+	delete from rkey
+	where rowid in (
+	  select rowid from rkey
+	  where etime <= :now
+	  limit :n
+	)`
 
-const sqlDeleteType = `
-delete from rkey where key in (:keys)
-  and (etime is null or etime > :now)
-  and type = :type`
+	sqlDeleteType = `
+	delete from rkey where key in (:keys)
+	  and (etime is null or etime > :now)
+	  and type = :type`
 
-const sqlExpire = `
-update rkey set etime = :at
-where key = :key and (etime is null or etime > :now)`
+	sqlExpire = `
+	update rkey set etime = :at
+	where key = :key and (etime is null or etime > :now)`
 
-const sqlGet = `
-select id, key, type, version, etime, mtime
-from rkey
-where key = ? and (etime is null or etime > ?)`
+	sqlGet = `
+	select id, key, type, version, etime, mtime
+	from rkey
+	where key = :key and (etime is null or etime > :now)`
 
-const sqlKeys = `
-select id, key, type, version, etime, mtime from rkey
-where key glob :pattern and (etime is null or etime > :now)`
+	sqlKeys = `
+	select id, key, type, version, etime, mtime from rkey
+	where key glob :pattern and (etime is null or etime > :now)`
 
-const sqlPersist = `
-update rkey set etime = null
-where key = :key and (etime is null or etime > :now)`
+	sqlPersist = `
+	update rkey set etime = null
+	where key = :key and (etime is null or etime > :now)`
 
-const sqlRandom = `
-select id, key, type, version, etime, mtime from rkey
-where etime is null or etime > ?
-order by random() limit 1`
+	sqlRandom = `
+	select id, key, type, version, etime, mtime from rkey
+	where etime is null or etime > ?
+	order by random() limit 1`
 
-const sqlRename = `
-update or replace rkey set
-  id = old.id,
-  key = :new_key,
-  type = old.type,
-  version = old.version+1,
-  etime = old.etime,
-  mtime = :now
-from (
-  select id, key, type, version, etime, mtime
-  from rkey
-  where key = :key and (etime is null or etime > :now)
-) as old
-where rkey.key = :key and (
-  rkey.etime is null or rkey.etime > :now
-)`
+	sqlRename = `
+	update or replace rkey set
+	  id = old.id,
+	  key = :new_key,
+	  type = old.type,
+	  version = old.version+1,
+	  etime = old.etime,
+	  mtime = :now
+	from (
+	  select id, key, type, version, etime, mtime
+	  from rkey
+	  where key = :key and (etime is null or etime > :now)
+	) as old
+	where rkey.key = :key and (
+	  rkey.etime is null or rkey.etime > :now
+	)`
 
-const sqlScan = `
-select id, key, type, version, etime, mtime from rkey
-where id > :cursor and key glob :pattern and (etime is null or etime > :now)
-limit :count`
+	sqlScan = `
+	select id, key, type, version, etime, mtime from rkey
+	where id > :cursor and key glob :pattern and (etime is null or etime > :now)
+	limit :count`
+)
 
 const scanPageSize = 10
 
@@ -371,9 +373,12 @@ func DeleteType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
 
 // Get returns the key data structure.
 func Get(tx sqlx.Tx, key string) (core.Key, error) {
-	now := time.Now().UnixMilli()
+	args := []any{
+		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
+	}
 	var k core.Key
-	err := tx.QueryRow(sqlGet, key, now).Scan(
+	err := tx.QueryRow(sqlGet, args...).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
