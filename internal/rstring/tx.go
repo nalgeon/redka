@@ -326,9 +326,9 @@ func (tx *Tx) set(key string, value any, ttl time.Duration) error {
 		sql.Named("key", key),
 		sql.Named("type", core.TypeString),
 		sql.Named("version", core.InitialVersion),
-		sql.Named("value", value),
 		sql.Named("etime", etime),
 		sql.Named("mtime", now.UnixMilli()),
+		sql.Named("value", value),
 	}
 
 	_, err := tx.tx.Exec(sqlSet1, args...)
@@ -349,8 +349,8 @@ func (tx *Tx) update(key string, value any) error {
 		sql.Named("key", key),
 		sql.Named("type", core.TypeString),
 		sql.Named("version", core.InitialVersion),
-		sql.Named("value", value),
 		sql.Named("mtime", now),
+		sql.Named("value", value),
 	}
 	_, err := tx.tx.Exec(sqlUpdate1, args...)
 	if err != nil {
