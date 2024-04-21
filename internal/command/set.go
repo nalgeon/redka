@@ -3,8 +3,6 @@ package command
 import (
 	"strconv"
 	"time"
-
-	"github.com/nalgeon/redka/internal/rstring"
 )
 
 // Set sets the string value of a key, ignoring its type.
@@ -21,89 +19,103 @@ type Set struct {
 }
 
 func parseSet(b baseCmd) (*Set, error) {
-	parseExists := func(cmd *Set, value string) error {
-		switch value {
-		case "nx":
-			cmd.ifNX = true
-		case "xx":
-			cmd.ifXX = true
-		default:
-			return ErrSyntaxError
-		}
-		return nil
-	}
-
-	parseExpires := func(cmd *Set, unit string, value string) error {
-		valueInt, err := strconv.Atoi(value)
-		if err != nil {
-			return ErrInvalidInt
-		}
-
-		switch string(unit) {
-		case "ex":
-			cmd.ttl = time.Duration(valueInt) * time.Second
-		case "px":
-			cmd.ttl = time.Duration(valueInt) * time.Millisecond
-		default:
-			return ErrSyntaxError
-		}
-
-		if cmd.ttl <= 0 {
-			return ErrInvalidExpireTime
-		}
-		return nil
-	}
-
 	cmd := &Set{baseCmd: b}
-	if len(cmd.args) < 2 || len(cmd.args) > 5 {
+	if len(cmd.args) < 2 {
 		return cmd, ErrInvalidArgNum
 	}
 
 	cmd.key = string(cmd.args[0])
 	cmd.value = cmd.args[1]
+	cmd.args = cmd.args[2:]
 
-	if len(cmd.args) == 3 || len(cmd.args) == 5 {
-		err := parseExists(cmd, string(cmd.args[2]))
-		if err != nil {
-			return cmd, err
-		}
+	err := cmd.parseExists()
+	if err != nil {
+		return cmd, err
 	}
 
-	if len(cmd.args) == 4 {
-		err := parseExpires(cmd, string(cmd.args[2]), string(cmd.args[3]))
-		if err != nil {
-			return cmd, err
-		}
+	err = cmd.parseExpires()
+	if err != nil {
+		return cmd, err
 	}
 
-	if len(cmd.args) == 5 {
-		err := parseExpires(cmd, string(cmd.args[3]), string(cmd.args[4]))
-		if err != nil {
-			return cmd, err
-		}
+	if len(cmd.args) > 0 {
+		return cmd, ErrSyntaxError
 	}
 
 	return cmd, nil
 }
 
-func (cmd *Set) Run(w Writer, red Redka) (any, error) {
-	var out rstring.SetOut
-	var ok bool
-	var err error
-	if cmd.ifXX {
-		out, err = red.Str().SetWith(cmd.key, cmd.value).TTL(cmd.ttl).IfExists().Run()
-		ok = out.Updated
-	} else if cmd.ifNX {
-		out, err = red.Str().SetWith(cmd.key, cmd.value).TTL(cmd.ttl).IfNotExists().Run()
-		ok = out.Created
-	} else {
-		err = red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
-		ok = err == nil
+func (cmd *Set) parseExists() error {
+	if len(cmd.args) == 0 {
+		return nil
 	}
-	return cmd.run(w, ok, err)
+
+	value := string(cmd.args[0])
+	switch value {
+	case "nx":
+		cmd.ifNX = true
+		cmd.args = cmd.args[1:]
+	case "xx":
+		cmd.ifXX = true
+		cmd.args = cmd.args[1:]
+	}
+	return nil
 }
 
-func (cmd *Set) run(w Writer, ok bool, err error) (any, error) {
+func (cmd *Set) parseExpires() error {
+	if len(cmd.args) == 0 {
+		return nil
+	}
+
+	unit := string(cmd.args[0])
+	if unit != "ex" && unit != "px" {
+		return nil
+	}
+
+	valueInt, err := strconv.Atoi(string(cmd.args[1]))
+	if err != nil {
+		return ErrInvalidInt
+	}
+
+	switch unit {
+	case "ex":
+		cmd.ttl = time.Duration(valueInt) * time.Second
+		cmd.args = cmd.args[2:]
+	case "px":
+		cmd.ttl = time.Duration(valueInt) * time.Millisecond
+		cmd.args = cmd.args[2:]
+	}
+
+	if cmd.ttl <= 0 {
+		return ErrInvalidExpireTime
+	}
+	return nil
+}
+
+func (cmd *Set) Run(w Writer, red Redka) (any, error) {
+	// Build and run the command.
+	op := red.Str().SetWith(cmd.key, cmd.value)
+	if cmd.ifXX {
+		op = op.IfExists()
+	} else if cmd.ifNX {
+		op = op.IfNotExists()
+	}
+	if cmd.ttl > 0 {
+		op = op.TTL(cmd.ttl)
+	}
+	out, err := op.Run()
+
+	// Determine the output status.
+	var ok bool
+	if cmd.ifXX {
+		ok = out.Updated
+	} else if cmd.ifNX {
+		ok = out.Created
+	} else {
+		ok = err == nil
+	}
+
+	// Write the output.
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

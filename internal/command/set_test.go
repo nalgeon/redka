@@ -48,8 +48,7 @@ func TestSetParse(t *testing.T) {
 			name: "set name alice nx xx",
 			args: buildArgs("set", "name", "alice", "nx", "xx"),
 			want: Set{},
-			// FIXME: should be ErrSyntaxError
-			err: ErrInvalidInt,
+			err:  ErrSyntaxError,
 		},
 		{
 			name: "set name alice ex 10",
