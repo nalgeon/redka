@@ -10,85 +10,77 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlCount = `
-select count(field)
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field in (:fields);
-`
+const (
+	sqlCount = `
+	select count(field)
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
-const sqlDelete = `
-delete from rhash
-where key_id = (
-  select id from rkey where key = :key
-  and (etime is null or etime > :now)
-) and field in (:fields);
-`
+	sqlDelete = `
+	delete from rhash
+	where key_id = (
+	    select id from rkey where key = :key
+	    and (etime is null or etime > :now)
+	  ) and field in (:fields)`
 
-const sqlFields = `
-select field
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlFields = `
+	select field
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlGet = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field = :field;
-`
+	sqlGet = `
+	select field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field = :field`
 
-const sqlGetMany = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field in (:fields);
-`
+	sqlGetMany = `
+	select field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
-const sqlItems = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlItems = `
+	select field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlLen = `
-select count(field)
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlLen = `
+	select count(field)
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlScan = `
-select rhash.rowid, field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and rhash.rowid > :cursor and field glob :pattern
-limit :count;
-`
+	sqlScan = `
+	select rhash.rowid, field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and rhash.rowid > :cursor and field glob :pattern
+	limit :count`
 
-var sqlSet = []string{
-	`insert into rkey (key, type, version, mtime)
+	sqlSet1 = `
+	insert into rkey (key, type, version, mtime)
 	values (:key, :type, :version, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime
-	;`,
+	  mtime = excluded.mtime`
 
-	`insert into rhash (key_id, field, value)
+	sqlSet2 = `
+	insert into rhash (key_id, field, value)
 	values ((select id from rkey where key = :key), :field, :value)
 	on conflict (key_id, field) do update
-	set value = excluded.value;`,
-}
+	set value = excluded.value`
 
-const sqlValues = `
-select value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlValues = `
+	select value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
+)
 
 const scanPageSize = 10
 
@@ -525,12 +517,12 @@ func (tx *Tx) set(key string, field string, value any) error {
 		sql.Named("mtime", now.UnixMilli()),
 	}
 
-	_, err := tx.tx.Exec(sqlSet[0], args...)
+	_, err := tx.tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
 
-	_, err = tx.tx.Exec(sqlSet[1], args...)
+	_, err = tx.tx.Exec(sqlSet2, args...)
 	return err
 }
 
