@@ -306,10 +306,10 @@ func (tx *Tx) Len(key string) (int, error) {
 // slice when there are no more items.
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
-func (tx *Tx) Scan(key string, cursor int, pattern string, pageSize int) (ScanResult, error) {
+func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
 	now := time.Now().UnixMilli()
-	if pageSize == 0 {
-		pageSize = scanPageSize
+	if count == 0 {
+		count = scanPageSize
 	}
 
 	args := []any{
@@ -317,7 +317,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, pageSize int) (ScanRe
 		sql.Named("cursor", cursor),
 		sql.Named("pattern", pattern),
 		sql.Named("now", now),
-		sql.Named("count", pageSize),
+		sql.Named("count", count),
 	}
 
 	// Select hash items matching the pattern.

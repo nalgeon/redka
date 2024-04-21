@@ -121,9 +121,9 @@ func (d *DB) Len(key string) (int, error) {
 // slice when there are no more items.
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
-func (d *DB) Scan(key string, cursor int, pattern string, pageSize int) (ScanResult, error) {
+func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
 	tx := NewTx(d.SQL)
-	return tx.Scan(key, cursor, pattern, pageSize)
+	return tx.Scan(key, cursor, pattern, count)
 }
 
 // Scanner returns an iterator for hash items with fields matching pattern.
