@@ -58,7 +58,7 @@ func TestHDelParse(t *testing.T) {
 }
 
 func TestHDelExec(t *testing.T) {
-	t.Run("one field", func(t *testing.T) {
+	t.Run("one", func(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
@@ -78,7 +78,7 @@ func TestHDelExec(t *testing.T) {
 		age, _ := db.Hash().Get("person", "age")
 		testx.AssertEqual(t, age.String(), "25")
 	})
-	t.Run("some fields", func(t *testing.T) {
+	t.Run("some", func(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
@@ -101,7 +101,7 @@ func TestHDelExec(t *testing.T) {
 		happy, _ := db.Hash().Get("person", "happy")
 		testx.AssertEqual(t, happy.Exists(), false)
 	})
-	t.Run("all fields", func(t *testing.T) {
+	t.Run("all", func(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
@@ -120,8 +120,5 @@ func TestHDelExec(t *testing.T) {
 		testx.AssertEqual(t, name.Exists(), false)
 		age, _ := db.Hash().Get("person", "age")
 		testx.AssertEqual(t, age.Exists(), false)
-
-		exist, _ := db.Key().Exists("person")
-		testx.AssertEqual(t, exist, false)
 	})
 }

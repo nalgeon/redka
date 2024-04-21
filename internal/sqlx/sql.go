@@ -9,6 +9,19 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 )
 
+// Sorting direction.
+const (
+	Asc  = "asc"
+	Desc = "desc"
+)
+
+// Aggregation functions.
+const (
+	Sum = "sum"
+	Min = "min"
+	Max = "max"
+)
+
 // Tx is a database transaction (or a transaction-like object).
 type Tx interface {
 	Query(query string, args ...any) (*sql.Rows, error)
@@ -59,8 +72,10 @@ func Select[T any](db Tx, query string, args []any,
 
 // Returns typed errors for some specific cases.
 func TypedError(err error) error {
-	if err.Error() == "key type mismatch" {
+	switch err.Error() {
+	case "key type mismatch", "UNIQUE constraint failed: rkey.key":
 		return core.ErrKeyType
+	default:
+		return err
 	}
-	return err
 }

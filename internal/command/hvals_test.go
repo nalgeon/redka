@@ -59,10 +59,8 @@ func TestHValsExec(t *testing.T) {
 		res, err := cmd.Run(conn, red)
 
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, []core.Value{core.Value("alice"), core.Value("25")})
-		testx.AssertEqual(t,
-			conn.out() == "2,alice,25" || conn.out() == "2,25,alice",
-			true)
+		testx.AssertEqual(t, res, []core.Value{core.Value("25"), core.Value("alice")})
+		testx.AssertEqual(t, conn.out(), "2,25,alice")
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)

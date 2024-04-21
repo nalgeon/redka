@@ -6,89 +6,80 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
-	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlGet = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field = :field;
-`
+const (
+	sqlCount = `
+	select count(field)
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
-const sqlGetMany = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field in (:fields);
-`
+	sqlDelete = `
+	delete from rhash
+	where key_id = (
+	    select id from rkey where key = :key
+	    and (etime is null or etime > :now)
+	  ) and field in (:fields)`
 
-const sqlCount = `
-select count(field)
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field in (:fields);
-`
+	sqlFields = `
+	select field
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlItems = `
-select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlGet = `
+	select value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field = :field`
 
-const sqlFields = `
-select field
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlGetMany = `
+	select field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
-const sqlValues = `
-select value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlItems = `
+	select field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlLen = `
-select count(field)
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
+	sqlLen = `
+	select count(field)
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlScan = `
-select rhash.rowid, field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and rhash.rowid > :cursor and field glob :pattern
-limit :count;
-`
+	sqlScan = `
+	select rhash.rowid, field, value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and rhash.rowid > :cursor and field glob :pattern
+	limit :count`
 
-var sqlSet = []string{
-	`insert into rkey (key, type, version, mtime)
+	sqlSet1 = `
+	insert into rkey (key, type, version, mtime)
 	values (:key, :type, :version, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime
-	;`,
+	  mtime = excluded.mtime`
 
-	`insert into rhash (key_id, field, value)
+	sqlSet2 = `
+	insert into rhash (key_id, field, value)
 	values ((select id from rkey where key = :key), :field, :value)
 	on conflict (key_id, field) do update
-	set value = excluded.value;`,
-}
+	set value = excluded.value`
 
-const sqlDelete = `
-delete from rhash
-where key_id = (
-  select id from rkey where key = :key
-  and (etime is null or etime > :now)
-) and field in (:fields);
-`
+	sqlValues = `
+	select value
+	from rhash
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
+)
 
 const scanPageSize = 10
 
@@ -103,97 +94,32 @@ func NewTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx}
 }
 
-// Get returns the value of a field in a hash.
-// Returns nil if the key or field does not exist.
-func (tx *Tx) Get(key, field string) (core.Value, error) {
-	now := time.Now()
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("field", field),
-		sql.Named("now", now.UnixMilli()),
-	}
-	row := tx.tx.QueryRow(sqlGet, args...)
-	_, val, err := scanValue(row)
-	return val, err
-}
-
-// GetMany returns a map of values for given fields.
-// Returns nil for fields that do not exist. If the key does not exist,
-// returns a map with nil values for all fields.
-func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
-	// Build a map of requested fields.
-	items := make(map[string]core.Value, len(fields))
-	for _, field := range fields {
-		items[field] = nil
-	}
-
-	// Get the values of the requested fields.
+// Delete deletes one or more items from a hash.
+// Returns the number of fields deleted.
+// Ignores non-existing fields.
+// Does nothing if the key does not exist or is not a hash.
+// Does not delete the key if the hash becomes empty.
+func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, fieldArgs := sqlx.ExpandIn(sqlGetMany, ":fields", fields)
+	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
 	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
-
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(query, args...)
+	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	defer rows.Close()
-
-	// Fill the map with the values for existing fields
-	// (the rest of the fields will remain nil).
-	for rows.Next() {
-		field, val, err := scanValue(rows)
-		if err != nil {
-			return nil, err
-		}
-		items[field] = val
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return items, nil
+	count, _ := res.RowsAffected()
+	return int(count), nil
 }
 
 // Exists checks if a field exists in a hash.
-// Returns false if the key does not exist.
+// If the key does not exist or is not a hash, returns false.
 func (tx *Tx) Exists(key, field string) (bool, error) {
 	count, err := tx.count(key, field)
 	return count > 0, err
 }
 
-// Items returns a map of all fields and values in a hash.
-// Returns an empty map if the key does not exist.
-func (tx *Tx) Items(key string) (map[string]core.Value, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
-	// Select hash rows.
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(sqlItems, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Build a map of hash fields and their values.
-	items := map[string]core.Value{}
-	for rows.Next() {
-		field, val, err := scanValue(rows)
-		if err != nil {
-			return nil, err
-		}
-		items[field] = val
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return items, nil
-}
-
 // Fields returns all fields in a hash.
-// Returns an empty slice if the key does not exist.
+// If the key does not exist or is not a hash, returns an empty slice.
 func (tx *Tx) Fields(key string) ([]string, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -223,8 +149,283 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 	return fields, nil
 }
 
+// Get returns the value of a field in a hash.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a hash, returns ErrNotFound.
+func (tx *Tx) Get(key, field string) (core.Value, error) {
+	args := []any{
+		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
+		sql.Named("field", field),
+	}
+	var val []byte
+	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
+	if err == sql.ErrNoRows {
+		return core.Value(nil), core.ErrNotFound
+	}
+	if err != nil {
+		return core.Value(nil), err
+	}
+	return core.Value(val), nil
+}
+
+// GetMany returns a map of values for given fields.
+// Ignores fields that do not exist and do not return them in the map.
+// If the key does not exist or is not a hash, returns an empty map.
+func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
+	// Get the values of the requested fields.
+	now := time.Now().UnixMilli()
+	query, fieldArgs := sqlx.ExpandIn(sqlGetMany, ":fields", fields)
+	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
+
+	var rows *sql.Rows
+	rows, err := tx.tx.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Fill the map with the values for existing fields.
+	items := map[string]core.Value{}
+	for rows.Next() {
+		field, val, err := scanValue(rows)
+		if err != nil {
+			return nil, err
+		}
+		items[field] = val
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return items, nil
+}
+
+// Incr increments the integer value of a field in a hash.
+// Returns the value after the increment.
+// If the field does not exist, sets it to 0 before the increment.
+// If the field value is not an integer, returns ErrValueType.
+// If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
+func (tx *Tx) Incr(key, field string, delta int) (int, error) {
+	// get the current value
+	val, err := tx.Get(key, field)
+	if err != nil && err != core.ErrNotFound {
+		return 0, err
+	}
+
+	// check if the value is a valid integer
+	valInt, err := val.Int()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valInt + delta
+	err = tx.set(key, field, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}
+
+// IncrFloat increments the float value of a field in a hash.
+// Returns the value after the increment.
+// If the field does not exist, sets it to 0 before the increment.
+// If the field value is not a float, returns ErrValueType.
+// If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
+func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
+	// get the current value
+	val, err := tx.Get(key, field)
+	if err != nil && err != core.ErrNotFound {
+		return 0, err
+	}
+
+	// check if the value is a valid float
+	valFloat, err := val.Float()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valFloat + delta
+	err = tx.set(key, field, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}
+
+// Items returns a map of all fields and values in a hash.
+// If the key does not exist or is not a hash, returns an empty map.
+func (tx *Tx) Items(key string) (map[string]core.Value, error) {
+	now := time.Now().UnixMilli()
+	args := []any{sql.Named("key", key), sql.Named("now", now)}
+
+	// Select hash rows.
+	var rows *sql.Rows
+	rows, err := tx.tx.Query(sqlItems, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Build a map of hash fields and their values.
+	items := map[string]core.Value{}
+	for rows.Next() {
+		field, val, err := scanValue(rows)
+		if err != nil {
+			return nil, err
+		}
+		items[field] = val
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return items, nil
+}
+
+// Len returns the number of fields in a hash.
+// If the key does not exist or is not a hash, returns 0.
+func (tx *Tx) Len(key string) (int, error) {
+	now := time.Now().UnixMilli()
+	args := []any{sql.Named("key", key), sql.Named("now", now)}
+	var n int
+	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	return n, err
+}
+
+// Scan iterates over hash items with fields matching pattern.
+// Returns a slice field-value pairs (see [HashItem]) of size count
+// based on the current state of the cursor. Returns an empty HashItem
+// slice when there are no more items.
+// If the key does not exist or is not a hash, returns a nil slice.
+// Supports glob-style patterns. Set count = 0 for default page size.
+func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
+	if count == 0 {
+		count = scanPageSize
+	}
+
+	args := []any{
+		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
+		sql.Named("cursor", cursor),
+		sql.Named("pattern", pattern),
+		sql.Named("count", count),
+	}
+
+	// Select hash items matching the pattern.
+	scan := func(rows *sql.Rows) (HashItem, error) {
+		var it HashItem
+		var val []byte
+		err := rows.Scan(&it.id, &it.Field, &val)
+		it.Value = core.Value(val)
+		return it, err
+	}
+	items, err := sqlx.Select(tx.tx, sqlScan, args, scan)
+	if err != nil {
+		return ScanResult{}, err
+	}
+
+	// Select the maximum ID.
+	maxID := 0
+	for _, it := range items {
+		if it.id > maxID {
+			maxID = it.id
+		}
+	}
+
+	return ScanResult{maxID, items}, nil
+}
+
+// Scanner returns an iterator for hash items with fields matching pattern.
+// The scanner returns items one by one, fetching them from the database
+// in pageSize batches when necessary. Stops when there are no more items
+// or an error occurs. If the key does not exist or is not a hash, stops immediately.
+// Supports glob-style patterns. Set pageSize = 0 for default page size.
+func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
+	return newScanner(tx, key, pattern, pageSize)
+}
+
+// Set creates or updates the value of a field in a hash.
+// Returns true if the field was created, false if it was updated.
+// If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
+func (tx *Tx) Set(key string, field string, value any) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrValueType
+	}
+	existCount, err := tx.count(key, field)
+	if err != nil {
+		return false, err
+	}
+	err = tx.set(key, field, value)
+	if err != nil {
+		return false, err
+	}
+	return existCount == 0, nil
+}
+
+// SetMany creates or updates the values of multiple fields in a hash.
+// Returns the number of fields created (as opposed to updated).
+// If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
+func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
+	for _, val := range items {
+		if !core.IsValueType(val) {
+			return 0, core.ErrValueType
+		}
+	}
+
+	// Count the number of existing fields.
+	fields := make([]string, 0, len(items))
+	for field := range items {
+		fields = append(fields, field)
+	}
+	existCount, err := tx.count(key, fields...)
+	if err != nil {
+		return 0, err
+	}
+
+	// Set the values.
+	for field, val := range items {
+		err := tx.set(key, field, val)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return len(items) - existCount, nil
+}
+
+// SetNotExists creates the value of a field in a hash if it does not exist.
+// Returns true if the field was created, false if it already exists.
+// If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
+func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrValueType
+	}
+	exist, err := tx.Exists(key, field)
+	if err != nil {
+		return false, err
+	}
+	if exist {
+		return false, nil
+	}
+	err = tx.set(key, field, value)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Values returns all values in a hash.
-// Returns an empty slice if the key does not exist.
+// If the key does not exist or is not a hash, returns an empty slice.
 func (tx *Tx) Values(key string) ([]core.Value, error) {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
@@ -254,254 +455,6 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 	return vals, nil
 }
 
-// Len returns the number of fields in a hash.
-// Returns 0 if the key does not exist.
-func (tx *Tx) Len(key string) (int, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-	var n int
-	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
-	return n, err
-}
-
-// Scan iterates over hash items with fields matching pattern.
-// It returns the next pageSize of field-value pairs (see [HashItem])
-// based on the current state of the cursor. Returns an empty HashItem
-// slice when there are no more items or if the key does not exist.
-//
-// Supports glob-style patterns like these:
-//
-//	key*  k?y  k[bce]y  k[!a-c][y-z]
-//
-// Set pageSize = 0 for default page size.
-func (tx *Tx) Scan(key string, cursor int, pattern string, pageSize int) (ScanResult, error) {
-	now := time.Now().UnixMilli()
-	if pageSize == 0 {
-		pageSize = scanPageSize
-	}
-
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("cursor", cursor),
-		sql.Named("pattern", pattern),
-		sql.Named("now", now),
-		sql.Named("count", pageSize),
-	}
-
-	// Select hash items matching the pattern.
-	scan := func(rows *sql.Rows) (HashItem, error) {
-		var it HashItem
-		var val []byte
-		err := rows.Scan(&it.id, &it.Field, &val)
-		it.Value = core.Value(val)
-		return it, err
-	}
-	items, err := sqlx.Select(tx.tx, sqlScan, args, scan)
-	if err != nil {
-		return ScanResult{}, err
-	}
-
-	// Select the maximum ID.
-	maxID := 0
-	for _, it := range items {
-		if it.id > maxID {
-			maxID = it.id
-		}
-	}
-
-	return ScanResult{maxID, items}, nil
-}
-
-// Scanner returns an iterator for hash items with fields matching pattern.
-// The scanner returns items one by one, fetching them from the database
-// in pageSize batches when necessary.
-// See [Tx.Scan] for pattern description.
-// Set pageSize = 0 for default page size.
-func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
-	return newScanner(tx, key, pattern, pageSize)
-}
-
-// Set creates or updates the value of a field in a hash.
-// Returns true if the field was created, false if it was updated.
-// If the key does not exist, creates it.
-func (tx *Tx) Set(key string, field string, value any) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
-	existCount, err := tx.count(key, field)
-	if err != nil {
-		return false, err
-	}
-	err = tx.set(key, field, value)
-	if err != nil {
-		return false, err
-	}
-	return existCount == 0, nil
-}
-
-// SetNotExists creates the value of a field in a hash if it does not exist.
-// Returns true if the field was created, false if it already exists.
-// If the key does not exist, creates it.
-func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
-	exist, err := tx.Exists(key, field)
-	if err != nil {
-		return false, err
-	}
-	if exist {
-		return false, nil
-	}
-	err = tx.set(key, field, value)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-// SetMany creates or updates the values of multiple fields in a hash.
-// Returns the number of fields created (as opposed to updated).
-// If the key does not exist, creates it.
-func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
-	for _, val := range items {
-		if !core.IsValueType(val) {
-			return 0, core.ErrValueType
-		}
-	}
-
-	// Count the number of existing fields.
-	fields := make([]string, 0, len(items))
-	for field := range items {
-		fields = append(fields, field)
-	}
-	existCount, err := tx.count(key, fields...)
-	if err != nil {
-		return 0, err
-	}
-
-	// Set the values.
-	for field, val := range items {
-		err := tx.set(key, field, val)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return len(items) - existCount, nil
-}
-
-// Incr increments the integer value of a field in a hash.
-// If the field does not exist, sets it to 0 before the increment.
-// If the key does not exist, creates it.
-// Returns the value after the increment.
-// Returns an error if the field value is not an integer.
-func (tx *Tx) Incr(key, field string, delta int) (int, error) {
-	// get the current value
-	val, err := tx.Get(key, field)
-	if err != nil {
-		return 0, err
-	}
-
-	// check if the value is a valid integer
-	valInt, err := val.Int()
-	if err != nil {
-		return 0, core.ErrValueType
-	}
-
-	// increment the value
-	newVal := valInt + delta
-	err = tx.set(key, field, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return newVal, nil
-}
-
-// IncrFloat increments the float value of a field in a hash.
-// If the field does not exist, sets it to 0 before the increment.
-// If the key does not exist, creates it.
-// Returns the value after the increment.
-// Returns an error if the field value is not a float.
-func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
-	// get the current value
-	val, err := tx.Get(key, field)
-	if err != nil {
-		return 0, err
-	}
-
-	// check if the value is a valid float
-	valFloat, err := val.Float()
-	if err != nil {
-		return 0, core.ErrValueType
-	}
-
-	// increment the value
-	newVal := valFloat + delta
-	err = tx.set(key, field, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return newVal, nil
-}
-
-// Delete deletes one or more items from a hash.
-// Non-existing fields are ignored.
-// If there are no fields left in the hash, deletes the key.
-// Returns the number of fields deleted.
-// Returns 0 if the key does not exist.
-func (tx *Tx) Delete(key string, fields ...string) (int, error) {
-	now := time.Now().UnixMilli()
-
-	// Check if the hash exists.
-	k, err := rkey.Get(tx.tx, key)
-	if err != nil {
-		return 0, err
-	}
-	if !k.Exists() {
-		return 0, nil
-	}
-	if k.Type != core.TypeHash {
-		return 0, core.ErrKeyType
-	}
-
-	// Count the number of existing fields.
-	existCount, err := tx.Len(key)
-	if err != nil {
-		return 0, err
-	}
-
-	if len(fields) == 0 {
-		// Delete the hash if no fields are specified.
-		_, err := rkey.Delete(tx.tx, key)
-		if err != nil {
-			return 0, err
-		}
-		return existCount, nil
-	}
-
-	// Delete the fields.
-	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
-	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
-	res, err := tx.tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
-	}
-	delCount, _ := res.RowsAffected()
-
-	if int(delCount) == existCount {
-		// Delete the hash if no fields remain.
-		_, err = rkey.Delete(tx.tx, key)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return int(delCount), nil
-}
-
 // count returns the number of existing fields in a hash.
 func (tx *Tx) count(key string, fields ...string) (int, error) {
 	now := time.Now().UnixMilli()
@@ -514,33 +467,28 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 
 // set creates or updates the value of a field in a hash.
 func (tx *Tx) set(key string, field string, value any) error {
-	now := time.Now()
-
 	args := []any{
 		sql.Named("key", key),
-		sql.Named("field", field),
 		sql.Named("type", core.TypeHash),
 		sql.Named("version", core.InitialVersion),
+		sql.Named("mtime", time.Now().UnixMilli()),
+		sql.Named("field", field),
 		sql.Named("value", value),
-		sql.Named("mtime", now.UnixMilli()),
 	}
 
-	_, err := tx.tx.Exec(sqlSet[0], args...)
+	_, err := tx.tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
 
-	_, err = tx.tx.Exec(sqlSet[1], args...)
+	_, err = tx.tx.Exec(sqlSet2, args...)
 	return err
 }
 
-// scanValue scans a hash field value from the row (rows).
-func scanValue(scanner sqlx.RowScanner) (field string, val core.Value, err error) {
+// scanValue scans a hash field value the current row.
+func scanValue(rows *sql.Rows) (field string, val core.Value, err error) {
 	var value []byte
-	err = scanner.Scan(&field, &value)
-	if err == sql.ErrNoRows {
-		return "", nil, nil
-	}
+	err = rows.Scan(&field, &value)
 	if err != nil {
 		return "", nil, err
 	}
@@ -558,66 +506,4 @@ type HashItem struct {
 type ScanResult struct {
 	Cursor int
 	Items  []HashItem
-}
-
-// Scanner is the iterator for hash items.
-// Stops when there are no more items or an error occurs.
-type Scanner struct {
-	db       *Tx
-	key      string
-	cursor   int
-	pattern  string
-	pageSize int
-	index    int
-	cur      HashItem
-	items    []HashItem
-	err      error
-}
-
-func newScanner(db *Tx, key string, pattern string, pageSize int) *Scanner {
-	if pageSize == 0 {
-		pageSize = scanPageSize
-	}
-	return &Scanner{
-		db:       db,
-		key:      key,
-		cursor:   0,
-		pattern:  pattern,
-		pageSize: pageSize,
-		index:    0,
-		items:    []HashItem{},
-	}
-}
-
-// Scan advances to the next item, fetching items from db as necessary.
-// Returns false when there are no more items or an error occurs.
-func (sc *Scanner) Scan() bool {
-	if sc.index >= len(sc.items) {
-		// Fetch a new page of items.
-		out, err := sc.db.Scan(sc.key, sc.cursor, sc.pattern, sc.pageSize)
-		if err != nil {
-			sc.err = err
-			return false
-		}
-		sc.cursor = out.Cursor
-		sc.items = out.Items
-		sc.index = 0
-		if len(sc.items) == 0 {
-			return false
-		}
-	}
-	// Advance to the next item from the current page.
-	sc.cur = sc.items[sc.index]
-	sc.index++
-	return true
-}
-
-// Item returns the current hash item.
-func (sc *Scanner) Item() HashItem {
-	return sc.cur
-}
-
-// Err returns the first error encountered during iteration.
-func (sc *Scanner) Err() error {
-	return sc.err
 }
