@@ -18,6 +18,10 @@ const sqlCount = `
 select count(id) from rkey
 where key in (:keys) and (etime is null or etime > :now)`
 
+const sqlCountType = `
+select count(id) from rkey
+where key in (:keys) and (etime is null or etime > :now) and type = :type`
+
 const sqlKeys = `
 select id, key, type, version, etime, mtime from rkey
 where key glob :pattern and (etime is null or etime > :now)`
@@ -419,6 +423,17 @@ func Count(tx sqlx.Tx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	var count int
+	err := tx.QueryRow(query, args...).Scan(&count)
+	return count, err
+}
+
+// CountType returns the number of existing keys
+// of a specific type among specified keys.
+func CountType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlCountType, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now), sql.Named("type", typ)})
 	var count int
 	err := tx.QueryRow(query, args...).Scan(&count)
 	return count, err

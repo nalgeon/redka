@@ -12,7 +12,7 @@ import (
 
 const (
 	sqlGet = `
-	select key, value
+	select value
 	from rstring
 	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
 	where key = :key`
@@ -66,26 +66,27 @@ func NewTx(tx sqlx.Tx) *Tx {
 }
 
 // Get returns the value of the key.
-// Returns nil if the key does not exist.
+// If the key does not exist or is not a string, returns ErrNotFound.
 func (tx *Tx) Get(key string) (core.Value, error) {
 	args := []any{
 		sql.Named("key", key),
 		sql.Named("now", time.Now().UnixMilli()),
 	}
-	row := tx.tx.QueryRow(sqlGet, args...)
-	_, val, err := scanValue(row)
-	return val, err
+	var val []byte
+	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
+	if err == sql.ErrNoRows {
+		return core.Value(nil), core.ErrNotFound
+	}
+	if err != nil {
+		return core.Value(nil), err
+	}
+	return core.Value(val), nil
 }
 
 // GetMany returns a map of values for given keys.
-// Returns nil for keys that do not exist.
+// Ignores keys that do not exist or not strings,
+// and does not return them in the map.
 func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
-	// Build a map of requested keys.
-	items := make(map[string]core.Value, len(keys))
-	for _, key := range keys {
-		items[key] = nil
-	}
-
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
@@ -98,14 +99,16 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	}
 	defer rows.Close()
 
-	// Fill the map with the values for existing keys
-	// (the rest of the keys will remain nil).
+	// Fill the map with the values for existing keys.
+	items := map[string]core.Value{}
 	for rows.Next() {
-		key, val, err := scanValue(rows)
+		var key string
+		var val []byte
+		err = rows.Scan(&key, &val)
 		if err != nil {
 			return nil, err
 		}
-		items[key] = val
+		items[key] = core.Value(val)
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
@@ -116,15 +119,16 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 
 // GetSet returns the previous value of a key after setting it to a new value.
 // Optionally sets the expiration time (if ttl > 0).
-// Overwrites the value and ttl if the key already exists.
-// Returns nil if the key did not exist.
+// If the key already exists, overwrites the value and ttl.
+// If the key exists but is not a string, returns ErrKeyType.
+// If the key does not exist, returns nil as the previous value.
 func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
 	if !core.IsValueType(value) {
 		return nil, core.ErrValueType
 	}
 
 	prev, err := tx.Get(key)
-	if err != nil {
+	if err != nil && err != core.ErrNotFound {
 		return nil, err
 	}
 
@@ -132,14 +136,15 @@ func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, erro
 	return prev, err
 }
 
-// Incr increments the key value by the specified amount.
-// If the key does not exist, sets it to 0 before the increment.
+// Incr increments the integer key value by the specified amount.
 // Returns the value after the increment.
-// Returns an error if the key value is not an integer.
+// If the key does not exist, sets it to 0 before the increment.
+// If the key value is not an integer, returns ErrValueType.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Incr(key string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key)
-	if err != nil {
+	if err != nil && err != core.ErrNotFound {
 		return 0, err
 	}
 
@@ -159,14 +164,15 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 	return newVal, nil
 }
 
-// IncrFloat increments the key value by the specified amount.
-// If the key does not exist, sets it to 0 before the increment.
+// IncrFloat increments the float key value by the specified amount.
 // Returns the value after the increment.
-// Returns an error if the key value is not a float.
+// If the key does not exist, sets it to 0 before the increment.
+// If the key value is not an float, returns ErrValueType.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key)
-	if err != nil {
+	if err != nil && err != core.ErrNotFound {
 		return 0, err
 	}
 
@@ -188,6 +194,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
 }
@@ -195,6 +202,7 @@ func (tx *Tx) Set(key string, value any) error {
 // SetExists sets the key value if the key exists.
 // Optionally sets the expiration time (if ttl > 0).
 // Returns true if the key was set, false if the key does not exist.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
@@ -214,6 +222,7 @@ func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) 
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
 		return core.ErrValueType
@@ -226,6 +235,7 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 // Overwrites values for keys that already exist and
 // creates new keys/values for keys that do not exist.
 // Removes the TTL for existing keys.
+// If any of the keys exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetMany(items map[string]any) error {
 	for _, val := range items {
 		if !core.IsValueType(val) {
@@ -244,8 +254,9 @@ func (tx *Tx) SetMany(items map[string]any) error {
 }
 
 // SetManyNX sets the values of multiple keys, but only if none
-// of them yet exist. Returns true if the keys were set, false if any
-// of them already exist.
+// of them yet exist. Returns true if the keys were set,
+// false if any of them already exist.
+// If any of the keys exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	for _, val := range items {
 		if !core.IsValueType(val) {
@@ -260,7 +271,7 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	}
 
 	// check if any of the keys exist
-	count, err := rkey.Count(tx.tx, keys...)
+	count, err := rkey.CountType(tx.tx, core.TypeString, keys...)
 	if err != nil {
 		return false, err
 	}
@@ -284,16 +295,17 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 // SetNotExists sets the key value if the key does not exist.
 // Optionally sets the expiration time (if ttl > 0).
 // Returns true if the key was set, false if the key already exists.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
 	}
 
-	k, err := rkey.Get(tx.tx, key)
-	if err != nil {
+	val, err := tx.Get(key)
+	if err != nil && err != core.ErrNotFound {
 		return false, err
 	}
-	if k.Exists() {
+	if val.Exists() {
 		return false, nil
 	}
 
@@ -346,17 +358,4 @@ func (tx *Tx) update(key string, value any) error {
 	}
 	_, err = tx.tx.Exec(sqlUpdate2, args...)
 	return err
-}
-
-// scanValue scans a key value from the row (rows).
-func scanValue(scanner sqlx.RowScanner) (key string, val core.Value, err error) {
-	var value []byte
-	err = scanner.Scan(&key, &value)
-	if err == sql.ErrNoRows {
-		return "", nil, nil
-	}
-	if err != nil {
-		return "", nil, err
-	}
-	return key, core.Value(value), nil
 }
