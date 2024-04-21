@@ -3,6 +3,8 @@ package command
 import (
 	"strconv"
 	"time"
+
+	"github.com/nalgeon/redka/internal/core"
 )
 
 // Sets the expiration time of a key to a Unix timestamp.
@@ -29,15 +31,15 @@ func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 }
 
 func (cmd *ExpireAt) Run(w Writer, red Redka) (any, error) {
-	ok, err := red.Key().ExpireAt(cmd.key, cmd.at)
-	if err != nil {
+	err := red.Key().ExpireAt(cmd.key, cmd.at)
+	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
-		return nil, err
+		return false, err
 	}
-	if ok {
-		w.WriteInt(1)
-	} else {
+	if err == core.ErrNotFound {
 		w.WriteInt(0)
+		return false, nil
 	}
-	return ok, nil
+	w.WriteInt(1)
+	return true, nil
 }

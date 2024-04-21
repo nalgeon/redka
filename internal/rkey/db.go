@@ -68,31 +68,26 @@ func (db *DB) Exists(key string) (bool, error) {
 
 // Expire sets a time-to-live (ttl) for the key using a relative duration.
 // After the ttl passes, the key is expired and no longer exists.
-// Returns false is the key does not exist.
-func (db *DB) Expire(key string, ttl time.Duration) (bool, error) {
-	var ok bool
+// If the key does not exist, returns ErrNotFound.
+func (db *DB) Expire(key string, ttl time.Duration) error {
 	err := db.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.Expire(key, ttl)
-		return err
+		return tx.Expire(key, ttl)
 	})
-	return ok, err
+	return err
 }
 
 // ExpireAt sets an expiration time for the key. After this time,
 // the key is expired and no longer exists.
-// Returns false is the key does not exist.
-func (db *DB) ExpireAt(key string, at time.Time) (bool, error) {
-	var ok bool
+// If the key does not exist, returns ErrNotFound.
+func (db *DB) ExpireAt(key string, at time.Time) error {
 	err := db.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.ExpireAt(key, at)
-		return err
+		return tx.ExpireAt(key, at)
 	})
-	return ok, err
+	return err
 }
 
 // Get returns a specific key with all associated details.
+// If the key does not exist, returns ErrNotFound.
 func (db *DB) Get(key string) (core.Key, error) {
 	tx := NewTx(db.SQL)
 	return tx.Get(key)
@@ -111,18 +106,16 @@ func (db *DB) Keys(pattern string) ([]core.Key, error) {
 }
 
 // Persist removes the expiration time for the key.
-// Returns false is the key does not exist.
-func (db *DB) Persist(key string) (bool, error) {
-	var ok bool
+// If the key does not exist, returns ErrNotFound.
+func (db *DB) Persist(key string) error {
 	err := db.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.Persist(key)
-		return err
+		return tx.Persist(key)
 	})
-	return ok, err
+	return err
 }
 
 // Random returns a random key.
+// If there are no keys, returns ErrNotFound.
 func (db *DB) Random() (core.Key, error) {
 	tx := NewTx(db.SQL)
 	return tx.Random()
@@ -130,6 +123,8 @@ func (db *DB) Random() (core.Key, error) {
 
 // Rename changes the key name.
 // If there is an existing key with the new name, it is replaced.
+// If the old key does not exist, returns ErrNotFound.
+// If the new key has a different type, returns ErrKeyType.
 func (db *DB) Rename(key, newKey string) error {
 	err := db.Update(func(tx *Tx) error {
 		err := tx.Rename(key, newKey)
@@ -152,20 +147,20 @@ func (db *DB) RenameNotExists(key, newKey string) (bool, error) {
 }
 
 // Scan iterates over keys matching pattern.
-// It returns the next pageSize keys based on the current state of the cursor.
+// Returns a slice of keys (see [core.Key]) of size count
+// based on the current state of the cursor.
 // Returns an empty slice when there are no more keys.
-// See [DB.Keys] for pattern description.
-// Set pageSize = 0 for default page size.
+// Supports glob-style patterns. Set count = 0 for default page size.
 func (db *DB) Scan(cursor int, pattern string, pageSize int) (ScanResult, error) {
 	tx := NewTx(db.SQL)
 	return tx.Scan(cursor, pattern, pageSize)
 }
 
 // Scanner returns an iterator for keys matching pattern.
-// The scanner returns keys one by one, fetching keys from the
-// database in pageSize batches when necessary.
-// See [DB.Keys] for pattern description.
-// Set pageSize = 0 for default page size.
+// The scanner returns keys one by one, fetching them
+// from the database in pageSize batches when necessary.
+// Stops when there are no more items or an error occurs.
+// Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (db *DB) Scanner(pattern string, pageSize int) *Scanner {
 	return newScanner(NewTx(db.SQL), pattern, pageSize)
 }

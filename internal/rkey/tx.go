@@ -104,13 +104,26 @@ func NewTx(tx sqlx.Tx) *Tx {
 
 // Count returns the number of existing keys among specified.
 func (tx *Tx) Count(keys ...string) (int, error) {
-	return Count(tx.tx, keys...)
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	var count int
+	err := tx.tx.QueryRow(query, args...).Scan(&count)
+	return count, err
 }
 
 // Delete deletes keys and their values, regardless of the type.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
-	return Delete(tx.tx, keys...)
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	res, err := tx.tx.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	affectedCount, _ := res.RowsAffected()
+	return int(affectedCount), nil
 }
 
 // DeleteAll deletes all keys and their values, effectively resetting
@@ -122,37 +135,40 @@ func (tx *Tx) DeleteAll() error {
 
 // Exists reports whether the key exists.
 func (tx *Tx) Exists(key string) (bool, error) {
-	count, err := Count(tx.tx, key)
+	count, err := tx.Count(key)
 	return count > 0, err
 }
 
 // Expire sets a time-to-live (ttl) for the key using a relative duration.
 // After the ttl passes, the key is expired and no longer exists.
-// Returns false is the key does not exist.
-func (tx *Tx) Expire(key string, ttl time.Duration) (bool, error) {
+// If the key does not exist, returns ErrNotFound.
+func (tx *Tx) Expire(key string, ttl time.Duration) error {
 	at := time.Now().Add(ttl)
 	return tx.ExpireAt(key, at)
 }
 
 // ExpireAt sets an expiration time for the key. After this time,
 // the key is expired and no longer exists.
-// Returns false is the key does not exist.
-func (tx *Tx) ExpireAt(key string, at time.Time) (bool, error) {
-	now := time.Now().UnixMilli()
+// If the key does not exist, returns ErrNotFound.
+func (tx *Tx) ExpireAt(key string, at time.Time) error {
 	args := []any{
 		sql.Named("key", key),
-		sql.Named("now", now),
+		sql.Named("now", time.Now().UnixMilli()),
 		sql.Named("at", at.UnixMilli()),
 	}
 	res, err := tx.tx.Exec(sqlExpire, args...)
 	if err != nil {
-		return false, err
+		return err
 	}
 	count, _ := res.RowsAffected()
-	return count > 0, nil
+	if count == 0 {
+		return core.ErrNotFound
+	}
+	return nil
 }
 
 // Get returns a specific key with all associated details.
+// If the key does not exist, returns ErrNotFound.
 func (tx *Tx) Get(key string) (core.Key, error) {
 	return Get(tx.tx, key)
 }
@@ -165,8 +181,10 @@ func (tx *Tx) Get(key string) (core.Key, error) {
 // Use this method only if you are sure that the number of keys is
 // limited. Otherwise, use the [Tx.Scan] or [Tx.Scanner] methods.
 func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("pattern", pattern), sql.Named("now", now)}
+	args := []any{
+		sql.Named("pattern", pattern),
+		sql.Named("now", time.Now().UnixMilli()),
+	}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
 		err := rows.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
@@ -178,19 +196,23 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 }
 
 // Persist removes the expiration time for the key.
-// Returns false is the key does not exist.
-func (tx *Tx) Persist(key string) (bool, error) {
+// If the key does not exist, returns ErrNotFound.
+func (tx *Tx) Persist(key string) error {
 	now := time.Now().UnixMilli()
 	args := []any{sql.Named("key", key), sql.Named("now", now)}
 	res, err := tx.tx.Exec(sqlPersist, args...)
 	if err != nil {
-		return false, err
+		return err
 	}
 	count, _ := res.RowsAffected()
-	return count > 0, nil
+	if count == 0 {
+		return core.ErrNotFound
+	}
+	return nil
 }
 
 // Random returns a random key.
+// If there are no keys, returns ErrNotFound.
 func (tx *Tx) Random() (core.Key, error) {
 	now := time.Now().UnixMilli()
 	var k core.Key
@@ -198,13 +220,15 @@ func (tx *Tx) Random() (core.Key, error) {
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
-		return core.Key{}, nil
+		return core.Key{}, core.ErrNotFound
 	}
 	return k, err
 }
 
 // Rename changes the key name.
 // If there is an existing key with the new name, it is replaced.
+// If the old key does not exist, returns ErrNotFound.
+// If the new key has a different type, returns ErrKeyType.
 func (tx *Tx) Rename(key, newKey string) error {
 	// Make sure the old key exists.
 	oldK, err := Get(tx.tx, key)
@@ -220,10 +244,13 @@ func (tx *Tx) Rename(key, newKey string) error {
 		return nil
 	}
 
-	// Delete the new key if it exists.
-	_, err = tx.Delete(newKey)
-	if err != nil {
+	// Make sure the new key does not exist or has the same type.
+	newK, err := Get(tx.tx, newKey)
+	if err != nil && err != core.ErrNotFound {
 		return err
+	}
+	if newK.Exists() && newK.Type != oldK.Type {
+		return core.ErrKeyType
 	}
 
 	// Rename the old key to the new key.
@@ -276,20 +303,20 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 }
 
 // Scan iterates over keys matching pattern.
-// It returns the next pageSize keys based on the current state of the cursor.
+// Returns a slice of keys (see [core.Key]) of size count
+// based on the current state of the cursor.
 // Returns an empty slice when there are no more keys.
-// See [Tx.Keys] for pattern description.
-// Set pageSize = 0 for default page size.
-func (tx *Tx) Scan(cursor int, pattern string, pageSize int) (ScanResult, error) {
+// Supports glob-style patterns. Set count = 0 for default page size.
+func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 	now := time.Now().UnixMilli()
-	if pageSize == 0 {
-		pageSize = scanPageSize
+	if count == 0 {
+		count = scanPageSize
 	}
 	args := []any{
+		sql.Named("now", now),
 		sql.Named("cursor", cursor),
 		sql.Named("pattern", pattern),
-		sql.Named("now", now),
-		sql.Named("count", pageSize),
+		sql.Named("count", count),
 	}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
@@ -314,22 +341,12 @@ func (tx *Tx) Scan(cursor int, pattern string, pageSize int) (ScanResult, error)
 }
 
 // Scanner returns an iterator for keys matching pattern.
-// The scanner returns keys one by one, fetching keys from the
-// database in pageSize batches when necessary.
-// See [Tx.Keys] for pattern description.
-// Set pageSize = 0 for default page size.
+// The scanner returns keys one by one, fetching them
+// from the database in pageSize batches when necessary.
+// Stops when there are no more items or an error occurs.
+// Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 	return newScanner(tx, pattern, pageSize)
-}
-
-// Count returns the number of existing keys among specified.
-func Count(tx sqlx.Tx, keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
-	var count int
-	err := tx.QueryRow(query, args...).Scan(&count)
-	return count, err
 }
 
 // CountType returns the number of existing keys
@@ -341,19 +358,6 @@ func CountType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
 	var count int
 	err := tx.QueryRow(query, args...).Scan(&count)
 	return count, err
-}
-
-// Delete deletes keys and their values (regardless of the type).
-func Delete(tx sqlx.Tx, keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
-	res, err := tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
-	}
-	affectedCount, _ := res.RowsAffected()
-	return int(affectedCount), nil
 }
 
 // DeleteType deletes keys of a specific type.
@@ -373,16 +377,14 @@ func DeleteType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
 
 // Get returns the key data structure.
 func Get(tx sqlx.Tx, key string) (core.Key, error) {
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
-	}
+	now := time.Now().UnixMilli()
+	args := []any{sql.Named("key", key), sql.Named("now", now)}
 	var k core.Key
 	err := tx.QueryRow(sqlGet, args...).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
-		return core.Key{}, nil
+		return core.Key{}, core.ErrNotFound
 	}
 	return k, err
 }

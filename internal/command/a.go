@@ -67,11 +67,11 @@ type RKey interface {
 	Delete(keys ...string) (int, error)
 	DeleteAll() error
 	Exists(key string) (bool, error)
-	Expire(key string, ttl time.Duration) (bool, error)
-	ExpireAt(key string, at time.Time) (bool, error)
+	Expire(key string, ttl time.Duration) error
+	ExpireAt(key string, at time.Time) error
 	Get(key string) (core.Key, error)
 	Keys(pattern string) ([]core.Key, error)
-	Persist(key string) (bool, error)
+	Persist(key string) error
 	Random() (core.Key, error)
 	Rename(key, newKey string) error
 	RenameNotExists(key, newKey string) (bool, error)

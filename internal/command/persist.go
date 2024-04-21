@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka/internal/core"
+
 // Removes the expiration time of a key.
 // PERSIST key
 // https://redis.io/commands/persist
@@ -18,15 +20,16 @@ func parsePersist(b baseCmd) (*Persist, error) {
 }
 
 func (cmd *Persist) Run(w Writer, red Redka) (any, error) {
-	ok, err := red.Key().Persist(cmd.key)
-	if err != nil {
+	err := red.Key().Persist(cmd.key)
+	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
-		return nil, err
+		return false, err
 	}
-	if ok {
-		w.WriteInt(1)
-	} else {
+	if err == core.ErrNotFound {
 		w.WriteInt(0)
+		return false, nil
+
 	}
-	return ok, nil
+	w.WriteInt(1)
+	return true, nil
 }

@@ -209,7 +209,7 @@ func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) 
 	}
 
 	k, err := rkey.Get(tx.tx, key)
-	if err != nil {
+	if err != nil && err != core.ErrNotFound {
 		return false, err
 	}
 	if !k.Exists() {
