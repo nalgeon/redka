@@ -10,51 +10,49 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const sqlGet = `
-select key, value
-from rstring
-join rkey on key_id = rkey.id
-where key = ? and (etime is null or etime > ?);
-`
+const (
+	sqlGet = `
+	select key, value
+	from rstring
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
-const sqlGetMany = `
-select key, value
-from rstring
-join rkey on key_id = rkey.id
-where key in (:keys) and (etime is null or etime > :now);
-`
+	sqlGetMany = `
+	select key, value
+	from rstring
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key in (:keys)`
 
-var sqlSet = []string{
-	`insert into rkey (key, type, version, etime, mtime)
+	sqlSet1 = `
+	insert into rkey (key, type, version, etime, mtime)
 	values (:key, :type, :version, :etime, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  etime = excluded.etime,
-	  mtime = excluded.mtime
-	;`,
+	  mtime = excluded.mtime`
 
-	`insert into rstring (key_id, value)
+	sqlSet2 = `
+	insert into rstring (key_id, value)
 	values ((select id from rkey where key = :key), :value)
 	on conflict (key_id) do update
-	set value = excluded.value;`,
-}
+	set value = excluded.value`
 
-var sqlUpdate = []string{
-	`insert into rkey (key, type, version, etime, mtime)
+	sqlUpdate1 = `
+	insert into rkey (key, type, version, etime, mtime)
 	values (:key, :type, :version, null, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  -- not changing etime
-	  mtime = excluded.mtime
-	;`,
+	  mtime = excluded.mtime`
 
-	`insert into rstring (key_id, value)
+	sqlUpdate2 = `
+	insert into rstring (key_id, value)
 	values ((select id from rkey where key = :key), :value)
 	on conflict (key_id) do update
-	set value = excluded.value;`,
-}
+	set value = excluded.value`
+)
 
 // Tx is a string repository transaction.
 type Tx struct {
@@ -70,8 +68,11 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Get returns the value of the key.
 // Returns nil if the key does not exist.
 func (tx *Tx) Get(key string) (core.Value, error) {
-	now := time.Now().UnixMilli()
-	row := tx.tx.QueryRow(sqlGet, key, now)
+	args := []any{
+		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
+	}
+	row := tx.tx.QueryRow(sqlGet, args...)
 	_, val, err := scanValue(row)
 	return val, err
 }
@@ -88,7 +89,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	args := slices.Concat([]any{sql.Named("now", now)}, keyArgs)
 
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
@@ -318,12 +319,12 @@ func (tx *Tx) set(key string, value any, ttl time.Duration) error {
 		sql.Named("mtime", now.UnixMilli()),
 	}
 
-	_, err := tx.tx.Exec(sqlSet[0], args...)
+	_, err := tx.tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
 
-	_, err = tx.tx.Exec(sqlSet[1], args...)
+	_, err = tx.tx.Exec(sqlSet2, args...)
 	return err
 }
 
@@ -339,11 +340,11 @@ func (tx *Tx) update(key string, value any) error {
 		sql.Named("value", value),
 		sql.Named("mtime", now),
 	}
-	_, err := tx.tx.Exec(sqlUpdate[0], args...)
+	_, err := tx.tx.Exec(sqlUpdate1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-	_, err = tx.tx.Exec(sqlUpdate[1], args...)
+	_, err = tx.tx.Exec(sqlUpdate2, args...)
 	return err
 }
 
