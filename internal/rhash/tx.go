@@ -10,6 +10,28 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
+const sqlCount = `
+select count(field)
+from rhash
+join rkey on key_id = rkey.id and (etime is null or etime > :now)
+where key = :key and field in (:fields);
+`
+
+const sqlDelete = `
+delete from rhash
+where key_id = (
+  select id from rkey where key = :key
+  and (etime is null or etime > :now)
+) and field in (:fields);
+`
+
+const sqlFields = `
+select field
+from rhash
+join rkey on key_id = rkey.id and (etime is null or etime > :now)
+where key = :key;
+`
+
 const sqlGet = `
 select field, value
 from rhash
@@ -24,29 +46,8 @@ join rkey on key_id = rkey.id and (etime is null or etime > :now)
 where key = :key and field in (:fields);
 `
 
-const sqlCount = `
-select count(field)
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key and field in (:fields);
-`
-
 const sqlItems = `
 select field, value
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
-
-const sqlFields = `
-select field
-from rhash
-join rkey on key_id = rkey.id and (etime is null or etime > :now)
-where key = :key;
-`
-
-const sqlValues = `
-select value
 from rhash
 join rkey on key_id = rkey.id and (etime is null or etime > :now)
 where key = :key;
@@ -82,12 +83,11 @@ var sqlSet = []string{
 	set value = excluded.value;`,
 }
 
-const sqlDelete = `
-delete from rhash
-where key_id = (
-  select id from rkey where key = :key
-  and (etime is null or etime > :now)
-) and field in (:fields);
+const sqlValues = `
+select value
+from rhash
+join rkey on key_id = rkey.id and (etime is null or etime > :now)
+where key = :key;
 `
 
 const scanPageSize = 10
@@ -101,6 +101,99 @@ type Tx struct {
 // from a generic database transaction.
 func NewTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx}
+}
+
+// Delete deletes one or more items from a hash.
+// Non-existing fields are ignored.
+// If there are no fields left in the hash, deletes the key.
+// Returns the number of fields deleted.
+// Returns 0 if the key does not exist.
+func (tx *Tx) Delete(key string, fields ...string) (int, error) {
+	now := time.Now().UnixMilli()
+
+	// Check if the hash exists.
+	k, err := rkey.Get(tx.tx, key)
+	if err != nil {
+		return 0, err
+	}
+	if !k.Exists() {
+		return 0, nil
+	}
+	if k.Type != core.TypeHash {
+		return 0, core.ErrKeyType
+	}
+
+	// Count the number of existing fields.
+	existCount, err := tx.Len(key)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(fields) == 0 {
+		// Delete the hash if no fields are specified.
+		_, err := rkey.Delete(tx.tx, key)
+		if err != nil {
+			return 0, err
+		}
+		return existCount, nil
+	}
+
+	// Delete the fields.
+	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
+	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
+	res, err := tx.tx.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	delCount, _ := res.RowsAffected()
+
+	if int(delCount) == existCount {
+		// Delete the hash if no fields remain.
+		_, err = rkey.Delete(tx.tx, key)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return int(delCount), nil
+}
+
+// Exists checks if a field exists in a hash.
+// Returns false if the key does not exist.
+func (tx *Tx) Exists(key, field string) (bool, error) {
+	count, err := tx.count(key, field)
+	return count > 0, err
+}
+
+// Fields returns all fields in a hash.
+// Returns an empty slice if the key does not exist.
+func (tx *Tx) Fields(key string) ([]string, error) {
+	now := time.Now().UnixMilli()
+	args := []any{sql.Named("key", key), sql.Named("now", now)}
+
+	// Select hash fields.
+	var rows *sql.Rows
+	rows, err := tx.tx.Query(sqlFields, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Build a slice of hash fields.
+	fields := []string{}
+	for rows.Next() {
+		var field string
+		err := rows.Scan(&field)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, field)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return fields, nil
 }
 
 // Get returns the value of a field in a hash.
@@ -155,11 +248,60 @@ func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, erro
 	return items, nil
 }
 
-// Exists checks if a field exists in a hash.
-// Returns false if the key does not exist.
-func (tx *Tx) Exists(key, field string) (bool, error) {
-	count, err := tx.count(key, field)
-	return count > 0, err
+// Incr increments the integer value of a field in a hash.
+// If the field does not exist, sets it to 0 before the increment.
+// If the key does not exist, creates it.
+// Returns the value after the increment.
+// Returns an error if the field value is not an integer.
+func (tx *Tx) Incr(key, field string, delta int) (int, error) {
+	// get the current value
+	val, err := tx.Get(key, field)
+	if err != nil {
+		return 0, err
+	}
+
+	// check if the value is a valid integer
+	valInt, err := val.Int()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valInt + delta
+	err = tx.set(key, field, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}
+
+// IncrFloat increments the float value of a field in a hash.
+// If the field does not exist, sets it to 0 before the increment.
+// If the key does not exist, creates it.
+// Returns the value after the increment.
+// Returns an error if the field value is not a float.
+func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
+	// get the current value
+	val, err := tx.Get(key, field)
+	if err != nil {
+		return 0, err
+	}
+
+	// check if the value is a valid float
+	valFloat, err := val.Float()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valFloat + delta
+	err = tx.set(key, field, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
 }
 
 // Items returns a map of all fields and values in a hash.
@@ -190,68 +332,6 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 	}
 
 	return items, nil
-}
-
-// Fields returns all fields in a hash.
-// Returns an empty slice if the key does not exist.
-func (tx *Tx) Fields(key string) ([]string, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
-	// Select hash fields.
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(sqlFields, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Build a slice of hash fields.
-	fields := []string{}
-	for rows.Next() {
-		var field string
-		err := rows.Scan(&field)
-		if err != nil {
-			return nil, err
-		}
-		fields = append(fields, field)
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return fields, nil
-}
-
-// Values returns all values in a hash.
-// Returns an empty slice if the key does not exist.
-func (tx *Tx) Values(key string) ([]core.Value, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
-	// Select hash values.
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(sqlValues, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Build a slice of hash values.
-	vals := []core.Value{}
-	for rows.Next() {
-		var value []byte
-		err := rows.Scan(&value)
-		if err != nil {
-			return nil, err
-		}
-		vals = append(vals, core.Value(value))
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return vals, nil
 }
 
 // Len returns the number of fields in a hash.
@@ -339,27 +419,6 @@ func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 	return existCount == 0, nil
 }
 
-// SetNotExists creates the value of a field in a hash if it does not exist.
-// Returns true if the field was created, false if it already exists.
-// If the key does not exist, creates it.
-func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
-	exist, err := tx.Exists(key, field)
-	if err != nil {
-		return false, err
-	}
-	if exist {
-		return false, nil
-	}
-	err = tx.set(key, field, value)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
 // SetMany creates or updates the values of multiple fields in a hash.
 // Returns the number of fields created (as opposed to updated).
 // If the key does not exist, creates it.
@@ -391,115 +450,56 @@ func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 	return len(items) - existCount, nil
 }
 
-// Incr increments the integer value of a field in a hash.
-// If the field does not exist, sets it to 0 before the increment.
+// SetNotExists creates the value of a field in a hash if it does not exist.
+// Returns true if the field was created, false if it already exists.
 // If the key does not exist, creates it.
-// Returns the value after the increment.
-// Returns an error if the field value is not an integer.
-func (tx *Tx) Incr(key, field string, delta int) (int, error) {
-	// get the current value
-	val, err := tx.Get(key, field)
-	if err != nil {
-		return 0, err
+func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrValueType
 	}
-
-	// check if the value is a valid integer
-	valInt, err := val.Int()
+	exist, err := tx.Exists(key, field)
 	if err != nil {
-		return 0, core.ErrValueType
+		return false, err
 	}
-
-	// increment the value
-	newVal := valInt + delta
-	err = tx.set(key, field, newVal)
+	if exist {
+		return false, nil
+	}
+	err = tx.set(key, field, value)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
-
-	return newVal, nil
+	return true, nil
 }
 
-// IncrFloat increments the float value of a field in a hash.
-// If the field does not exist, sets it to 0 before the increment.
-// If the key does not exist, creates it.
-// Returns the value after the increment.
-// Returns an error if the field value is not a float.
-func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
-	// get the current value
-	val, err := tx.Get(key, field)
-	if err != nil {
-		return 0, err
-	}
-
-	// check if the value is a valid float
-	valFloat, err := val.Float()
-	if err != nil {
-		return 0, core.ErrValueType
-	}
-
-	// increment the value
-	newVal := valFloat + delta
-	err = tx.set(key, field, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return newVal, nil
-}
-
-// Delete deletes one or more items from a hash.
-// Non-existing fields are ignored.
-// If there are no fields left in the hash, deletes the key.
-// Returns the number of fields deleted.
-// Returns 0 if the key does not exist.
-func (tx *Tx) Delete(key string, fields ...string) (int, error) {
+// Values returns all values in a hash.
+// Returns an empty slice if the key does not exist.
+func (tx *Tx) Values(key string) ([]core.Value, error) {
 	now := time.Now().UnixMilli()
+	args := []any{sql.Named("key", key), sql.Named("now", now)}
 
-	// Check if the hash exists.
-	k, err := rkey.Get(tx.tx, key)
+	// Select hash values.
+	var rows *sql.Rows
+	rows, err := tx.tx.Query(sqlValues, args...)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if !k.Exists() {
-		return 0, nil
-	}
-	if k.Type != core.TypeHash {
-		return 0, core.ErrKeyType
-	}
+	defer rows.Close()
 
-	// Count the number of existing fields.
-	existCount, err := tx.Len(key)
-	if err != nil {
-		return 0, err
-	}
-
-	if len(fields) == 0 {
-		// Delete the hash if no fields are specified.
-		_, err := rkey.Delete(tx.tx, key)
+	// Build a slice of hash values.
+	vals := []core.Value{}
+	for rows.Next() {
+		var value []byte
+		err := rows.Scan(&value)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		return existCount, nil
+		vals = append(vals, core.Value(value))
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 
-	// Delete the fields.
-	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
-	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
-	res, err := tx.tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
-	}
-	delCount, _ := res.RowsAffected()
-
-	if int(delCount) == existCount {
-		// Delete the hash if no fields remain.
-		_, err = rkey.Delete(tx.tx, key)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return int(delCount), nil
+	return vals, nil
 }
 
 // count returns the number of existing fields in a hash.

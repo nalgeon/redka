@@ -96,21 +96,21 @@ type RStr interface {
 
 // RHash is a hash repository.
 type RHash interface {
+	Delete(key string, fields ...string) (int, error)
+	Exists(key, field string) (bool, error)
+	Fields(key string) ([]string, error)
 	Get(key, field string) (core.Value, error)
 	GetMany(key string, fields ...string) (map[string]core.Value, error)
-	Exists(key, field string) (bool, error)
+	Incr(key, field string, delta int) (int, error)
+	IncrFloat(key, field string, delta float64) (float64, error)
 	Items(key string) (map[string]core.Value, error)
-	Fields(key string) ([]string, error)
-	Values(key string) ([]core.Value, error)
 	Len(key string) (int, error)
 	Scan(key string, cursor int, pattern string, pageSize int) (rhash.ScanResult, error)
 	Scanner(key, pattern string, pageSize int) *rhash.Scanner
 	Set(key, field string, value any) (bool, error)
-	SetNotExists(key, field string, value any) (bool, error)
 	SetMany(key string, items map[string]any) (int, error)
-	Incr(key, field string, delta int) (int, error)
-	IncrFloat(key, field string, delta float64) (float64, error)
-	Delete(key string, fields ...string) (int, error)
+	SetNotExists(key, field string, value any) (bool, error)
+	Values(key string) ([]core.Value, error)
 }
 
 // Redka is an abstraction for *redka.DB and *redka.Tx.
