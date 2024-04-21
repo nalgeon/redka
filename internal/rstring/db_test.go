@@ -70,6 +70,136 @@ func TestGetMany(t *testing.T) {
 	}
 }
 
+func TestGetSet(t *testing.T) {
+	t.Run("create key", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		val, err := db.GetSet("name", "alice", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, core.Value(nil))
+		key, _ := red.Key().Get("name")
+		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+	})
+	t.Run("update key", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_ = db.Set("name", "alice")
+		val, err := db.GetSet("name", "bob", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, core.Value("alice"))
+		key, _ := red.Key().Get("name")
+		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+	})
+	t.Run("not changed", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_ = db.Set("name", "alice")
+		val, err := db.GetSet("name", "alice", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, core.Value("alice"))
+		key, _ := red.Key().Get("name")
+		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+	})
+	t.Run("with ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_ = db.Set("name", "alice")
+
+		now := time.Now()
+		ttl := time.Second
+		val, err := db.GetSet("name", "bob", ttl)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, core.Value("alice"))
+
+		key, _ := red.Key().Get("name")
+		got := (*key.ETime) / 1000
+		want := now.Add(ttl).UnixMilli() / 1000
+		testx.AssertEqual(t, got, want)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		val, err := db.GetSet("person", "name", 0)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, core.Value(nil))
+	})
+}
+
+func TestIncr(t *testing.T) {
+	red, db := getDB(t)
+	defer red.Close()
+
+	tests := []struct {
+		name  string
+		key   string
+		value int
+		want  int
+	}{
+		{"create", "age", 10, 10},
+		{"increment", "age", 15, 25},
+		{"decrement", "age", -5, 20},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			val, err := db.Incr(test.key, test.value)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, val, test.want)
+		})
+	}
+	t.Run("invalid int", func(t *testing.T) {
+		_ = db.Set("name", "alice")
+		val, err := db.Incr("name", 1)
+		testx.AssertErr(t, err, core.ErrValueType)
+		testx.AssertEqual(t, val, 0)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "age", 25)
+		val, err := db.Incr("person", 10)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0)
+	})
+}
+
+func TestIncrFloat(t *testing.T) {
+	red, db := getDB(t)
+	defer red.Close()
+
+	tests := []struct {
+		name  string
+		key   string
+		value float64
+		want  float64
+	}{
+		{"create", "pi", 3.14, 3.14},
+		{"increment", "pi", 1.86, 5},
+		{"decrement", "pi", -1.5, 3.5},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			val, err := db.IncrFloat(test.key, test.value)
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, val, test.want)
+		})
+	}
+	t.Run("invalid float", func(t *testing.T) {
+		_ = db.Set("name", "alice")
+		val, err := db.IncrFloat("name", 1.5)
+		testx.AssertErr(t, err, core.ErrValueType)
+		testx.AssertEqual(t, val, 0.0)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		_, _ = red.Hash().Set("person", "age", 25.5)
+		val, err := db.IncrFloat("person", 10.5)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0.0)
+	})
+}
+
 func TestSet(t *testing.T) {
 	red, db := getDB(t)
 	defer red.Close()
@@ -136,91 +266,6 @@ func TestSet(t *testing.T) {
 	})
 }
 
-func TestSetExpires(t *testing.T) {
-	t.Run("no ttl", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		err := db.SetExpires("name", "alice", 0)
-		testx.AssertNoErr(t, err)
-
-		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, core.Value("alice"))
-
-		key, _ := red.Key().Get("name")
-		testx.AssertEqual(t, key.ETime, (*int64)(nil))
-	})
-	t.Run("with ttl", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		now := time.Now()
-		ttl := time.Second
-		err := db.SetExpires("name", "alice", ttl)
-		testx.AssertNoErr(t, err)
-
-		val, _ := db.Get("name")
-		testx.AssertEqual(t, val, core.Value("alice"))
-
-		key, _ := red.Key().Get("name")
-		got := (*key.ETime) / 1000
-		want := now.Add(ttl).UnixMilli() / 1000
-		testx.AssertEqual(t, got, want)
-	})
-	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_, _ = red.Hash().Set("person", "name", "alice")
-		err := db.SetExpires("person", "name", time.Second)
-		testx.AssertErr(t, err, core.ErrKeyType)
-	})
-}
-
-func TestSetNotExists(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
-
-	_ = db.Set("name", "alice")
-
-	tests := []struct {
-		name  string
-		key   string
-		value any
-		want  bool
-	}{
-		{"new key", "age", 25, true},
-		{"existing key", "name", "bob", false},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ok, err := db.SetNotExists(test.key, test.value, 0)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, ok, test.want)
-
-			key, _ := red.Key().Get(test.key)
-			testx.AssertEqual(t, key.ETime, (*int64)(nil))
-		})
-	}
-	t.Run("with ttl", func(t *testing.T) {
-		now := time.Now()
-		ttl := time.Second
-		ok, err := db.SetNotExists("city", "paris", ttl)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, true)
-
-		key, _ := red.Key().Get("city")
-		got := (*key.ETime) / 1000
-		want := now.Add(ttl).UnixMilli() / 1000
-		testx.AssertEqual(t, got, want)
-	})
-	t.Run("key type mismatch", func(t *testing.T) {
-		_, _ = red.Hash().Set("person", "name", "alice")
-		ok, err := db.SetNotExists("person", "name", 0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, false)
-	})
-}
-
 func TestSetExists(t *testing.T) {
 	red, db := getDB(t)
 	defer red.Close()
@@ -266,36 +311,17 @@ func TestSetExists(t *testing.T) {
 	})
 }
 
-func TestGetSet(t *testing.T) {
-	t.Run("create key", func(t *testing.T) {
+func TestSetExpires(t *testing.T) {
+	t.Run("no ttl", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
-		val, err := db.GetSet("name", "alice", 0)
+		err := db.SetExpires("name", "alice", 0)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, core.Value(nil))
-		key, _ := red.Key().Get("name")
-		testx.AssertEqual(t, key.ETime, (*int64)(nil))
-	})
-	t.Run("update key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
 
-		_ = db.Set("name", "alice")
-		val, err := db.GetSet("name", "bob", 0)
-		testx.AssertNoErr(t, err)
+		val, _ := db.Get("name")
 		testx.AssertEqual(t, val, core.Value("alice"))
-		key, _ := red.Key().Get("name")
-		testx.AssertEqual(t, key.ETime, (*int64)(nil))
-	})
-	t.Run("not changed", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
 
-		_ = db.Set("name", "alice")
-		val, err := db.GetSet("name", "alice", 0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, core.Value("alice"))
 		key, _ := red.Key().Get("name")
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 	})
@@ -303,12 +329,12 @@ func TestGetSet(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 
-		_ = db.Set("name", "alice")
-
 		now := time.Now()
 		ttl := time.Second
-		val, err := db.GetSet("name", "bob", ttl)
+		err := db.SetExpires("name", "alice", ttl)
 		testx.AssertNoErr(t, err)
+
+		val, _ := db.Get("name")
 		testx.AssertEqual(t, val, core.Value("alice"))
 
 		key, _ := red.Key().Get("name")
@@ -320,9 +346,8 @@ func TestGetSet(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_, _ = red.Hash().Set("person", "name", "alice")
-		val, err := db.GetSet("person", "name", 0)
+		err := db.SetExpires("person", "name", time.Second)
 		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, core.Value(nil))
 	})
 }
 
@@ -436,73 +461,48 @@ func TestSetManyNX(t *testing.T) {
 	})
 }
 
-func TestIncr(t *testing.T) {
+func TestSetNotExists(t *testing.T) {
 	red, db := getDB(t)
 	defer red.Close()
+
+	_ = db.Set("name", "alice")
 
 	tests := []struct {
 		name  string
 		key   string
-		value int
-		want  int
+		value any
+		want  bool
 	}{
-		{"create", "age", 10, 10},
-		{"increment", "age", 15, 25},
-		{"decrement", "age", -5, 20},
+		{"new key", "age", 25, true},
+		{"existing key", "name", "bob", false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			val, err := db.Incr(test.key, test.value)
+			ok, err := db.SetNotExists(test.key, test.value, 0)
 			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, test.want)
+			testx.AssertEqual(t, ok, test.want)
+
+			key, _ := red.Key().Get(test.key)
+			testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		})
 	}
-	t.Run("invalid int", func(t *testing.T) {
-		_ = db.Set("name", "alice")
-		val, err := db.Incr("name", 1)
-		testx.AssertErr(t, err, core.ErrValueType)
-		testx.AssertEqual(t, val, 0)
+	t.Run("with ttl", func(t *testing.T) {
+		now := time.Now()
+		ttl := time.Second
+		ok, err := db.SetNotExists("city", "paris", ttl)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, ok, true)
+
+		key, _ := red.Key().Get("city")
+		got := (*key.ETime) / 1000
+		want := now.Add(ttl).UnixMilli() / 1000
+		testx.AssertEqual(t, got, want)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		_, _ = red.Hash().Set("person", "age", 25)
-		val, err := db.Incr("person", 10)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, 0)
-	})
-}
-
-func TestIncrFloat(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
-
-	tests := []struct {
-		name  string
-		key   string
-		value float64
-		want  float64
-	}{
-		{"create", "pi", 3.14, 3.14},
-		{"increment", "pi", 1.86, 5},
-		{"decrement", "pi", -1.5, 3.5},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			val, err := db.IncrFloat(test.key, test.value)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, test.want)
-		})
-	}
-	t.Run("invalid float", func(t *testing.T) {
-		_ = db.Set("name", "alice")
-		val, err := db.IncrFloat("name", 1.5)
-		testx.AssertErr(t, err, core.ErrValueType)
-		testx.AssertEqual(t, val, 0.0)
-	})
-	t.Run("key type mismatch", func(t *testing.T) {
-		_, _ = red.Hash().Set("person", "age", 25.5)
-		val, err := db.IncrFloat("person", 10.5)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, 0.0)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		ok, err := db.SetNotExists("person", "name", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, ok, false)
 	})
 }
 

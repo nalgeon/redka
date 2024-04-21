@@ -113,40 +113,82 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	return items, nil
 }
 
+// GetSet returns the previous value of a key after setting it to a new value.
+// Optionally sets the expiration time (if ttl > 0).
+// Overwrites the value and ttl if the key already exists.
+// Returns nil if the key did not exist.
+func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
+	if !core.IsValueType(value) {
+		return nil, core.ErrValueType
+	}
+
+	prev, err := tx.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.set(key, value, ttl)
+	return prev, err
+}
+
+// Incr increments the key value by the specified amount.
+// If the key does not exist, sets it to 0 before the increment.
+// Returns the value after the increment.
+// Returns an error if the key value is not an integer.
+func (tx *Tx) Incr(key string, delta int) (int, error) {
+	// get the current value
+	val, err := tx.Get(key)
+	if err != nil {
+		return 0, err
+	}
+
+	// check if the value is a valid integer
+	valInt, err := val.Int()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valInt + delta
+	err = tx.update(key, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}
+
+// IncrFloat increments the key value by the specified amount.
+// If the key does not exist, sets it to 0 before the increment.
+// Returns the value after the increment.
+// Returns an error if the key value is not a float.
+func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
+	// get the current value
+	val, err := tx.Get(key)
+	if err != nil {
+		return 0, err
+	}
+
+	// check if the value is a valid float
+	valFloat, err := val.Float()
+	if err != nil {
+		return 0, core.ErrValueType
+	}
+
+	// increment the value
+	newVal := valFloat + delta
+	err = tx.update(key, newVal)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}
+
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
 func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
-}
-
-// SetExpires sets the key value with an optional expiration time (if ttl > 0).
-// Overwrites the value and ttl if the key already exists.
-func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
-	if !core.IsValueType(value) {
-		return core.ErrValueType
-	}
-	err := tx.set(key, value, ttl)
-	return err
-}
-
-// SetNotExists sets the key value if the key does not exist.
-// Optionally sets the expiration time (if ttl > 0).
-// Returns true if the key was set, false if the key already exists.
-func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
-
-	k, err := rkey.Get(tx.tx, key)
-	if err != nil {
-		return false, err
-	}
-	if k.Exists() {
-		return false, nil
-	}
-
-	err = tx.set(key, value, ttl)
-	return err == nil, err
 }
 
 // SetExists sets the key value if the key exists.
@@ -169,22 +211,14 @@ func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) 
 	return err == nil, err
 }
 
-// GetSet returns the previous value of a key after setting it to a new value.
-// Optionally sets the expiration time (if ttl > 0).
+// SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
-// Returns nil if the key did not exist.
-func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
+func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
-		return nil, core.ErrValueType
+		return core.ErrValueType
 	}
-
-	prev, err := tx.Get(key)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.set(key, value, ttl)
-	return prev, err
+	err := tx.set(key, value, ttl)
+	return err
 }
 
 // SetMany sets the values of multiple keys.
@@ -246,58 +280,24 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	return true, nil
 }
 
-// Incr increments the key value by the specified amount.
-// If the key does not exist, sets it to 0 before the increment.
-// Returns the value after the increment.
-// Returns an error if the key value is not an integer.
-func (tx *Tx) Incr(key string, delta int) (int, error) {
-	// get the current value
-	val, err := tx.Get(key)
-	if err != nil {
-		return 0, err
+// SetNotExists sets the key value if the key does not exist.
+// Optionally sets the expiration time (if ttl > 0).
+// Returns true if the key was set, false if the key already exists.
+func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
+	if !core.IsValueType(value) {
+		return false, core.ErrValueType
 	}
 
-	// check if the value is a valid integer
-	valInt, err := val.Int()
+	k, err := rkey.Get(tx.tx, key)
 	if err != nil {
-		return 0, core.ErrValueType
+		return false, err
+	}
+	if k.Exists() {
+		return false, nil
 	}
 
-	// increment the value
-	newVal := valInt + delta
-	err = tx.update(key, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return newVal, nil
-}
-
-// IncrFloat increments the key value by the specified amount.
-// If the key does not exist, sets it to 0 before the increment.
-// Returns the value after the increment.
-// Returns an error if the key value is not a float.
-func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
-	// get the current value
-	val, err := tx.Get(key)
-	if err != nil {
-		return 0, err
-	}
-
-	// check if the value is a valid float
-	valFloat, err := val.Float()
-	if err != nil {
-		return 0, core.ErrValueType
-	}
-
-	// increment the value
-	newVal := valFloat + delta
-	err = tx.update(key, newVal)
-	if err != nil {
-		return 0, err
-	}
-
-	return newVal, nil
+	err = tx.set(key, value, ttl)
+	return err == nil, err
 }
 
 // set sets the key value and (optionally) its expiration time.
