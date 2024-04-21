@@ -63,20 +63,20 @@ type Cmd interface {
 
 // RKey is a key repository.
 type RKey interface {
-	Exists(key string) (bool, error)
 	Count(keys ...string) (int, error)
-	Keys(pattern string) ([]core.Key, error)
-	Scan(cursor int, pattern string, pageSize int) (rkey.ScanResult, error)
-	Scanner(pattern string, pageSize int) *rkey.Scanner
-	Random() (core.Key, error)
-	Get(key string) (core.Key, error)
-	Expire(key string, ttl time.Duration) (bool, error)
-	ExpireAt(key string, at time.Time) (bool, error)
-	Persist(key string) (bool, error)
-	Rename(key, newKey string) error
-	RenameNotExists(key, newKey string) (bool, error)
 	Delete(keys ...string) (int, error)
 	DeleteAll() error
+	Exists(key string) (bool, error)
+	Expire(key string, ttl time.Duration) (bool, error)
+	ExpireAt(key string, at time.Time) (bool, error)
+	Get(key string) (core.Key, error)
+	Keys(pattern string) ([]core.Key, error)
+	Persist(key string) (bool, error)
+	Random() (core.Key, error)
+	Rename(key, newKey string) error
+	RenameNotExists(key, newKey string) (bool, error)
+	Scan(cursor int, pattern string, pageSize int) (rkey.ScanResult, error)
+	Scanner(pattern string, pageSize int) *rkey.Scanner
 }
 
 // RStr is a string repository.
