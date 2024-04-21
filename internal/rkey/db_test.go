@@ -225,9 +225,10 @@ func TestGet(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
-		_ = red.Str().Set("name", "alice")
 
 		now := time.Now().UnixMilli()
+		_ = red.Str().Set("name", "alice")
+
 		key, err := db.Get("name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, key.ID, 1)
@@ -404,7 +405,6 @@ func TestRename(t *testing.T) {
 
 		exists, _ = db.Exists("hash")
 		testx.AssertEqual(t, exists, true)
-
 	})
 }
 

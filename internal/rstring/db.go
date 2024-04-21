@@ -39,21 +39,6 @@ func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
 	return tx.GetMany(keys...)
 }
 
-// GetSet returns the previous value of a key after setting it to a new value.
-// Optionally sets the expiration time (if ttl > 0).
-// If the key already exists, overwrites the value and ttl.
-// If the key exists but is not a string, returns ErrKeyType.
-// If the key does not exist, returns nil as the previous value.
-func (d *DB) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
-	var val core.Value
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		val, err = tx.GetSet(key, value, ttl)
-		return err
-	})
-	return val, err
-}
-
 // Incr increments the integer key value by the specified amount.
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
@@ -94,20 +79,6 @@ func (d *DB) Set(key string, value any) error {
 	return err
 }
 
-// SetExists sets the key value if the key exists.
-// Optionally sets the expiration time (if ttl > 0).
-// Returns true if the key was set, false if the key does not exist.
-// If the key exists but is not a string, returns ErrKeyType.
-func (d *DB) SetExists(key string, value any, ttl time.Duration) (bool, error) {
-	var ok bool
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.SetExists(key, value, ttl)
-		return err
-	})
-	return ok, err
-}
-
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 // If the key exists but is not a string, returns ErrKeyType.
@@ -144,16 +115,7 @@ func (d *DB) SetManyNX(items map[string]any) (bool, error) {
 	return ok, err
 }
 
-// SetNotExists sets the key value if the key does not exist.
-// Optionally sets the expiration time (if ttl > 0).
-// Returns true if the key was set, false if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
-func (d *DB) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
-	var ok bool
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.SetNotExists(key, value, ttl)
-		return err
-	})
-	return ok, err
+// SetWith sets the key value with additional options.
+func (d *DB) SetWith(key string, value any) SetCmd {
+	return SetCmd{db: d, key: key, val: value}
 }

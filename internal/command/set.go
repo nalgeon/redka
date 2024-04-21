@@ -3,6 +3,8 @@ package command
 import (
 	"strconv"
 	"time"
+
+	"github.com/nalgeon/redka/internal/rstring"
 )
 
 // Set sets the string value of a key, ignoring its type.
@@ -85,26 +87,15 @@ func parseSet(b baseCmd) (*Set, error) {
 }
 
 func (cmd *Set) Run(w Writer, red Redka) (any, error) {
+	var out rstring.SetOut
 	var ok bool
 	var err error
 	if cmd.ifXX {
-		ok, err = red.Str().SetExists(cmd.key, cmd.value, cmd.ttl)
+		out, err = red.Str().SetWith(cmd.key, cmd.value).TTL(cmd.ttl).IfExists().Run()
+		ok = out.Updated
 	} else if cmd.ifNX {
-		ok, err = red.Str().SetNotExists(cmd.key, cmd.value, cmd.ttl)
-	} else {
-		err = red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
-		ok = err == nil
-	}
-	return cmd.run(w, ok, err)
-}
-
-func (cmd *Set) RunTx(w Writer, red Redka) (any, error) {
-	var ok bool
-	var err error
-	if cmd.ifXX {
-		ok, err = red.Str().SetExists(cmd.key, cmd.value, cmd.ttl)
-	} else if cmd.ifNX {
-		ok, err = red.Str().SetNotExists(cmd.key, cmd.value, cmd.ttl)
+		out, err = red.Str().SetWith(cmd.key, cmd.value).TTL(cmd.ttl).IfNotExists().Run()
+		ok = out.Created
 	} else {
 		err = red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 		ok = err == nil

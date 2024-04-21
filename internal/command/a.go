@@ -12,6 +12,7 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
+	"github.com/nalgeon/redka/internal/rstring"
 )
 
 // Redis-like errors.
@@ -83,15 +84,13 @@ type RKey interface {
 type RStr interface {
 	Get(key string) (core.Value, error)
 	GetMany(keys ...string) (map[string]core.Value, error)
-	GetSet(key string, value any, ttl time.Duration) (core.Value, error)
 	Incr(key string, delta int) (int, error)
 	IncrFloat(key string, delta float64) (float64, error)
 	Set(key string, value any) error
-	SetExists(key string, value any, ttl time.Duration) (bool, error)
 	SetExpires(key string, value any, ttl time.Duration) error
 	SetMany(items map[string]any) error
 	SetManyNX(items map[string]any) (bool, error)
-	SetNotExists(key string, value any, ttl time.Duration) (bool, error)
+	SetWith(key string, value any) rstring.SetCmd
 }
 
 // RHash is a hash repository.

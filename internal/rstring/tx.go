@@ -68,19 +68,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Get returns the value of the key.
 // If the key does not exist or is not a string, returns ErrNotFound.
 func (tx *Tx) Get(key string) (core.Value, error) {
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
-	}
-	var val []byte
-	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
-	if err == sql.ErrNoRows {
-		return core.Value(nil), core.ErrNotFound
-	}
-	if err != nil {
-		return core.Value(nil), err
-	}
-	return core.Value(val), nil
+	return get(tx.tx, key)
 }
 
 // GetMany returns a map of values for given keys.
@@ -117,25 +105,6 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	return items, nil
 }
 
-// GetSet returns the previous value of a key after setting it to a new value.
-// Optionally sets the expiration time (if ttl > 0).
-// If the key already exists, overwrites the value and ttl.
-// If the key exists but is not a string, returns ErrKeyType.
-// If the key does not exist, returns nil as the previous value.
-func (tx *Tx) GetSet(key string, value any, ttl time.Duration) (core.Value, error) {
-	if !core.IsValueType(value) {
-		return nil, core.ErrValueType
-	}
-
-	prev, err := tx.Get(key)
-	if err != nil && err != core.ErrNotFound {
-		return nil, err
-	}
-
-	err = tx.set(key, value, ttl)
-	return prev, err
-}
-
 // Incr increments the integer key value by the specified amount.
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
@@ -156,7 +125,7 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 
 	// increment the value
 	newVal := valInt + delta
-	err = tx.update(key, newVal)
+	err = update(tx.tx, key, newVal)
 	if err != nil {
 		return 0, err
 	}
@@ -184,7 +153,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 
 	// increment the value
 	newVal := valFloat + delta
-	err = tx.update(key, newVal)
+	err = update(tx.tx, key, newVal)
 	if err != nil {
 		return 0, err
 	}
@@ -199,27 +168,6 @@ func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
 }
 
-// SetExists sets the key value if the key exists.
-// Optionally sets the expiration time (if ttl > 0).
-// Returns true if the key was set, false if the key does not exist.
-// If the key exists but is not a string, returns ErrKeyType.
-func (tx *Tx) SetExists(key string, value any, ttl time.Duration) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
-
-	k, err := rkey.Get(tx.tx, key)
-	if err != nil && err != core.ErrNotFound {
-		return false, err
-	}
-	if !k.Exists() {
-		return false, nil
-	}
-
-	err = tx.set(key, value, ttl)
-	return err == nil, err
-}
-
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 // If the key exists but is not a string, returns ErrKeyType.
@@ -227,7 +175,7 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
 		return core.ErrValueType
 	}
-	err := tx.set(key, value, ttl)
+	err := set(tx.tx, key, value, ttl)
 	return err
 }
 
@@ -244,7 +192,7 @@ func (tx *Tx) SetMany(items map[string]any) error {
 	}
 
 	for key, val := range items {
-		err := tx.set(key, val, 0)
+		err := set(tx.tx, key, val, 0)
 		if err != nil {
 			return err
 		}
@@ -283,7 +231,7 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 
 	// set the keys
 	for key, val := range items {
-		err = tx.set(key, val, 0)
+		err = set(tx.tx, key, val, 0)
 		if err != nil {
 			return false, err
 		}
@@ -292,29 +240,29 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	return true, nil
 }
 
-// SetNotExists sets the key value if the key does not exist.
-// Optionally sets the expiration time (if ttl > 0).
-// Returns true if the key was set, false if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
-func (tx *Tx) SetNotExists(key string, value any, ttl time.Duration) (bool, error) {
-	if !core.IsValueType(value) {
-		return false, core.ErrValueType
-	}
+// SetWith sets the key value with additional options.
+func (tx *Tx) SetWith(key string, value any) SetCmd {
+	return SetCmd{tx: tx, key: key, val: value}
+}
 
-	val, err := tx.Get(key)
-	if err != nil && err != core.ErrNotFound {
-		return false, err
+func get(tx sqlx.Tx, key string) (core.Value, error) {
+	args := []any{
+		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
 	}
-	if val.Exists() {
-		return false, nil
+	var val []byte
+	err := tx.QueryRow(sqlGet, args...).Scan(&val)
+	if err == sql.ErrNoRows {
+		return core.Value(nil), core.ErrNotFound
 	}
-
-	err = tx.set(key, value, ttl)
-	return err == nil, err
+	if err != nil {
+		return core.Value(nil), err
+	}
+	return core.Value(val), nil
 }
 
 // set sets the key value and (optionally) its expiration time.
-func (tx *Tx) set(key string, value any, ttl time.Duration) error {
+func set(tx sqlx.Tx, key string, value any, ttl time.Duration) error {
 	now := time.Now()
 	var etime *int64
 	if ttl > 0 {
@@ -331,19 +279,19 @@ func (tx *Tx) set(key string, value any, ttl time.Duration) error {
 		sql.Named("value", value),
 	}
 
-	_, err := tx.tx.Exec(sqlSet1, args...)
+	_, err := tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
 
-	_, err = tx.tx.Exec(sqlSet2, args...)
+	_, err = tx.Exec(sqlSet2, args...)
 	return err
 }
 
 // update updates the value of the existing key without changing its
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
-func (tx *Tx) update(key string, value any) error {
+func update(tx sqlx.Tx, key string, value any) error {
 	now := time.Now().UnixMilli()
 	args := []any{
 		sql.Named("key", key),
@@ -352,10 +300,10 @@ func (tx *Tx) update(key string, value any) error {
 		sql.Named("mtime", now),
 		sql.Named("value", value),
 	}
-	_, err := tx.tx.Exec(sqlUpdate1, args...)
+	_, err := tx.Exec(sqlUpdate1, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-	_, err = tx.tx.Exec(sqlUpdate2, args...)
+	_, err = tx.Exec(sqlUpdate2, args...)
 	return err
 }

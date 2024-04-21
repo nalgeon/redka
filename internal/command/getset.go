@@ -20,15 +20,15 @@ func parseGetSet(b baseCmd) (*GetSet, error) {
 }
 
 func (cmd *GetSet) Run(w Writer, red Redka) (any, error) {
-	val, err := red.Str().GetSet(cmd.key, cmd.value, 0)
+	out, err := red.Str().SetWith(cmd.key, cmd.value).Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
-	if !val.Exists() {
+	if !out.Prev.Exists() {
 		w.WriteNull()
-		return val, nil
+		return out.Prev, nil
 	}
-	w.WriteBulk(val)
-	return val, nil
+	w.WriteBulk(out.Prev)
+	return out.Prev, nil
 }
