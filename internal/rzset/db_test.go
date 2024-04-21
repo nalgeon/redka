@@ -1098,7 +1098,7 @@ func TestScanner(t *testing.T) {
 
 		var items []rzset.SetItem
 		err := red.View(func(tx *redka.Tx) error {
-			sc := tx.SortedSet().Scanner("key", "*", 2)
+			sc := tx.ZSet().Scanner("key", "*", 2)
 			for sc.Scan() {
 				items = append(items, sc.Item())
 			}
@@ -1431,5 +1431,5 @@ func getDB(tb testing.TB) (*redka.DB, *rzset.DB) {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return db, db.SortedSet()
+	return db, db.ZSet()
 }

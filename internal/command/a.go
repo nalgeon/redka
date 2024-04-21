@@ -32,17 +32,17 @@ var (
 
 // Writer is an interface to write responses to the client.
 type Writer interface {
-	WriteError(msg string)
-	WriteString(str string)
+	WriteAny(v any)
+	WriteArray(count int)
 	WriteBulk(bulk []byte)
 	WriteBulkString(bulk string)
+	WriteError(msg string)
 	WriteInt(num int)
 	WriteInt64(num int64)
-	WriteUint64(num uint64)
-	WriteArray(count int)
 	WriteNull()
 	WriteRaw(data []byte)
-	WriteAny(v any)
+	WriteString(str string)
+	WriteUint64(num uint64)
 }
 
 // Cmd is a Redis-compatible command.
@@ -116,27 +116,32 @@ type RHash interface {
 // Redka is an abstraction for *redka.DB and *redka.Tx.
 // Used to execute commands in a unified way.
 type Redka struct {
+	hash RHash
 	key  RKey
 	str  RStr
-	hash RHash
 }
 
 // RedkaDB creates a new Redka instance for a database.
 func RedkaDB(db *redka.DB) Redka {
 	return Redka{
+		hash: db.Hash(),
 		key:  db.Key(),
 		str:  db.Str(),
-		hash: db.Hash(),
 	}
 }
 
 // RedkaTx creates a new Redka instance for a transaction.
 func RedkaTx(tx *redka.Tx) Redka {
 	return Redka{
+		hash: tx.Hash(),
 		key:  tx.Key(),
 		str:  tx.Str(),
-		hash: tx.Hash(),
 	}
+}
+
+// Hash returns the hash repository.
+func (r Redka) Hash() RHash {
+	return r.hash
 }
 
 // Key returns the key repository.
@@ -147,11 +152,6 @@ func (r Redka) Key() RKey {
 // Str returns the string repository.
 func (r Redka) Str() RStr {
 	return r.str
-}
-
-// Hash returns the hash repository.
-func (r Redka) Hash() RHash {
-	return r.hash
 }
 
 type baseCmd struct {

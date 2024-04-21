@@ -61,9 +61,9 @@ var defaultOptions = Options{
 // a single instance of DB throughout your program.
 type DB struct {
 	*sqlx.DB[*Tx]
+	hashDB   *rhash.DB
 	keyDB    *rkey.DB
 	stringDB *rstring.DB
-	hashDB   *rhash.DB
 	zsetDB   *rzset.DB
 	bg       *time.Ticker
 	log      *slog.Logger
@@ -95,21 +95,14 @@ func Open(path string, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 	rdb := &DB{
 		DB:       sdb,
+		hashDB:   rhash.New(db),
 		keyDB:    rkey.New(db),
 		stringDB: rstring.New(db),
-		hashDB:   rhash.New(db),
 		zsetDB:   rzset.New(db),
 		log:      opts.Logger,
 	}
 	rdb.bg = rdb.startBgManager()
 	return rdb, nil
-}
-
-// Str returns the string repository.
-// A string is a slice of bytes associated with a key.
-// Use the string repository to work with individual strings.
-func (db *DB) Str() *rstring.DB {
-	return db.stringDB
 }
 
 // Hash returns the hash repository.
@@ -120,21 +113,28 @@ func (db *DB) Hash() *rhash.DB {
 	return db.hashDB
 }
 
-// SortedSet returns the sorted set repository.
-// A sorted set (zset) is a like a set, but each element has a score,
-// and elements are ordered by score from low to high.
-// Use the sorted set repository to work with individual sets
-// and their elements, and to perform set operations.
-func (db *DB) SortedSet() *rzset.DB {
-	return db.zsetDB
-}
-
 // Key returns the key repository.
 // A key is a unique identifier for a data structure
 // (string, list, hash, etc.). Use the key repository
 // to manage all keys regardless of their type.
 func (db *DB) Key() *rkey.DB {
 	return db.keyDB
+}
+
+// Str returns the string repository.
+// A string is a slice of bytes associated with a key.
+// Use the string repository to work with individual strings.
+func (db *DB) Str() *rstring.DB {
+	return db.stringDB
+}
+
+// ZSet returns the sorted set repository.
+// A sorted set (zset) is a like a set, but each element has a score,
+// and elements are ordered by score from low to high.
+// Use the sorted set repository to work with individual sets
+// and their elements, and to perform set operations.
+func (db *DB) ZSet() *rzset.DB {
+	return db.zsetDB
 }
 
 // Update executes a function within a writable transaction.
@@ -213,30 +213,20 @@ func (db *DB) startBgManager() *time.Ticker {
 // [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 type Tx struct {
 	tx     sqlx.Tx
+	hashTx *rhash.Tx
 	keyTx  *rkey.Tx
 	strTx  *rstring.Tx
-	hashTx *rhash.Tx
 	zsetTx *rzset.Tx
 }
 
 // newTx creates a new database transaction.
 func newTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx: tx,
+		hashTx: rhash.NewTx(tx),
 		keyTx:  rkey.NewTx(tx),
 		strTx:  rstring.NewTx(tx),
-		hashTx: rhash.NewTx(tx),
 		zsetTx: rzset.NewTx(tx),
 	}
-}
-
-// Str returns the string transaction.
-func (tx *Tx) Str() *rstring.Tx {
-	return tx.strTx
-}
-
-// Keys returns the key transaction.
-func (tx *Tx) Key() *rkey.Tx {
-	return tx.keyTx
 }
 
 // Hash returns the hash transaction.
@@ -244,8 +234,18 @@ func (tx *Tx) Hash() *rhash.Tx {
 	return tx.hashTx
 }
 
-// SortedSet returns the sorted set transaction.
-func (tx *Tx) SortedSet() *rzset.Tx {
+// Keys returns the key transaction.
+func (tx *Tx) Key() *rkey.Tx {
+	return tx.keyTx
+}
+
+// Str returns the string transaction.
+func (tx *Tx) Str() *rstring.Tx {
+	return tx.strTx
+}
+
+// ZSet returns the sorted set transaction.
+func (tx *Tx) ZSet() *rzset.Tx {
 	return tx.zsetTx
 }
 
