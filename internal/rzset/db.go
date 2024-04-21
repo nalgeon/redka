@@ -89,8 +89,8 @@ func (d *DB) DeleteWith(key string) DeleteCmd {
 // GetRank returns the rank and score of an element in a set.
 // The rank is the 0-based position of the element in the set, ordered
 // by score (from low to high), and then by lexicographical order (ascending).
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) {
 	tx := NewTx(d.SQL)
 	return tx.GetRank(key, elem)
@@ -99,16 +99,16 @@ func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) 
 // GetRankRev returns the rank and score of an element in a set.
 // The rank is the 0-based position of the element in the set, ordered
 // by score (from high to low), and then by lexicographical order (descending).
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRankRev(key string, elem any) (rank int, score float64, err error) {
 	tx := NewTx(d.SQL)
 	return tx.GetRankRev(key, elem)
 }
 
 // GetScore returns the score of an element in a set.
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetScore(key string, elem any) (float64, error) {
 	tx := NewTx(d.SQL)
 	return tx.GetScore(key, elem)

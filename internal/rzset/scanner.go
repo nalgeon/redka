@@ -53,7 +53,7 @@ func (sc *Scanner) Scan() bool {
 	return true
 }
 
-// Item returns the current hash item.
+// Item returns the current set item.
 func (sc *Scanner) Item() SetItem {
 	return sc.cur
 }

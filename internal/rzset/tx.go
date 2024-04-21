@@ -196,8 +196,8 @@ func (tx *Tx) DeleteWith(key string) DeleteCmd {
 // GetRank returns the rank and score of an element in a set.
 // The rank is the 0-based position of the element in the set, ordered
 // by score (from low to high), and then by lexicographical order (ascending).
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (tx *Tx) GetRank(key string, elem any) (rank int, score float64, err error) {
 	return tx.getRank(key, elem, sqlx.Asc)
 }
@@ -205,15 +205,15 @@ func (tx *Tx) GetRank(key string, elem any) (rank int, score float64, err error)
 // GetRankRev returns the rank and score of an element in a set.
 // The rank is the 0-based position of the element in the set, ordered
 // by score (from high to low), and then by lexicographical order (descending).
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (tx *Tx) GetRankRev(key string, elem any) (rank int, score float64, err error) {
 	return tx.getRank(key, elem, sqlx.Desc)
 }
 
 // GetScore returns the score of an element in a set.
-// If the key or element does not exist, returns ErrNotFound.
-// If the key exists but is not a set, returns ErrKeyType.
+// If the element does not exist, returns ErrNotFound.
+// If the key does not exist or is not a set, returns ErrNotFound.
 func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 	if !core.IsValueType(elem) {
 		return 0, core.ErrValueType
@@ -442,14 +442,11 @@ func (tx *Tx) getRank(key string, elem any, sortDir string) (rank int, score flo
 	return rank, score, nil
 }
 
-// scanItem scans a set item from the row (rows).
-func scanItem(scanner sqlx.RowScanner) (SetItem, error) {
+// scanItem scans a set item from the current row.
+func scanItem(rows *sql.Rows) (SetItem, error) {
 	var it SetItem
 	var elem []byte
-	err := scanner.Scan(&elem, &it.Score)
-	if err == sql.ErrNoRows {
-		return it, nil
-	}
+	err := rows.Scan(&elem, &it.Score)
 	if err != nil {
 		return it, err
 	}
