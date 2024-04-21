@@ -64,9 +64,6 @@ rhash (
 create unique index if not exists
 rhash_pk_idx on rhash (key_id, field);
 
-create index if not exists
-rhash_key_id_idx on rhash (key_id);
-
 create view if not exists
 vhash as
   select
