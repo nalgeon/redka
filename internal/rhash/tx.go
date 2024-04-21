@@ -300,7 +300,7 @@ func (tx *Tx) Len(key string) (int, error) {
 }
 
 // Scan iterates over hash items with fields matching pattern.
-// Returns a slice field-value pairs (see [HashItem]) of size count
+// Returns a slice of field-value pairs (see [HashItem]) of size count
 // based on the current state of the cursor. Returns an empty HashItem
 // slice when there are no more items.
 // If the key does not exist or is not a hash, returns a nil slice.
