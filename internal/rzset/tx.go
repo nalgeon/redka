@@ -137,8 +137,8 @@ func (tx *Tx) AddMany(key string, items map[any]float64) (int, error) {
 	}
 
 	// Add the elements.
-	for field, val := range items {
-		err := tx.add(key, field, val)
+	for elem, score := range items {
+		err := tx.add(key, elem, score)
 		if err != nil {
 			return 0, err
 		}
