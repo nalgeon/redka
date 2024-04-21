@@ -113,12 +113,18 @@ type RHash interface {
 	Delete(key string, fields ...string) (int, error)
 }
 
+// RSet is a set repository.
+type RSet interface {
+	Add(key string, elems ...any) (int, error)
+}
+
 // Redka is an abstraction for *redka.DB and *redka.Tx.
 // Used to execute commands in a unified way.
 type Redka struct {
 	key  RKey
 	str  RStr
 	hash RHash
+	set  RSet
 }
 
 // RedkaDB creates a new Redka instance for a database.
@@ -127,6 +133,7 @@ func RedkaDB(db *redka.DB) Redka {
 		key:  db.Key(),
 		str:  db.Str(),
 		hash: db.Hash(),
+		set:  db.Set(),
 	}
 }
 
@@ -136,6 +143,7 @@ func RedkaTx(tx *redka.Tx) Redka {
 		key:  tx.Key(),
 		str:  tx.Str(),
 		hash: tx.Hash(),
+		set:  tx.Set(),
 	}
 }
 
@@ -152,6 +160,10 @@ func (r Redka) Str() RStr {
 // Hash returns the hash repository.
 func (r Redka) Hash() RHash {
 	return r.hash
+}
+
+func (r Redka) Set() RSet {
+	return r.set
 }
 
 type baseCmd struct {
@@ -292,6 +304,10 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseHSetNX(b)
 	case "hvals":
 		return parseHVals(b)
+
+	// set
+	case "sadd":
+		return parseSAdd(b)
 
 	default:
 		return parseUnknown(b)

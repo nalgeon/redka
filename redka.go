@@ -11,6 +11,7 @@ package redka
 import (
 	"context"
 	"database/sql"
+	"github.com/nalgeon/redka/internal/rset"
 	"io"
 	"log/slog"
 	"time"
@@ -63,6 +64,7 @@ type DB struct {
 	keyDB    *rkey.DB
 	stringDB *rstring.DB
 	hashDB   *rhash.DB
+	setDB    *rset.DB
 	bg       *time.Ticker
 	log      *slog.Logger
 }
@@ -123,6 +125,10 @@ func (db *DB) Hash() *rhash.DB {
 // to manage all keys regardless of their type.
 func (db *DB) Key() *rkey.DB {
 	return db.keyDB
+}
+
+func (db *DB) Set() *rset.DB {
+	return db.setDB
 }
 
 // Update executes a function within a writable transaction.
@@ -204,6 +210,7 @@ type Tx struct {
 	keyTx  *rkey.Tx
 	strTx  *rstring.Tx
 	hashTx *rhash.Tx
+	setTx  *rset.Tx
 }
 
 // newTx creates a new database transaction.
@@ -218,6 +225,10 @@ func newTx(tx sqlx.Tx) *Tx {
 // Str returns the string transaction.
 func (tx *Tx) Str() *rstring.Tx {
 	return tx.strTx
+}
+
+func (tx *Tx) Set() *rset.Tx {
+	return tx.setTx
 }
 
 // Keys returns the key transaction.
