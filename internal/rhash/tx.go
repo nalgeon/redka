@@ -153,11 +153,10 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a hash, returns ErrNotFound.
 func (tx *Tx) Get(key, field string) (core.Value, error) {
-	now := time.Now()
 	args := []any{
 		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
 		sql.Named("field", field),
-		sql.Named("now", now.UnixMilli()),
 	}
 	var val []byte
 	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
@@ -307,16 +306,15 @@ func (tx *Tx) Len(key string) (int, error) {
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
-	now := time.Now().UnixMilli()
 	if count == 0 {
 		count = scanPageSize
 	}
 
 	args := []any{
 		sql.Named("key", key),
+		sql.Named("now", time.Now().UnixMilli()),
 		sql.Named("cursor", cursor),
 		sql.Named("pattern", pattern),
-		sql.Named("now", now),
 		sql.Named("count", count),
 	}
 
@@ -469,15 +467,13 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 
 // set creates or updates the value of a field in a hash.
 func (tx *Tx) set(key string, field string, value any) error {
-	now := time.Now()
-
 	args := []any{
 		sql.Named("key", key),
-		sql.Named("field", field),
 		sql.Named("type", core.TypeHash),
 		sql.Named("version", core.InitialVersion),
+		sql.Named("mtime", time.Now().UnixMilli()),
+		sql.Named("field", field),
 		sql.Named("value", value),
-		sql.Named("mtime", now.UnixMilli()),
 	}
 
 	_, err := tx.tx.Exec(sqlSet1, args...)
