@@ -19,6 +19,7 @@ import (
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/rstring"
+	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -63,6 +64,7 @@ type DB struct {
 	keyDB    *rkey.DB
 	stringDB *rstring.DB
 	hashDB   *rhash.DB
+	zsetDB   *rzset.DB
 	bg       *time.Ticker
 	log      *slog.Logger
 }
@@ -96,6 +98,7 @@ func Open(path string, opts *Options) (*DB, error) {
 		keyDB:    rkey.New(db),
 		stringDB: rstring.New(db),
 		hashDB:   rhash.New(db),
+		zsetDB:   rzset.New(db),
 		log:      opts.Logger,
 	}
 	rdb.bg = rdb.startBgManager()
@@ -115,6 +118,15 @@ func (db *DB) Str() *rstring.DB {
 // and their fields.
 func (db *DB) Hash() *rhash.DB {
 	return db.hashDB
+}
+
+// SortedSet returns the sorted set repository.
+// A sorted set (zset) is a like a set, but each element has a score,
+// and elements are ordered by score from low to high.
+// Use the sorted set repository to work with individual sets
+// and their elements, and to perform set operations.
+func (db *DB) SortedSet() *rzset.DB {
+	return db.zsetDB
 }
 
 // Key returns the key repository.
@@ -204,6 +216,7 @@ type Tx struct {
 	keyTx  *rkey.Tx
 	strTx  *rstring.Tx
 	hashTx *rhash.Tx
+	zsetTx *rzset.Tx
 }
 
 // newTx creates a new database transaction.
@@ -212,6 +225,7 @@ func newTx(tx sqlx.Tx) *Tx {
 		keyTx:  rkey.NewTx(tx),
 		strTx:  rstring.NewTx(tx),
 		hashTx: rhash.NewTx(tx),
+		zsetTx: rzset.NewTx(tx),
 	}
 }
 
@@ -228,6 +242,11 @@ func (tx *Tx) Key() *rkey.Tx {
 // Hash returns the hash transaction.
 func (tx *Tx) Hash() *rhash.Tx {
 	return tx.hashTx
+}
+
+// SortedSet returns the sorted set transaction.
+func (tx *Tx) SortedSet() *rzset.Tx {
+	return tx.zsetTx
 }
 
 // applyOptions applies custom options to the

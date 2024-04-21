@@ -61,6 +61,11 @@ const sqlDelete = `
 delete from rkey where key in (:keys)
   and (etime is null or etime > :now)`
 
+const sqlDeleteType = `
+delete from rkey where key in (:keys)
+  and (etime is null or etime > :now)
+  and type = :type`
+
 const sqlDeleteAll = `
   delete from rkey;
   vacuum;
@@ -424,6 +429,21 @@ func Delete(tx sqlx.Tx, keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
 	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	res, err := tx.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	affectedCount, _ := res.RowsAffected()
+	return int(affectedCount), nil
+}
+
+// DeleteType deletes keys of a specific type.
+// Returns the number of deleted keys.
+// Non-existing keys and keys of other types are ignored.
+func DeleteType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
+	now := time.Now().UnixMilli()
+	query, keyArgs := sqlx.ExpandIn(sqlDeleteType, ":keys", keys)
+	args := slices.Concat(keyArgs, []any{sql.Named("now", now), sql.Named("type", typ)})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err

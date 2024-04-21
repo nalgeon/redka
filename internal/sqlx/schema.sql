@@ -76,3 +76,30 @@ vhash as
   from rkey join rhash on rkey.id = rhash.key_id
   where rkey.type = 4
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
+
+-- sorted sets
+create table if not exists
+rzset (
+    key_id integer not null,
+    elem   blob not null,
+    score  real not null,
+
+    foreign key (key_id) references rkey (id)
+      on delete cascade
+);
+
+create unique index if not exists
+rzset_pk_idx on rzset (key_id, elem);
+
+create index if not exists
+rzset_score_idx on rzset (key_id, score, elem);
+
+create view if not exists
+vzset as
+select
+    rkey.id as key_id, rkey.key, rzset.score, rzset.elem,
+	datetime(etime/1000, 'unixepoch') as etime,
+	datetime(mtime/1000, 'unixepoch') as mtime
+from rkey join rzset on rkey.id = rzset.key_id
+where rkey.type = 5
+    and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
