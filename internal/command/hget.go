@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka/internal/core"
+
 // Returns the value of a field in a hash.
 // HGET key field
 // https://redis.io/commands/hget
@@ -21,13 +23,13 @@ func parseHGet(b baseCmd) (*HGet, error) {
 
 func (cmd *HGet) Run(w Writer, red Redka) (any, error) {
 	val, err := red.Hash().Get(cmd.key, cmd.field)
-	if err != nil {
-		w.WriteError(cmd.Error(err))
-		return nil, err
-	}
-	if !val.Exists() {
+	if err == core.ErrNotFound {
 		w.WriteNull()
 		return val, nil
+	}
+	if err != nil {
+		w.WriteError(cmd.Error(err))
+		return val, err
 	}
 	w.WriteBulk(val)
 	return val, nil

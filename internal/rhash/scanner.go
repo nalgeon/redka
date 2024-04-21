@@ -31,6 +31,7 @@ func newScanner(db *Tx, key string, pattern string, pageSize int) *Scanner {
 
 // Scan advances to the next item, fetching items from db as necessary.
 // Returns false when there are no more items or an error occurs.
+// Returns false if the key does not exist or is not a hash.
 func (sc *Scanner) Scan() bool {
 	if sc.index >= len(sc.items) {
 		// Fetch a new page of items.

@@ -95,6 +95,7 @@ func TestExists(t *testing.T) {
 	defer red.Close()
 
 	_, _ = db.Set("person", "name", "alice")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name  string
@@ -105,6 +106,7 @@ func TestExists(t *testing.T) {
 		{"field found", "person", "name", true},
 		{"field not found", "person", "age", false},
 		{"key not found", "pet", "name", false},
+		{"key type mismatch", "str", "str", false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -122,6 +124,7 @@ func TestFields(t *testing.T) {
 	_, _ = db.Set("person", "name", "alice")
 	_, _ = db.Set("person", "age", 25)
 	_, _ = db.Set("pet", "name", "doggo")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name   string
@@ -131,6 +134,7 @@ func TestFields(t *testing.T) {
 		{"multiple fields", "person", []string{"name", "age"}},
 		{"single field", "pet", []string{"name"}},
 		{"key not found", "robot", []string{}},
+		{"key type mismatch", "str", []string{}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -144,28 +148,37 @@ func TestFields(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
-
-	_, _ = db.Set("person", "name", "alice")
-
-	tests := []struct {
-		name  string
-		key   string
-		field string
-		want  any
-	}{
-		{"field found", "person", "name", core.Value("alice")},
-		{"field not found", "person", "age", core.Value(nil)},
-		{"key not found", "pet", "name", core.Value(nil)},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			val, err := db.Get(test.key, test.field)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, val, test.want)
-		})
-	}
+	t.Run("field found", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = db.Set("person", "name", "alice")
+		val, err := db.Get("person", "name")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, core.Value("alice"))
+	})
+	t.Run("field not found", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = db.Set("person", "name", "alice")
+		val, err := db.Get("person", "age")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		testx.AssertEqual(t, val, core.Value(nil))
+	})
+	t.Run("key not found", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		val, err := db.Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		testx.AssertEqual(t, val, core.Value(nil))
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("person", "name")
+		val, err := db.Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		testx.AssertEqual(t, val, core.Value(nil))
+	})
 }
 
 func TestGetMany(t *testing.T) {
@@ -174,6 +187,7 @@ func TestGetMany(t *testing.T) {
 
 	_, _ = db.Set("person", "name", "alice")
 	_, _ = db.Set("person", "age", 25)
+	_ = red.Str().Set("str", "name")
 
 	tests := []struct {
 		name   string
@@ -185,13 +199,16 @@ func TestGetMany(t *testing.T) {
 			map[string]core.Value{"name": core.Value("alice"), "age": core.Value("25")},
 		},
 		{"some found", "person", []string{"name", "city"},
-			map[string]core.Value{"name": core.Value("alice"), "city": core.Value(nil)},
+			map[string]core.Value{"name": core.Value("alice")},
 		},
 		{"none found", "person", []string{"key1", "key2"},
-			map[string]core.Value{"key1": core.Value(nil), "key2": core.Value(nil)},
+			map[string]core.Value{},
 		},
 		{"key not found", "pet", []string{"name", "age"},
-			map[string]core.Value{"name": core.Value(nil), "age": core.Value(nil)},
+			map[string]core.Value{},
+		},
+		{"key type mismatch", "str", []string{"name"},
+			map[string]core.Value{},
 		},
 	}
 	for _, test := range tests {
@@ -318,6 +335,7 @@ func TestItems(t *testing.T) {
 	_, _ = db.Set("person", "name", "alice")
 	_, _ = db.Set("person", "age", 25)
 	_, _ = db.Set("pet", "name", "doggo")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name  string
@@ -331,6 +349,7 @@ func TestItems(t *testing.T) {
 			"name": core.Value("doggo"),
 		}},
 		{"key not found", "robot", map[string]core.Value{}},
+		{"key type mismatch", "str", map[string]core.Value{}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -348,6 +367,7 @@ func TestLen(t *testing.T) {
 	_, _ = db.Set("person", "name", "alice")
 	_, _ = db.Set("person", "age", 25)
 	_, _ = db.Set("pet", "name", "doggo")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name string
@@ -357,6 +377,7 @@ func TestLen(t *testing.T) {
 		{"multiple fields", "person", 2},
 		{"single field", "pet", 1},
 		{"key not found", "robot", 0},
+		{"key type mismatch", "str", 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -376,6 +397,7 @@ func TestScan(t *testing.T) {
 	_, _ = db.Set("key", "f21", "21")
 	_, _ = db.Set("key", "f22", "22")
 	_, _ = db.Set("key", "f31", "31")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name    string
@@ -434,7 +456,7 @@ func TestScan(t *testing.T) {
 		})
 	}
 
-	t.Run("different keys", func(t *testing.T) {
+	t.Run("ignore other keys", func(t *testing.T) {
 		_, _ = db.Set("person", "name", "alice")
 		_, _ = db.Set("pet", "name", "doggo")
 
@@ -444,37 +466,76 @@ func TestScan(t *testing.T) {
 		testx.AssertEqual(t, out.Items[0].Field, "name")
 		testx.AssertEqual(t, out.Items[0].Value.String(), "alice")
 	})
+	t.Run("key not found", func(t *testing.T) {
+		out, err := db.Scan("not", 0, "*", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 0)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		out, err := db.Scan("str", 0, "*", 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 0)
+	})
 }
 
 func TestScanner(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	t.Run("scan", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
 
-	_, _ = db.Set("key", "f11", "11")
-	_, _ = db.Set("key", "f12", "12")
-	_, _ = db.Set("key", "f21", "21")
-	_, _ = db.Set("key", "f22", "22")
-	_, _ = db.Set("key", "f31", "31")
+		_, _ = db.Set("key", "f11", "11")
+		_, _ = db.Set("key", "f12", "12")
+		_, _ = db.Set("key", "f21", "21")
+		_, _ = db.Set("key", "f22", "22")
+		_, _ = db.Set("key", "f31", "31")
 
-	var items []rhash.HashItem
-	err := red.View(func(tx *redka.Tx) error {
-		sc := tx.Hash().Scanner("key", "*", 2)
+		var items []rhash.HashItem
+		err := red.View(func(tx *redka.Tx) error {
+			sc := tx.Hash().Scanner("key", "*", 2)
+			for sc.Scan() {
+				items = append(items, sc.Item())
+			}
+			return sc.Err()
+		})
+
+		testx.AssertNoErr(t, err)
+		fields := make([]string, len(items))
+		vals := make([]string, len(items))
+
+		for i, it := range items {
+			fields[i] = it.Field
+			vals[i] = it.Value.String()
+		}
+		testx.AssertEqual(t, fields, []string{"f11", "f12", "f21", "f22", "f31"})
+		testx.AssertEqual(t, vals, []string{"11", "12", "21", "22", "31"})
+	})
+	t.Run("key not found", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		sc := db.Scanner("not", "*", 2)
+		var items []rhash.HashItem
 		for sc.Scan() {
 			items = append(items, sc.Item())
 		}
-		return sc.Err()
+
+		testx.AssertNoErr(t, sc.Err())
+		testx.AssertEqual(t, items, []rhash.HashItem(nil))
 	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = red.Str().Set("key", "str")
 
-	testx.AssertNoErr(t, err)
-	fields := make([]string, len(items))
-	vals := make([]string, len(items))
+		sc := db.Scanner("key", "*", 2)
+		var items []rhash.HashItem
+		for sc.Scan() {
+			items = append(items, sc.Item())
+		}
 
-	for i, it := range items {
-		fields[i] = it.Field
-		vals[i] = it.Value.String()
-	}
-	testx.AssertEqual(t, fields, []string{"f11", "f12", "f21", "f22", "f31"})
-	testx.AssertEqual(t, vals, []string{"11", "12", "21", "22", "31"})
+		testx.AssertNoErr(t, sc.Err())
+		testx.AssertEqual(t, items, []rhash.HashItem(nil))
+	})
 }
 
 func TestSet(t *testing.T) {
@@ -636,6 +697,7 @@ func TestValues(t *testing.T) {
 	_, _ = db.Set("person", "name", "alice")
 	_, _ = db.Set("person", "age", 25)
 	_, _ = db.Set("pet", "name", "doggo")
+	_ = red.Str().Set("str", "str")
 
 	tests := []struct {
 		name string
@@ -649,6 +711,7 @@ func TestValues(t *testing.T) {
 			core.Value("doggo"),
 		}},
 		{"key not found", "robot", []core.Value{}},
+		{"key type mismatch", "str", []core.Value{}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
