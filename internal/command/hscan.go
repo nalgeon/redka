@@ -16,63 +16,31 @@ type HScan struct {
 }
 
 func parseHScan(b baseCmd) (*HScan, error) {
-	parseMatch := func(cmd *HScan, idx int) error {
-		if len(cmd.args) < idx+1 {
-			return ErrSyntaxError
-		}
-		cmd.match = string(cmd.args[idx])
-		return nil
-	}
-
-	parseCount := func(cmd *HScan, idx int) error {
-		if len(cmd.args) < idx+1 {
-			return ErrSyntaxError
-		}
-		var err error
-		cmd.count, err = strconv.Atoi(string(cmd.args[idx]))
-		if err != nil {
-			return ErrInvalidInt
-		}
-		return nil
-	}
-
 	cmd := &HScan{baseCmd: b}
-	if len(cmd.args) < 2 || len(cmd.args) > 6 {
+	if len(cmd.args) < 2 {
 		return cmd, ErrInvalidArgNum
 	}
+
 	var err error
 	cmd.key = string(cmd.args[0])
 	cmd.cursor, err = strconv.Atoi(string(cmd.args[1]))
 	if err != nil {
 		return cmd, ErrInvalidCursor
 	}
+	cmd.args = cmd.args[2:]
 
-	if len(cmd.args) > 2 {
-		switch string(cmd.args[2]) {
-		case "match":
-			err = parseMatch(cmd, 3)
-		case "count":
-			err = parseCount(cmd, 3)
-		default:
-			err = ErrSyntaxError
-		}
-		if err != nil {
-			return cmd, err
-		}
+	err = cmd.parseMatch()
+	if err != nil {
+		return cmd, err
 	}
 
-	if len(cmd.args) > 4 {
-		switch string(cmd.args[4]) {
-		case "match":
-			err = parseMatch(cmd, 5)
-		case "count":
-			err = parseCount(cmd, 5)
-		default:
-			err = ErrSyntaxError
-		}
-		if err != nil {
-			return cmd, err
-		}
+	err = cmd.parseCount()
+	if err != nil {
+		return cmd, err
+	}
+
+	if len(cmd.args) > 0 {
+		return cmd, ErrSyntaxError
 	}
 
 	// all keys by default
@@ -81,6 +49,36 @@ func parseHScan(b baseCmd) (*HScan, error) {
 	}
 
 	return cmd, nil
+}
+
+func (cmd *HScan) parseMatch() error {
+	if len(cmd.args) == 0 {
+		return nil
+	}
+	if string(cmd.args[0]) != "match" {
+		return nil
+	}
+	cmd.match = string(cmd.args[1])
+	cmd.args = cmd.args[2:]
+	return nil
+}
+
+func (cmd *HScan) parseCount() error {
+	if len(cmd.args) == 0 {
+		return nil
+	}
+	if string(cmd.args[0]) != "count" {
+		return nil
+	}
+
+	var err error
+	cmd.count, err = strconv.Atoi(string(cmd.args[1]))
+	if err != nil {
+		return ErrInvalidInt
+	}
+
+	cmd.args = cmd.args[2:]
+	return nil
 }
 
 func (cmd *HScan) Run(w Writer, red Redka) (any, error) {
