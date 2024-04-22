@@ -514,6 +514,23 @@ func TestInter(t *testing.T) {
 			{Elem: core.Value("two"), Score: 222},
 		})
 	})
+	t.Run("single key", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = db.AddMany("key1", map[any]float64{
+			"one": 1,
+			"two": 2,
+			"thr": 3,
+		})
+
+		items, err := db.Inter("key1")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, items, []rzset.SetItem{
+			{Elem: core.Value("one"), Score: 1},
+			{Elem: core.Value("two"), Score: 2},
+			{Elem: core.Value("thr"), Score: 3},
+		})
+	})
 	t.Run("empty", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()

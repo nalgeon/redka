@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"slices"
 	"strconv"
 )
 
@@ -22,6 +23,21 @@ func String(dest *string) ParserFunc {
 			return false, args, nil
 		}
 		*dest = string(args[0])
+		return true, args[1:], nil
+	}
+}
+
+// Enum parses a positional argument as a string enum.
+func Enum(dest *string, allowed ...string) ParserFunc {
+	return func(args [][]byte) (bool, [][]byte, error) {
+		if len(args) == 0 {
+			return false, args, nil
+		}
+		val := string(args[0])
+		if !slices.Contains(allowed, val) {
+			return true, args, ErrSyntaxError
+		}
+		*dest = val
 		return true, args[1:], nil
 	}
 }
@@ -67,6 +83,23 @@ func Strings(dest *[]string) ParserFunc {
 			(*dest)[i] = string(arg)
 		}
 		return true, nil, nil
+	}
+}
+
+// StringsN parses n variadic arguments as a slice of strings.
+func StringsN(dest *[]string, n int) ParserFunc {
+	return func(args [][]byte) (bool, [][]byte, error) {
+		if len(args) == 0 {
+			return false, args, nil
+		}
+		if len(args) < n {
+			return true, args, ErrInvalidArgNum
+		}
+		*dest = make([]string, n)
+		for i, arg := range args[:n] {
+			(*dest)[i] = string(arg)
+		}
+		return true, args[n:], nil
 	}
 }
 

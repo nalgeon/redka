@@ -5,6 +5,7 @@ package command
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -220,6 +221,10 @@ func (cmd baseCmd) String() string {
 	return b.String()
 }
 
+func floatToString(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
+}
+
 // Parse parses a text representation of a command into a Cmd.
 func Parse(args [][]byte) (Cmd, error) {
 	name := strings.ToLower(string(args[0]))
@@ -330,6 +335,8 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseZCard(b)
 	case "zcount":
 		return parseZCount(b)
+	case "zinter":
+		return parseZInter(b)
 
 	default:
 		return parseUnknown(b)
