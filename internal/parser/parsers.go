@@ -84,6 +84,24 @@ func AnyMap(dest *map[string]any) ParserFunc {
 	}
 }
 
+// FloatMap parses variadic float-value pairs.
+func FloatMap(dest *map[any]float64) ParserFunc {
+	return func(args [][]byte) (bool, [][]byte, error) {
+		if len(args)%2 != 0 {
+			return false, args, nil
+		}
+		*dest = make(map[any]float64, len(args)/2)
+		for i := 0; i < len(args); i += 2 {
+			flo, err := strconv.ParseFloat(string(args[i]), 64)
+			if err != nil {
+				return true, args, ErrInvalidFloat
+			}
+			(*dest)[string(args[i+1])] = flo
+		}
+		return true, nil, nil
+	}
+}
+
 // Flag parses a named argument as a bool.
 func Flag(name string, dest *bool) ParserFunc {
 	return func(args [][]byte) (bool, [][]byte, error) {
