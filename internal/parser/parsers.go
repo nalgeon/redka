@@ -98,35 +98,30 @@ func Flag(name string, dest *bool) ParserFunc {
 	}
 }
 
-// NamedString parses a named argument as a string.
-func NamedString(name string, dest *string) ParserFunc {
+// Named parses a named argument with given parsers.
+// Returns an error if any of the parsers does not fire.
+func Named(name string, parsers ...ParserFunc) ParserFunc {
 	return func(args [][]byte) (bool, [][]byte, error) {
-		if len(args) < 2 {
+		if len(args) == 0 {
 			return false, args, nil
 		}
 		if string(args[0]) != name {
 			return false, args, nil
 		}
-		*dest = string(args[1])
-		return true, args[2:], nil
-	}
-}
-
-// NamedInt parses a named argument as an integer.
-func NamedInt(name string, dest *int) ParserFunc {
-	return func(args [][]byte) (bool, [][]byte, error) {
-		if len(args) < 2 {
-			return false, args, nil
+		allFired := true
+		for _, parser := range parsers {
+			var fired bool
+			var err error
+			fired, args, err = parser(args[1:])
+			if err != nil {
+				return fired, args, err
+			}
+			allFired = allFired && fired
 		}
-		if string(args[0]) != name {
-			return false, args, nil
+		if !allFired {
+			return true, args, ErrSyntaxError
 		}
-		var err error
-		*dest, err = strconv.Atoi(string(args[1]))
-		if err != nil {
-			return true, args, ErrInvalidInt
-		}
-		return true, args[2:], nil
+		return true, args, nil
 	}
 }
 

@@ -19,8 +19,8 @@ func parseScan(b baseCmd) (*Scan, error) {
 
 	err := parser.New(
 		parser.Int(&cmd.cursor),
-		parser.NamedString("match", &cmd.match),
-		parser.NamedInt("count", &cmd.count),
+		parser.Named("match", parser.String(&cmd.match)),
+		parser.Named("count", parser.Int(&cmd.count)),
 	).Required(1).Run(cmd.args)
 	if err != nil {
 		return cmd, err

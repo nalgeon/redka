@@ -32,8 +32,8 @@ func parseSet(b baseCmd) (*Set, error) {
 			parser.Flag("xx", &cmd.ifXX),
 		),
 		parser.OneOf(
-			parser.NamedInt("ex", &ttlSec),
-			parser.NamedInt("px", &ttlMs),
+			parser.Named("ex", parser.Int(&ttlSec)),
+			parser.Named("px", parser.Int(&ttlMs)),
 		),
 	).Required(2).Run(cmd.args)
 	if err != nil {
