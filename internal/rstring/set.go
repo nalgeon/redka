@@ -22,6 +22,7 @@ type SetCmd struct {
 	val         any
 	ttl         time.Duration
 	at          time.Time
+	keepTTL     bool
 	ifExists    bool
 	ifNotExists bool
 }
@@ -44,6 +45,7 @@ func (c SetCmd) IfNotExists() SetCmd {
 func (c SetCmd) TTL(ttl time.Duration) SetCmd {
 	c.ttl = ttl
 	c.at = time.Time{}
+	c.keepTTL = false
 	return c
 }
 
@@ -51,15 +53,31 @@ func (c SetCmd) TTL(ttl time.Duration) SetCmd {
 func (c SetCmd) At(at time.Time) SetCmd {
 	c.ttl = 0
 	c.at = at
+	c.keepTTL = false
+	return c
+}
+
+// KeepTTL instructs to keep the expiration time already set for the key.
+func (c SetCmd) KeepTTL() SetCmd {
+	c.ttl = 0
+	c.at = time.Time{}
+	c.keepTTL = true
 	return c
 }
 
 // Run sets the key value according to the configured options.
 // Returns the previous value (if any) and the operation result
 // (if the key was created or updated).
-// If called with TTL() > 0, sets the expiration time.
-// If called with IfExists(), sets the value only if the key exists.
-// If called with IfNotExists(), sets the value only if the key does not exist.
+//
+// Expiration time handling:
+//   - If called with TTL() > 0 or At(), sets the expiration time.
+//   - If called with KeepTTL(), keeps the expiration time already set for the key.
+//   - If called without TTL(), At() or KeepTTL(), sets the value that will not expire.
+//
+// Existence checks:
+//   - If called with IfExists(), sets the value only if the key exists.
+//   - If called with IfNotExists(), sets the value only if the key does not exist.
+//
 // If the key exists but is not a string, returns ErrKeyType.
 func (c SetCmd) Run() (out SetOut, err error) {
 	if c.db != nil {
@@ -94,21 +112,20 @@ func (c SetCmd) run(tx sqlx.Tx) (out SetOut, err error) {
 		c.at = time.Now().Add(c.ttl)
 	}
 
-	// Set the new value.
-	if c.ifExists {
+	// Special cases for exists / not exists checks.
+	if c.ifExists && !exists {
 		// only set if the key exists
-		if !exists {
-			return SetOut{Prev: prev}, nil
-		}
-		err = set(tx, c.key, c.val, c.at)
-	} else if c.ifNotExists {
+		return SetOut{Prev: prev}, nil
+	}
+	if c.ifNotExists && exists {
 		// only set if the key does not exist
-		if exists {
-			return SetOut{Prev: prev}, nil
-		}
-		err = set(tx, c.key, c.val, c.at)
+		return SetOut{Prev: prev}, nil
+	}
+
+	// Set the value.
+	if c.keepTTL {
+		err = update(tx, c.key, c.val)
 	} else {
-		// set the key value unconditionally
 		err = set(tx, c.key, c.val, c.at)
 	}
 

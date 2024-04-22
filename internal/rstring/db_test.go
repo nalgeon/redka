@@ -570,6 +570,51 @@ func TestSetWithAt(t *testing.T) {
 	})
 }
 
+func TestSetWithKeepTTL(t *testing.T) {
+	t.Run("delete ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_ = db.SetExpires("name", "alice", 60*time.Second)
+
+		_, err := db.SetWith("name", "bob").Run()
+		testx.AssertNoErr(t, err)
+
+		val, _ := db.Get("name")
+		testx.AssertEqual(t, val, core.Value("bob"))
+
+		key, _ := red.Key().Get("name")
+		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+	})
+	t.Run("keep ttl", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		ttl := 60 * time.Second
+		_ = db.SetExpires("name", "alice", ttl)
+
+		now := time.Now()
+		_, err := db.SetWith("name", "alice").KeepTTL().Run()
+		testx.AssertNoErr(t, err)
+
+		val, _ := db.Get("name")
+		testx.AssertEqual(t, val, core.Value("alice"))
+
+		key, _ := red.Key().Get("name")
+		got := (*key.ETime) / 1000
+		want := now.Add(ttl).UnixMilli() / 1000
+		testx.AssertEqual(t, got, want)
+	})
+	t.Run("key type mismatch", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, err := db.SetWith("person", "name").KeepTTL().Run()
+		testx.AssertErr(t, err, core.ErrKeyType)
+
+		_, err = db.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
+	})
+}
+
 func TestSetMany(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		red, db := getDB(t)

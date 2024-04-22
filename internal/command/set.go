@@ -7,19 +7,20 @@ import (
 	"github.com/nalgeon/redka/internal/parser"
 )
 
-// Set sets the string value of a key, ignoring its type.
+// Set sets the string value of a key.
 // The key is created if it doesn't exist.
-// SET key value [NX | XX] [GET] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds]
+// SET key value [NX | XX] [GET] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds | KEEPTTL]
 // https://redis.io/commands/set
 type Set struct {
 	baseCmd
-	key   string
-	value []byte
-	ifNX  bool
-	ifXX  bool
-	get   bool
-	ttl   time.Duration
-	at    time.Time
+	key     string
+	value   []byte
+	ifNX    bool
+	ifXX    bool
+	get     bool
+	ttl     time.Duration
+	at      time.Time
+	keepTTL bool
 }
 
 func parseSet(b baseCmd) (*Set, error) {
@@ -40,6 +41,7 @@ func parseSet(b baseCmd) (*Set, error) {
 			parser.Named("px", parser.Int(&ttlMs)),
 			parser.Named("exat", parser.Int(&atSec)),
 			parser.Named("pxat", parser.Int(&atMs)),
+			parser.Flag("keepttl", &cmd.keepTTL),
 		),
 	).Required(2).Run(cmd.args)
 	if err != nil {
@@ -75,6 +77,8 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 		op = op.TTL(cmd.ttl)
 	} else if !cmd.at.IsZero() {
 		op = op.At(cmd.at)
+	} else if cmd.keepTTL {
+		op = op.KeepTTL()
 	}
 	out, err := op.Run()
 

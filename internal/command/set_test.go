@@ -84,6 +84,18 @@ func TestSetParse(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "set name alice keepttl",
+			args: buildArgs("set", "name", "alice", "keepttl"),
+			want: Set{key: "name", value: []byte("alice"), keepTTL: true},
+			err:  nil,
+		},
+		{
+			name: "set name alice ex 10 keepttl",
+			args: buildArgs("set", "name", "alice", "ex", "10", "keepttl"),
+			want: Set{},
+			err:  ErrSyntaxError,
+		},
+		{
 			name: "set name alice nx ex 10",
 			args: buildArgs("set", "name", "alice", "nx", "ex", "10"),
 			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},
@@ -168,6 +180,12 @@ func TestSetExec(t *testing.T) {
 		{
 			name: "set ex",
 			cmd:  mustParse[*Set]("set name alice ex 10"),
+			res:  true,
+			out:  "OK",
+		},
+		{
+			name: "set keepttl",
+			cmd:  mustParse[*Set]("set name alice keepttl"),
 			res:  true,
 			out:  "OK",
 		},
