@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -100,6 +101,12 @@ func TestSetParse(t *testing.T) {
 			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},
 			err:  nil,
 		},
+		{
+			name: "set name alice nx get ex 10",
+			args: buildArgs("set", "name", "alice", "nx", "ex", "10"),
+			want: Set{key: "name", value: []byte("alice"), ifNX: true, get: true, ttl: 10 * time.Second},
+			err:  nil,
+		},
 	}
 
 	for _, test := range tests {
@@ -169,6 +176,18 @@ func TestSetExec(t *testing.T) {
 			cmd:  mustParse[*Set]("set color blue nx ex 10"),
 			res:  true,
 			out:  "OK",
+		},
+		{
+			name: "set get",
+			cmd:  mustParse[*Set]("set name bob get"),
+			res:  core.Value("alice"),
+			out:  "alice",
+		},
+		{
+			name: "set get nil",
+			cmd:  mustParse[*Set]("set country france get"),
+			res:  core.Value(nil),
+			out:  "(nil)",
 		},
 	}
 

@@ -3,12 +3,13 @@ package command
 import (
 	"time"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Set sets the string value of a key, ignoring its type.
 // The key is created if it doesn't exist.
-// SET key value [NX | XX] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds]
+// SET key value [NX | XX] [GET] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds]
 // https://redis.io/commands/set
 type Set struct {
 	baseCmd
@@ -16,6 +17,7 @@ type Set struct {
 	value []byte
 	ifNX  bool
 	ifXX  bool
+	get   bool
 	ttl   time.Duration
 	at    time.Time
 }
@@ -32,6 +34,7 @@ func parseSet(b baseCmd) (*Set, error) {
 			parser.Flag("nx", &cmd.ifNX),
 			parser.Flag("xx", &cmd.ifXX),
 		),
+		parser.Flag("get", &cmd.get),
 		parser.OneOf(
 			parser.Named("ex", parser.Int(&ttlSec)),
 			parser.Named("px", parser.Int(&ttlMs)),
@@ -90,10 +93,24 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
-	if !ok {
-		w.WriteNull()
-		return false, nil
+
+	if cmd.get {
+		// GET given: The key didn't exist before the SET.
+		if !out.Prev.Exists() {
+			w.WriteNull()
+			return core.Value(nil), nil
+		}
+		// GET given: The previous value of the key.
+		w.WriteBulk(out.Prev)
+		return out.Prev, nil
+	} else {
+		// GET not given: Operation was aborted (conflict with one of the XX/NX options).
+		if !ok {
+			w.WriteNull()
+			return false, nil
+		}
+		// GET not given: The key was set.
+		w.WriteString("OK")
+		return true, nil
 	}
-	w.WriteString("OK")
-	return true, nil
 }
