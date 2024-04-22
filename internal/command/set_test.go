@@ -57,10 +57,10 @@ func TestSetParse(t *testing.T) {
 			err:  nil,
 		},
 		{
-			name: "set name alice px 10",
+			name: "set name alice ex 0",
 			args: buildArgs("set", "name", "alice", "ex", "0"),
-			want: Set{},
-			err:  ErrInvalidExpireTime,
+			want: Set{key: "name", value: []byte("alice"), ttl: 0},
+			err:  nil,
 		},
 		{
 			name: "set name alice px 10",
@@ -71,6 +71,18 @@ func TestSetParse(t *testing.T) {
 		{
 			name: "set name alice nx ex 10",
 			args: buildArgs("set", "name", "alice", "nx", "ex", "10"),
+			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},
+			err:  nil,
+		},
+		{
+			name: "set name alice xx px 10",
+			args: buildArgs("set", "name", "alice", "xx", "px", "10"),
+			want: Set{key: "name", value: []byte("alice"), ifXX: true, ttl: 10 * time.Millisecond},
+			err:  nil,
+		},
+		{
+			name: "set name alice ex 10 nx",
+			args: buildArgs("set", "name", "alice", "ex", "10", "nx"),
 			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},
 			err:  nil,
 		},

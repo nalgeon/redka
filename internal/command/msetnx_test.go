@@ -35,7 +35,7 @@ func TestMSetNXParse(t *testing.T) {
 			name: "msetnx name alice age",
 			args: buildArgs("msetnx", "name", "alice", "age"),
 			want: MSetNX{},
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 		{
 			name: "msetnx name alice age 25",

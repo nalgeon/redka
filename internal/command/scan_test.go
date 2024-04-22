@@ -49,12 +49,20 @@ func TestScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
+			name:   "scan 15 match * count ok",
+			args:   buildArgs("scan", "15", "match", "*", "count", "ok"),
+			cursor: 15,
+			match:  "*",
+			count:  0,
+			err:    ErrInvalidInt,
+		},
+		{
 			name:   "scan 15 count 5 match *",
 			args:   buildArgs("scan", "15", "count", "5", "match", "*"),
 			cursor: 15,
 			match:  "*",
 			count:  5,
-			err:    ErrSyntaxError,
+			err:    nil,
 		},
 		{
 			name:   "scan 15 match k2* count 5",
@@ -70,7 +78,7 @@ func TestScanParse(t *testing.T) {
 			cursor: 0,
 			match:  "",
 			count:  0,
-			err:    ErrInvalidCursor,
+			err:    ErrInvalidInt,
 		},
 		{
 			name:   "scan 15 *",

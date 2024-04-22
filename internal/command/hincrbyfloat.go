@@ -2,6 +2,8 @@ package command
 
 import (
 	"strconv"
+
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Increments the floating point value of a field by a number.
@@ -17,16 +19,14 @@ type HIncrByFloat struct {
 
 func parseHIncrByFloat(b baseCmd) (*HIncrByFloat, error) {
 	cmd := &HIncrByFloat{baseCmd: b}
-	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	cmd.field = string(cmd.args[1])
-	delta, err := strconv.ParseFloat(string(cmd.args[2]), 64)
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.String(&cmd.field),
+		parser.Float(&cmd.delta),
+	).Required(3).Run(cmd.args)
 	if err != nil {
-		return cmd, ErrInvalidFloat
+		return nil, err
 	}
-	cmd.delta = delta
 	return cmd, nil
 }
 

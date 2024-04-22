@@ -70,7 +70,7 @@ func TestHScanParse(t *testing.T) {
 			cursor: 15,
 			match:  "*",
 			count:  5,
-			err:    ErrSyntaxError,
+			err:    nil,
 		},
 		{
 			name:   "hscan person 15 match k2* count 5",
@@ -88,7 +88,7 @@ func TestHScanParse(t *testing.T) {
 			cursor: 0,
 			match:  "",
 			count:  0,
-			err:    ErrInvalidCursor,
+			err:    ErrInvalidInt,
 		},
 		{
 			name:   "hscan person 15 *",

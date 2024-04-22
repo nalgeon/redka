@@ -2,6 +2,8 @@ package command
 
 import (
 	"strings"
+
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Echo returns the given string.
@@ -14,12 +16,11 @@ type Echo struct {
 
 func parseEcho(b baseCmd) (*Echo, error) {
 	cmd := &Echo{baseCmd: b}
-	if len(b.args) < 1 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.parts = make([]string, len(b.args))
-	for i := 0; i < len(b.args); i++ {
-		cmd.parts[i] = string(cmd.args[i])
+	err := parser.New(
+		parser.Strings(&cmd.parts),
+	).Required(1).Run(cmd.args)
+	if err != nil {
+		return cmd, err
 	}
 	return cmd, nil
 }

@@ -48,7 +48,7 @@ func TestExpireParse(t *testing.T) {
 			args: buildArgs("expire", "name", "60", "age", "60"),
 			key:  "",
 			ttl:  0,
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 	}
 

@@ -35,7 +35,7 @@ func TestMSetParse(t *testing.T) {
 			name: "mset name alice age",
 			args: buildArgs("mset", "name", "alice", "age"),
 			want: MSet{},
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 		{
 			name: "mset name alice age 25",

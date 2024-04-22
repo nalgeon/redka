@@ -1,8 +1,6 @@
 package command
 
-import (
-	"strconv"
-)
+import "github.com/nalgeon/redka/internal/parser"
 
 // Increments the integer value of a field in a hash by a number.
 // Uses 0 as initial value if the field doesn't exist.
@@ -17,16 +15,14 @@ type HIncrBy struct {
 
 func parseHIncrBy(b baseCmd) (*HIncrBy, error) {
 	cmd := &HIncrBy{baseCmd: b}
-	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	cmd.field = string(cmd.args[1])
-	delta, err := strconv.Atoi(string(cmd.args[2]))
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.String(&cmd.field),
+		parser.Int(&cmd.delta),
+	).Required(3).Run(cmd.args)
 	if err != nil {
-		return cmd, ErrInvalidInt
+		return nil, err
 	}
-	cmd.delta = delta
 	return cmd, nil
 }
 

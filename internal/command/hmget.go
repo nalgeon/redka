@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Returns the values of multiple fields in a hash.
@@ -15,13 +16,12 @@ type HMGet struct {
 
 func parseHMGet(b baseCmd) (*HMGet, error) {
 	cmd := &HMGet{baseCmd: b}
-	if len(cmd.args) < 2 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	cmd.fields = make([]string, len(cmd.args)-1)
-	for i, arg := range cmd.args[1:] {
-		cmd.fields[i] = string(arg)
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Strings(&cmd.fields),
+	).Required(2).Run(cmd.args)
+	if err != nil {
+		return nil, err
 	}
 	return cmd, nil
 }

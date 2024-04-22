@@ -41,7 +41,7 @@ func TestHSetParse(t *testing.T) {
 			name: "hset person name alice age",
 			args: buildArgs("hset", "person", "name", "alice", "age"),
 			want: HSet{},
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 		{
 			name: "hset person name alice age 25",

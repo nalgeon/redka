@@ -48,7 +48,7 @@ func TestPExpireParse(t *testing.T) {
 			args: buildArgs("pexpire", "name", "100", "age", "100"),
 			key:  "",
 			ttl:  0,
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 	}
 

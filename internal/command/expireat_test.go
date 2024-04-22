@@ -49,7 +49,7 @@ func TestExpireAtParse(t *testing.T) {
 			args: buildArgs("expireat", "name", "60", "age", "60"),
 			key:  "",
 			at:   time.Time{},
-			err:  ErrInvalidArgNum,
+			err:  ErrSyntaxError,
 		},
 	}
 

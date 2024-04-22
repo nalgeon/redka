@@ -21,7 +21,7 @@ var (
 	ErrInvalidCursor     = errors.New("ERR invalid cursor")
 	ErrInvalidExpireTime = errors.New("ERR invalid expire time")
 	ErrInvalidFloat      = errors.New("ERR value is not a float")
-	ErrInvalidInt        = errors.New("ERR value is not an integer or out of range")
+	ErrInvalidInt        = errors.New("ERR value is not an integer")
 	ErrKeyType           = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 	ErrNestedMulti       = errors.New("ERR MULTI calls can not be nested")
 	ErrNotFound          = errors.New("ERR no such key")

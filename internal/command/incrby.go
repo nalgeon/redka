@@ -1,8 +1,6 @@
 package command
 
-import (
-	"strconv"
-)
+import "github.com/nalgeon/redka/internal/parser"
 
 // Increments the integer value of a key by a number.
 // Uses 0 as initial value if the key doesn't exist.
@@ -21,14 +19,12 @@ type IncrBy struct {
 
 func parseIncrBy(b baseCmd, sign int) (*IncrBy, error) {
 	cmd := &IncrBy{baseCmd: b}
-	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum
-	}
-	var err error
-	cmd.key = string(cmd.args[0])
-	cmd.delta, err = strconv.Atoi(string(cmd.args[1]))
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Int(&cmd.delta),
+	).Required(2).Run(cmd.args)
 	if err != nil {
-		return cmd, ErrInvalidInt
+		return nil, err
 	}
 	cmd.delta *= sign
 	return cmd, nil

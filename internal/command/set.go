@@ -1,8 +1,9 @@
 package command
 
 import (
-	"strconv"
 	"time"
+
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Set sets the string value of a key, ignoring its type.
@@ -20,76 +21,36 @@ type Set struct {
 
 func parseSet(b baseCmd) (*Set, error) {
 	cmd := &Set{baseCmd: b}
-	if len(cmd.args) < 2 {
-		return cmd, ErrInvalidArgNum
-	}
 
-	cmd.key = string(cmd.args[0])
-	cmd.value = cmd.args[1]
-	cmd.args = cmd.args[2:]
-
-	err := cmd.parseExists()
+	// Parse the command arguments.
+	var ttlSec, ttlMs int
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Bytes(&cmd.value),
+		parser.OneOf(
+			parser.Flag("nx", &cmd.ifNX),
+			parser.Flag("xx", &cmd.ifXX),
+		),
+		parser.OneOf(
+			parser.NamedInt("ex", &ttlSec),
+			parser.NamedInt("px", &ttlMs),
+		),
+	).Required(2).Run(cmd.args)
 	if err != nil {
 		return cmd, err
 	}
 
-	err = cmd.parseExpires()
-	if err != nil {
-		return cmd, err
+	// Parse the TTL.
+	if ttlSec > 0 {
+		cmd.ttl = time.Duration(ttlSec) * time.Second
+	} else if ttlMs > 0 {
+		cmd.ttl = time.Duration(ttlMs) * time.Millisecond
 	}
-
-	if len(cmd.args) > 0 {
-		return cmd, ErrSyntaxError
+	if cmd.ttl < 0 {
+		return cmd, ErrInvalidExpireTime
 	}
 
 	return cmd, nil
-}
-
-func (cmd *Set) parseExists() error {
-	if len(cmd.args) == 0 {
-		return nil
-	}
-
-	value := string(cmd.args[0])
-	switch value {
-	case "nx":
-		cmd.ifNX = true
-		cmd.args = cmd.args[1:]
-	case "xx":
-		cmd.ifXX = true
-		cmd.args = cmd.args[1:]
-	}
-	return nil
-}
-
-func (cmd *Set) parseExpires() error {
-	if len(cmd.args) == 0 {
-		return nil
-	}
-
-	unit := string(cmd.args[0])
-	if unit != "ex" && unit != "px" {
-		return nil
-	}
-
-	valueInt, err := strconv.Atoi(string(cmd.args[1]))
-	if err != nil {
-		return ErrInvalidInt
-	}
-
-	switch unit {
-	case "ex":
-		cmd.ttl = time.Duration(valueInt) * time.Second
-		cmd.args = cmd.args[2:]
-	case "px":
-		cmd.ttl = time.Duration(valueInt) * time.Millisecond
-		cmd.args = cmd.args[2:]
-	}
-
-	if cmd.ttl <= 0 {
-		return ErrInvalidExpireTime
-	}
-	return nil
 }
 
 func (cmd *Set) Run(w Writer, red Redka) (any, error) {

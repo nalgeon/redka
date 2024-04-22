@@ -1,8 +1,9 @@
 package command
 
 import (
-	"strconv"
 	"time"
+
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Sets the string value and expiration time of a key.
@@ -18,17 +19,17 @@ type SetEX struct {
 
 func parseSetEX(b baseCmd, multi int) (*SetEX, error) {
 	cmd := &SetEX{baseCmd: b}
-	if len(cmd.args) != 3 {
-		return cmd, ErrInvalidArgNum
-	}
 
-	cmd.key = string(cmd.args[0])
-	cmd.value = cmd.args[2]
-
-	ttl, err := strconv.Atoi(string(cmd.args[1]))
+	var ttl int
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Int(&ttl),
+		parser.Bytes(&cmd.value),
+	).Required(3).Run(cmd.args)
 	if err != nil {
-		return cmd, ErrInvalidInt
+		return nil, err
 	}
+
 	cmd.ttl = time.Duration(multi*ttl) * time.Millisecond
 
 	return cmd, nil

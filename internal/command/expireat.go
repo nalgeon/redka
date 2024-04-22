@@ -1,10 +1,10 @@
 package command
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Sets the expiration time of a key to a Unix timestamp.
@@ -18,14 +18,16 @@ type ExpireAt struct {
 
 func parseExpireAt(b baseCmd, multi int) (*ExpireAt, error) {
 	cmd := &ExpireAt{baseCmd: b}
-	if len(cmd.args) != 2 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	at, err := strconv.Atoi(string(cmd.args[1]))
+
+	var at int
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Int(&at),
+	).Required(2).Run(cmd.args)
 	if err != nil {
-		return cmd, ErrInvalidInt
+		return cmd, err
 	}
+
 	cmd.at = time.UnixMilli(int64(multi * at))
 	return cmd, nil
 }

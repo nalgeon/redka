@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka/internal/parser"
+
 // Deletes one or more fields and their values from a hash.
 // Deletes the hash if no fields remain.
 // HDEL key field [field ...]
@@ -12,13 +14,12 @@ type HDel struct {
 
 func parseHDel(b baseCmd) (*HDel, error) {
 	cmd := &HDel{baseCmd: b}
-	if len(cmd.args) < 2 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	cmd.fields = make([]string, len(cmd.args)-1)
-	for i, arg := range cmd.args[1:] {
-		cmd.fields[i] = string(arg)
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.Strings(&cmd.fields),
+	).Required(2).Run(cmd.args)
+	if err != nil {
+		return nil, err
 	}
 	return cmd, nil
 }

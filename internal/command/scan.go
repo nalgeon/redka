@@ -1,7 +1,7 @@
 package command
 
 import (
-	"strconv"
+	"github.com/nalgeon/redka/internal/parser"
 )
 
 // Iterates over the key names in the database.
@@ -16,29 +16,14 @@ type Scan struct {
 
 func parseScan(b baseCmd) (*Scan, error) {
 	cmd := &Scan{baseCmd: b}
-	if len(cmd.args) < 1 || len(cmd.args) > 5 {
-		return cmd, ErrInvalidArgNum
-	}
 
-	var err error
-	cmd.cursor, err = strconv.Atoi(string(cmd.args[0]))
-	if err != nil {
-		return cmd, ErrInvalidCursor
-	}
-	cmd.args = cmd.args[1:]
-
-	err = cmd.parseMatch()
+	err := parser.New(
+		parser.Int(&cmd.cursor),
+		parser.NamedString("match", &cmd.match),
+		parser.NamedInt("count", &cmd.count),
+	).Required(1).Run(cmd.args)
 	if err != nil {
 		return cmd, err
-	}
-
-	err = cmd.parseCount()
-	if err != nil {
-		return cmd, err
-	}
-
-	if len(cmd.args) > 0 {
-		return cmd, ErrSyntaxError
 	}
 
 	// all keys by default
@@ -47,36 +32,6 @@ func parseScan(b baseCmd) (*Scan, error) {
 	}
 
 	return cmd, nil
-}
-
-func (cmd *Scan) parseMatch() error {
-	if len(cmd.args) == 0 {
-		return nil
-	}
-	if string(cmd.args[0]) != "match" {
-		return nil
-	}
-	cmd.match = string(cmd.args[1])
-	cmd.args = cmd.args[2:]
-	return nil
-}
-
-func (cmd *Scan) parseCount() error {
-	if len(cmd.args) == 0 {
-		return nil
-	}
-	if string(cmd.args[0]) != "count" {
-		return nil
-	}
-
-	var err error
-	cmd.count, err = strconv.Atoi(string(cmd.args[1]))
-	if err != nil {
-		return ErrInvalidInt
-	}
-
-	cmd.args = cmd.args[2:]
-	return nil
 }
 
 func (cmd *Scan) Run(w Writer, red Redka) (any, error) {

@@ -1,5 +1,7 @@
 package command
 
+import "github.com/nalgeon/redka/internal/parser"
+
 // Sets the values of one ore more fields in a hash.
 // HSET key field value [field value ...]
 // https://redis.io/commands/hset
@@ -11,13 +13,12 @@ type HSet struct {
 
 func parseHSet(b baseCmd) (*HSet, error) {
 	cmd := &HSet{baseCmd: b}
-	if len(cmd.args) < 3 || len(cmd.args)%2 != 1 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.key = string(cmd.args[0])
-	cmd.items = make(map[string]any, (len(cmd.args)-1)/2)
-	for i := 1; i < len(cmd.args); i += 2 {
-		cmd.items[string(cmd.args[i])] = cmd.args[i+1]
+	err := parser.New(
+		parser.String(&cmd.key),
+		parser.AnyMap(&cmd.items),
+	).Required(3).Run(cmd.args)
+	if err != nil {
+		return nil, err
 	}
 	return cmd, nil
 }

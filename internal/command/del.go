@@ -1,5 +1,9 @@
 package command
 
+import (
+	"github.com/nalgeon/redka/internal/parser"
+)
+
 // Deletes one or more keys.
 // DEL key [key ...]
 // https://redis.io/commands/del
@@ -10,12 +14,11 @@ type Del struct {
 
 func parseDel(b baseCmd) (*Del, error) {
 	cmd := &Del{baseCmd: b}
-	if len(cmd.args) < 1 {
-		return cmd, ErrInvalidArgNum
-	}
-	cmd.keys = make([]string, len(cmd.args))
-	for i, arg := range cmd.args {
-		cmd.keys[i] = string(arg)
+	err := parser.New(
+		parser.Strings(&cmd.keys),
+	).Required(1).Run(cmd.args)
+	if err != nil {
+		return cmd, err
 	}
 	return cmd, nil
 }
