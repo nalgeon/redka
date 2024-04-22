@@ -175,7 +175,11 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
 		return core.ErrValueType
 	}
-	err := set(tx.tx, key, value, ttl)
+	var at time.Time
+	if ttl > 0 {
+		at = time.Now().Add(ttl)
+	}
+	err := set(tx.tx, key, value, at)
 	return err
 }
 
@@ -191,8 +195,9 @@ func (tx *Tx) SetMany(items map[string]any) error {
 		}
 	}
 
+	at := time.Time{} // no expiration
 	for key, val := range items {
-		err := set(tx.tx, key, val, 0)
+		err := set(tx.tx, key, val, at)
 		if err != nil {
 			return err
 		}
@@ -230,8 +235,9 @@ func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
 	}
 
 	// set the keys
+	at := time.Time{} // no expiration
 	for key, val := range items {
-		err = set(tx.tx, key, val, 0)
+		err = set(tx.tx, key, val, at)
 		if err != nil {
 			return false, err
 		}
@@ -262,12 +268,12 @@ func get(tx sqlx.Tx, key string) (core.Value, error) {
 }
 
 // set sets the key value and (optionally) its expiration time.
-func set(tx sqlx.Tx, key string, value any, ttl time.Duration) error {
+func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	now := time.Now()
 	var etime *int64
-	if ttl > 0 {
+	if !at.IsZero() {
 		etime = new(int64)
-		*etime = now.Add(ttl).UnixMilli()
+		*etime = at.UnixMilli()
 	}
 
 	args := []any{

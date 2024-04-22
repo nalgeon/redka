@@ -69,6 +69,20 @@ func TestSetParse(t *testing.T) {
 			err:  nil,
 		},
 		{
+			name: "set name alice exat 1577882096",
+			args: buildArgs("set", "name", "alice", "exat", "1577882096"),
+			want: Set{key: "name", value: []byte("alice"),
+				at: time.Date(2020, 1, 1, 12, 34, 56, 0, time.UTC)},
+			err: nil,
+		},
+		{
+			name: "set name alice pxat 1577882096000",
+			args: buildArgs("set", "name", "alice", "exat", "1577882096000"),
+			want: Set{key: "name", value: []byte("alice"),
+				at: time.Date(2020, 1, 1, 12, 34, 56, 0, time.UTC)},
+			err: nil,
+		},
+		{
 			name: "set name alice nx ex 10",
 			args: buildArgs("set", "name", "alice", "nx", "ex", "10"),
 			want: Set{key: "name", value: []byte("alice"), ifNX: true, ttl: 10 * time.Second},

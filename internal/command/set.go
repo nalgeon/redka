@@ -8,7 +8,7 @@ import (
 
 // Set sets the string value of a key, ignoring its type.
 // The key is created if it doesn't exist.
-// SET key value [NX | XX] [EX seconds | PX milliseconds ]
+// SET key value [NX | XX] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds]
 // https://redis.io/commands/set
 type Set struct {
 	baseCmd
@@ -17,13 +17,14 @@ type Set struct {
 	ifNX  bool
 	ifXX  bool
 	ttl   time.Duration
+	at    time.Time
 }
 
 func parseSet(b baseCmd) (*Set, error) {
 	cmd := &Set{baseCmd: b}
 
 	// Parse the command arguments.
-	var ttlSec, ttlMs int
+	var ttlSec, ttlMs, atSec, atMs int
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Bytes(&cmd.value),
@@ -34,17 +35,23 @@ func parseSet(b baseCmd) (*Set, error) {
 		parser.OneOf(
 			parser.Named("ex", parser.Int(&ttlSec)),
 			parser.Named("px", parser.Int(&ttlMs)),
+			parser.Named("exat", parser.Int(&atSec)),
+			parser.Named("pxat", parser.Int(&atMs)),
 		),
 	).Required(2).Run(cmd.args)
 	if err != nil {
 		return cmd, err
 	}
 
-	// Parse the TTL.
+	// Set the expiration time.
 	if ttlSec > 0 {
 		cmd.ttl = time.Duration(ttlSec) * time.Second
 	} else if ttlMs > 0 {
 		cmd.ttl = time.Duration(ttlMs) * time.Millisecond
+	} else if atSec > 0 {
+		cmd.at = time.Unix(int64(atSec), 0)
+	} else if atMs > 0 {
+		cmd.at = time.Unix(0, int64(atMs)*int64(time.Millisecond))
 	}
 	if cmd.ttl < 0 {
 		return cmd, ErrInvalidExpireTime
@@ -63,6 +70,8 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 	}
 	if cmd.ttl > 0 {
 		op = op.TTL(cmd.ttl)
+	} else if !cmd.at.IsZero() {
+		op = op.At(cmd.at)
 	}
 	out, err := op.Run()
 

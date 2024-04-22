@@ -21,6 +21,7 @@ type SetCmd struct {
 	key         string
 	val         any
 	ttl         time.Duration
+	at          time.Time
 	ifExists    bool
 	ifNotExists bool
 }
@@ -39,9 +40,17 @@ func (c SetCmd) IfNotExists() SetCmd {
 	return c
 }
 
-// TTL sets the expiration time.
+// TTL sets the time-to-live for the value.
 func (c SetCmd) TTL(ttl time.Duration) SetCmd {
 	c.ttl = ttl
+	c.at = time.Time{}
+	return c
+}
+
+// At sets the expiration time for the value.
+func (c SetCmd) At(at time.Time) SetCmd {
+	c.ttl = 0
+	c.at = at
 	return c
 }
 
@@ -80,22 +89,27 @@ func (c SetCmd) run(tx sqlx.Tx) (out SetOut, err error) {
 	}
 	exists := err != core.ErrNotFound
 
+	// Set the expiration time.
+	if c.ttl > 0 {
+		c.at = time.Now().Add(c.ttl)
+	}
+
 	// Set the new value.
 	if c.ifExists {
 		// only set if the key exists
 		if !exists {
 			return SetOut{Prev: prev}, nil
 		}
-		err = set(tx, c.key, c.val, c.ttl)
+		err = set(tx, c.key, c.val, c.at)
 	} else if c.ifNotExists {
 		// only set if the key does not exist
 		if exists {
 			return SetOut{Prev: prev}, nil
 		}
-		err = set(tx, c.key, c.val, c.ttl)
+		err = set(tx, c.key, c.val, c.at)
 	} else {
 		// set the key value unconditionally
-		err = set(tx, c.key, c.val, c.ttl)
+		err = set(tx, c.key, c.val, c.at)
 	}
 
 	if err != nil {
