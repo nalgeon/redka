@@ -6,9 +6,8 @@ import (
 )
 
 // DB is a database-backed set repository.
-// A set is a field-value map associated with a key.
-// Use the set repository to work with individual hashmaps
-// and their fields.
+// A set is a slice of elements associated with a key.
+// Use the set repository to work with individual sets
 type DB struct {
 	*sqlx.DB[*Tx]
 }
