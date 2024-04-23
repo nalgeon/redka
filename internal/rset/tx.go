@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var sqlAdd = []string{`
+const sqlAdd1 = `
 insert into rkey (key, type, version, etime, mtime)
 values (:key, :type, :version, :etime, :mtime)
 on conflict (key) do update set 
@@ -15,11 +15,10 @@ on conflict (key) do update set
     type = excluded.type,
     etime = excluded.etime,
     mtime = excluded.mtime
-;`,
+;`
 
-	`insert into rset (key_id, elem)
-values ((select id from rkey where key = :key), :value)`,
-}
+const sqlAdd2 = `insert into rset (key_id, elem)
+values ((select id from rkey where key = :key), :value)`
 
 // Tx is a set repository transaction.
 type Tx struct {
@@ -52,11 +51,11 @@ func (t *Tx) add(key string, elems ...any) (int, error) {
 	}
 
 	for _, arg := range args {
-		_, err := t.tx.Exec(sqlAdd[0], arg)
+		_, err := t.tx.Exec(sqlAdd1, arg)
 		if err != nil {
 			return 0, sqlx.TypedError(err)
 		}
-		_, err = t.tx.Exec(sqlAdd[1], arg)
+		_, err = t.tx.Exec(sqlAdd2, arg)
 		if err != nil {
 			return 0, err
 		}
