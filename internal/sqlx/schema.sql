@@ -104,23 +104,23 @@ where rkey.type = 5
 -- set
 
 create table if not exists
-    rset (
-             key_id integer not null,
-             elem blob not null,
+rset (
+    key_id integer not null,
+    elem blob not null,
 
-             foreign key (key_id) references rkey (id)
-    on delete cascade
-    );
+    foreign key (key_id) references rkey (id)
+      on delete cascade
+);
 
 create unique index if not exists
-    rset_pk_idx on rset (key_id, elem);
+rset_pk_idx on rset (key_id, elem);
 
 create view if not exists
-        vset as
-select
-    rkey.id as key_id, rkey.key, rset.elem
-               datetime(etime/1000, 'unixepoch') as etime,
-        datetime(mtime/1000, 'unixepoch') as mtime
-from rkey join rset on rkey.id = rset.key_id
-where rkey.type = 3
-  and (rkey.etime is null or rkey.etime > unixepoch('subsec'))
+vset as
+  select
+    rkey.id as key_id, rkey.key, rset.elem,
+    datetime(etime/1000, 'unixepoch') as etime,
+    datetime(mtime/1000, 'unixepoch') as mtime
+  from rkey join rset on rkey.id = rset.key_id
+  where rkey.type = 3
+    and (rkey.etime is null or rkey.etime > unixepoch('subsec'))
