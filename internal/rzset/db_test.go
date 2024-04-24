@@ -834,6 +834,43 @@ func TestRangeRank(t *testing.T) {
 			testx.AssertEqual(t, items, test.items)
 		}
 	})
+	t.Run("desc", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_, _ = db.Add("key", "one", 1)
+		_, _ = db.Add("key", "two", 2)
+		_, _ = db.Add("key", "thr", 3)
+		_, _ = db.Add("key", "2nd", 2)
+
+		tests := []struct {
+			start, stop int
+			items       []rzset.SetItem
+		}{
+			{0, 0, []rzset.SetItem{
+				{Elem: core.Value("thr"), Score: 3},
+			}},
+			{0, 1, []rzset.SetItem{
+				{Elem: core.Value("thr"), Score: 3}, {Elem: core.Value("two"), Score: 2},
+			}},
+			{1, 2, []rzset.SetItem{
+				{Elem: core.Value("two"), Score: 2}, {Elem: core.Value("2nd"), Score: 2},
+			}},
+			{2, 3, []rzset.SetItem{
+				{Elem: core.Value("2nd"), Score: 2}, {Elem: core.Value("one"), Score: 1},
+			}},
+			{3, 4, []rzset.SetItem{
+				{Elem: core.Value("one"), Score: 1},
+			}},
+			{4, 5, []rzset.SetItem(nil)},
+		}
+
+		for _, test := range tests {
+			items, err := db.RangeWith("key").ByRank(test.start, test.stop).Desc().Run()
+			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, items, test.items)
+		}
+	})
 	t.Run("negative indexes", func(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()

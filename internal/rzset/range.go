@@ -11,16 +11,16 @@ import (
 const (
 	sqlRangeRank = `
 	with ranked as (
-	select elem, score, (row_number() over w - 1) as rank
-	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key
-	window w as (partition by key_id order by score asc, elem asc)
+	  select elem, score, (row_number() over w - 1) as rank
+	  from rzset
+	    join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	  where key = :key
+	  window w as (partition by key_id order by score asc, elem asc)
 	)
 	select elem, score
 	from ranked
 	where rank between :start and :stop
-	order by rank asc, elem asc`
+	order by rank, elem asc`
 
 	sqlRangeScore = `
 	select elem, score
@@ -50,14 +50,17 @@ type RangeCmd struct {
 	count   int
 }
 
-// ByRank sets filtering by rank.
+// ByRank sets filtering and sorting by rank.
+// Start and stop are 0-based, inclusive.
+// Negative values are not supported.
 func (c RangeCmd) ByRank(start, stop int) RangeCmd {
 	c.byRank = &byRank{start, stop}
 	c.byScore = nil
 	return c
 }
 
-// ByScore sets filtering by score.
+// ByScore sets filtering and sorting by score.
+// Start and stop are inclusive.
 func (c RangeCmd) ByScore(start, stop float64) RangeCmd {
 	c.byScore = &byScore{start, stop}
 	c.byRank = nil
@@ -91,9 +94,8 @@ func (c RangeCmd) Count(count int) RangeCmd {
 }
 
 // Run returns a range of elements from a sorted set.
-// Uses either by-rank or by-score filtering. The range is inclusive
-// of both start and stop. The elements are sorted by score and then
-// by element according to the sorting direction.
+// Uses either by-rank or by-score filtering. The elements are sorted
+// by score/rank and then by element according to the sorting direction.
 //
 // Offset and count are optional, and only take effect
 // when filtering by score.
