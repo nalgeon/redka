@@ -102,11 +102,43 @@ HRANDFIELD  HSTRLEN
 
 ### Sorted sets
 
-Sorted sets are collections of unique strings ordered by each string's associated score. Redka aims to support the following sorted set related commands in 1.0:
+Sorted sets (zsets) are collections of unique strings ordered by each string's associated score. Redka supports the following sorted set related commands:
 
 ```
-ZADD  ZCARD  ZCOUNT  ZINCRBY  ZINTERSTORE  ZRANGE
-ZRANK  ZREM  ZSCORE
+Command           Go API                  Description
+-------           ------                  -----------
+ZADD              DB.ZSet().AddMany       Adds or updates one or more members of a set.
+ZCARD             DB.ZSet().Len           Returns the number of members in a set.
+ZCOUNT            DB.ZSet().Count         Returns the number of members of a set within a range
+                                          of scores.
+ZINCRBY           DB.ZSet().Incr          Increments the score of a member in a set.
+ZINTER            DB.ZSet().InterWith     Returns the intersection of multiple sets.
+ZINTERSTORE       DB.ZSet().InterWith     Stores the intersection of multiple sets in a key.
+ZRANGE            DB.ZSet().RangeWith     Returns members of a set within a range of indexes.
+ZRANGEBYSCORE     DB.ZSet().RangeWith     Returns members of a set within a range of scores.
+ZRANK             DB.ZSet().GetRank       Returns the index of a member in a set ordered
+                                          by ascending scores.
+ZREM              DB.ZSet().Delete        Removes one or more members from a set.
+ZREMRANGEBYRANK   DB.ZSet().DeleteWith    Removes members of a set within a range of indexes.
+ZREMRANGEBYSCORE  DB.ZSet().DeleteWith    Removes members of a set within a range of scores.
+ZREVRANGE         DB.ZSet().RangeWith     Returns members of a set within a range of indexes
+                                          in reverse order.
+ZREVRANGEBYSCORE  DB.ZSet().RangeWith     Returns members of a set within a range of scores
+                                          in reverse order.
+ZREVRANK          DB.ZSet().GetRankRev    Returns the index of a member in a set ordered
+                                          by descending scores.
+ZSCAN             DB.ZSet().Scan          Iterates over members and scores of a set.
+ZSCORE            DB.ZSet().GetScore      Returns the score of a member in a set.
+ZUNION            DB.ZSet().UnionWith     Returns the union of multiple sets.
+ZUNIONSTORE       DB.ZSet().UnionWith     Stores the union of multiple sets in a key.
+```
+
+The following sorted set related commands are not planned for 1.0:
+
+```
+BZMPOP  BZPOPMAX  BZPOPMIN  ZDIFF  ZDIFFSTORE  ZINTERCARD
+ZLEXCOUNT  ZMPOP  ZMSCORE  ZPOPMAX  ZPOPMIN  ZRANDMEMBER
+ZRANGEBYLEX  ZRANGESTORE  ZREMRANGEBYLEX  ZREVRANGEBYLEX
 ```
 
 ### Key management
@@ -182,7 +214,7 @@ Redka server is a single-file binary. Download it from the [releases](https://gi
 Linux (x86 CPU only):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.2.0/redka_linux_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.3.0/redka_linux_amd64.zip"
 unzip redka_linux_amd64.zip
 chmod +x redka
 ```
@@ -190,7 +222,7 @@ chmod +x redka
 macOS (both x86 and ARM/Apple Silicon CPU):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.2.0/redka_darwin_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.3.0/redka_darwin_amd64.zip"
 unzip redka_darwin_amd64.zip
 # remove the build from quarantine
 # (macOS disables unsigned binaries)
@@ -392,6 +424,12 @@ rhash
 key_id   integer not null    -- FK -> rkey.id
 field    text not null
 value    blob not null
+
+rzset
+---
+key_id   integer not null    -- FK -> rkey.id
+elem     blob not null
+score    real not null
 ```
 
 To access the data with SQL, use views instead of tables:
@@ -414,7 +452,7 @@ select * from vstring;
 There is a separate view for every data type:
 
 ```
-vstring  vhash
+vstring  vhash  vzset
 ```
 
 ## Performance
@@ -476,13 +514,13 @@ Note that running in a container may result in poorer performance.
 
 The project is on its way to 1.0.
 
-The 1.0 release will include the following features from Redis 2.x (which I consider the "golden age" of the Redis API):
+The 1.0 release will include the following features:
 
 -   ✅ Strings.
--   ⬜ Lists.
+-   ⏳ Lists.
 -   ⬜ Sets.
 -   ✅ Hashes.
--   ⏳ Sorted sets.
+-   ✅ Sorted sets.
 -   ✅ Key management.
 -   ✅ Transactions.
 
