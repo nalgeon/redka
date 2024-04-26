@@ -674,69 +674,6 @@ func TestSetMany(t *testing.T) {
 	})
 }
 
-func TestSetManyNX(t *testing.T) {
-	t.Run("create", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		ok, err := db.SetManyNX(map[string]any{
-			"age":  25,
-			"city": "paris",
-		})
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, true)
-		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, core.Value("25"))
-		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, core.Value("paris"))
-	})
-	t.Run("update", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		_ = db.Set("age", 25)
-		_ = db.Set("city", "paris")
-		ok, err := db.SetManyNX(map[string]any{
-			"age":  50,
-			"city": "berlin",
-		})
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, false)
-		age, _ := db.Get("age")
-		testx.AssertEqual(t, age, core.Value("25"))
-		city, _ := db.Get("city")
-		testx.AssertEqual(t, city, core.Value("paris"))
-	})
-	t.Run("invalid type", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-
-		ok, err := db.SetManyNX(map[string]any{
-			"name": "alice",
-			"age":  struct{ Name string }{"alice"},
-		})
-		testx.AssertErr(t, err, core.ErrValueType)
-		testx.AssertEqual(t, ok, false)
-	})
-	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_, _ = red.Hash().Set("person", "name", "alice")
-
-		ok, err := db.SetManyNX(map[string]any{
-			"name":   "alice",
-			"person": "alice",
-		})
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, ok, false)
-
-		_, err = db.Get("name")
-		testx.AssertErr(t, err, core.ErrNotFound)
-		_, err = db.Get("person")
-		testx.AssertErr(t, err, core.ErrNotFound)
-	})
-}
-
 func TestSetNotExists(t *testing.T) {
 	t.Run("key exists", func(t *testing.T) {
 		red, db := getDB(t)

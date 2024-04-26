@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
-	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -204,46 +203,6 @@ func (tx *Tx) SetMany(items map[string]any) error {
 	}
 
 	return nil
-}
-
-// SetManyNX sets the values of multiple keys, but only if none
-// of them yet exist. Returns true if the keys were set,
-// false if any of them already exist.
-// If any of the keys exists but is not a string, returns ErrKeyType.
-func (tx *Tx) SetManyNX(items map[string]any) (bool, error) {
-	for _, val := range items {
-		if !core.IsValueType(val) {
-			return false, core.ErrValueType
-		}
-	}
-
-	// extract keys
-	keys := make([]string, 0, len(items))
-	for key := range items {
-		keys = append(keys, key)
-	}
-
-	// check if any of the keys exist
-	count, err := rkey.CountType(tx.tx, core.TypeString, keys...)
-	if err != nil {
-		return false, err
-	}
-
-	// do not proceed if any of the keys exist
-	if count != 0 {
-		return false, nil
-	}
-
-	// set the keys
-	at := time.Time{} // no expiration
-	for key, val := range items {
-		err = set(tx.tx, key, val, at)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return true, nil
 }
 
 // SetWith sets the key value with additional options.

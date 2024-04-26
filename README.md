@@ -40,7 +40,6 @@ INCRBY       DB.Str().Incr          Increments the integer value of a key by a n
 INCRBYFLOAT  DB.Str().IncrFloat     Increments the float value of a key by a number.
 MGET         DB.Str().GetMany       Returns the values of one or more keys.
 MSET         DB.Str().SetMany       Sets the values of one or more keys.
-MSETNX       DB.Str().SetManyNX     Sets the values of one or more keys when all keys don't exist.
 PSETEX       DB.Str().SetExpires    Sets the value and expiration time (in ms) of a key.
 SET          DB.Str().Set           Sets the value of a key.
 SETEX        DB.Str().SetExpires    Sets the value and expiration (in sec) time of a key.
@@ -50,7 +49,7 @@ SETNX        DB.Str().SetNotExists  Sets the value of a key when the key doesn't
 The following string-related commands are not planned for 1.0:
 
 ```
-APPEND  GETDEL  GETEX  GETRANGE  LCS  SETRANGE  STRLEN  SUBSTR
+APPEND  GETDEL  GETEX  GETRANGE  LCS  MSETNX  SETRANGE  STRLEN  SUBSTR
 ```
 
 ### Lists

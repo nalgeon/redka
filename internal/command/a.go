@@ -110,7 +110,6 @@ type RStr interface {
 	Set(key string, value any) error
 	SetExpires(key string, value any, ttl time.Duration) error
 	SetMany(items map[string]any) error
-	SetManyNX(items map[string]any) (bool, error)
 	SetWith(key string, value any) rstring.SetCmd
 }
 
@@ -287,8 +286,6 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseMGet(b)
 	case "mset":
 		return parseMSet(b)
-	case "msetnx":
-		return parseMSetNX(b)
 	case "psetex":
 		return parseSetEX(b, 1)
 	case "set":

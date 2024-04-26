@@ -101,20 +101,6 @@ func (d *DB) SetMany(items map[string]any) error {
 	return err
 }
 
-// SetManyNX sets the values of multiple keys, but only if none
-// of them yet exist. Returns true if the keys were set,
-// false if any of them already exist.
-// If any of the keys exists but is not a string, returns ErrKeyType.
-func (d *DB) SetManyNX(items map[string]any) (bool, error) {
-	var ok bool
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		ok, err = tx.SetManyNX(items)
-		return err
-	})
-	return ok, err
-}
-
 // SetWith sets the key value with additional options.
 func (d *DB) SetWith(key string, value any) SetCmd {
 	return SetCmd{db: d, key: key, val: value}
