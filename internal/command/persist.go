@@ -23,7 +23,7 @@ func (cmd *Persist) Run(w Writer, red Redka) (any, error) {
 	err := red.Key().Persist(cmd.key)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
-		return false, err
+		return nil, err
 	}
 	if err == core.ErrNotFound {
 		w.WriteInt(0)

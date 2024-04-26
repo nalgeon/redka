@@ -121,7 +121,7 @@ func TestRenameExec(t *testing.T) {
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, red)
 		testx.AssertEqual(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, res, false)
+		testx.AssertEqual(t, res, nil)
 		testx.AssertEqual(t, strings.HasPrefix(conn.out(), ErrNotFound.Error()), true)
 
 		key, _ := db.Key().Get("name")

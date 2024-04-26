@@ -23,7 +23,7 @@ func (cmd *RenameNX) Run(w Writer, red Redka) (any, error) {
 	ok, err := red.Key().RenameNotExists(cmd.key, cmd.newKey)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return false, err
+		return nil, err
 	}
 	if ok {
 		w.WriteInt(1)

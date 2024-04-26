@@ -33,7 +33,7 @@ func (cmd *ZRevRange) Run(w Writer, red Redka) (any, error) {
 	items, err := red.ZSet().RangeWith(cmd.key).ByRank(cmd.start, cmd.stop).Desc().Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return items, err
+		return nil, err
 	}
 
 	// write the response with/without scores

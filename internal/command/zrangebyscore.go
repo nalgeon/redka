@@ -47,7 +47,7 @@ func (cmd *ZRangeByScore) Run(w Writer, red Redka) (any, error) {
 	items, err := rang.Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return items, err
+		return nil, err
 	}
 
 	// write the response with/without scores

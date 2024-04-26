@@ -21,7 +21,7 @@ func (cmd *ZCard) Run(w Writer, red Redka) (any, error) {
 	n, err := red.ZSet().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return 0, err
+		return nil, err
 	}
 	w.WriteInt(n)
 	return n, nil

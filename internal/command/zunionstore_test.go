@@ -244,7 +244,7 @@ func TestZUnionStoreExec(t *testing.T) {
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, red)
 		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, 0)
+		testx.AssertEqual(t, res, nil)
 		testx.AssertEqual(t, conn.out(), ErrKeyType.Error()+" (zunionstore)")
 
 		dest, _ := db.Str().Get("dest")

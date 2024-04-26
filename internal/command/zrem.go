@@ -29,7 +29,7 @@ func (cmd *ZRem) Run(w Writer, red Redka) (any, error) {
 	n, err := red.ZSet().Delete(cmd.key, cmd.members...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return 0, err
+		return nil, err
 	}
 	w.WriteInt(n)
 	return n, nil

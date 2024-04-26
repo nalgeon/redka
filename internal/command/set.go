@@ -71,7 +71,7 @@ func (cmd *Set) Run(w Writer, red Redka) (any, error) {
 		err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 		if err != nil {
 			w.WriteError(cmd.Error(err))
-			return false, err
+			return nil, err
 		}
 		w.WriteString("OK")
 		return true, nil

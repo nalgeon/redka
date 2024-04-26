@@ -29,7 +29,7 @@ func (cmd *HGet) Run(w Writer, red Redka) (any, error) {
 	}
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return val, err
+		return nil, err
 	}
 	w.WriteBulk(val)
 	return val, nil

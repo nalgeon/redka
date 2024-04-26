@@ -44,7 +44,7 @@ func (cmd *ZInterStore) Run(w Writer, red Redka) (any, error) {
 	count, err := inter.Store()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return count, err
+		return nil, err
 	}
 
 	w.WriteInt(count)

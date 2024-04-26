@@ -29,7 +29,7 @@ func (cmd *ZCount) Run(w Writer, red Redka) (any, error) {
 	n, err := red.ZSet().Count(cmd.key, cmd.min, cmd.max)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return 0, err
+		return nil, err
 	}
 	w.WriteInt(n)
 	return n, nil

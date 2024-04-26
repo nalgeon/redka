@@ -36,7 +36,7 @@ func (cmd *ExpireAt) Run(w Writer, red Redka) (any, error) {
 	err := red.Key().ExpireAt(cmd.key, cmd.at)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
-		return false, err
+		return nil, err
 	}
 	if err == core.ErrNotFound {
 		w.WriteInt(0)

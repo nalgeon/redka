@@ -19,7 +19,7 @@ func (cmd *FlushDB) Run(w Writer, red Redka) (any, error) {
 	err := red.Key().DeleteAll()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return false, err
+		return nil, err
 	}
 	w.WriteString("OK")
 	return true, nil

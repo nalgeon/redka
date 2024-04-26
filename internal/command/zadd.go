@@ -28,7 +28,7 @@ func (cmd *ZAdd) Run(w Writer, red Redka) (any, error) {
 	count, err := red.ZSet().AddMany(cmd.key, cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
-		return 0, err
+		return nil, err
 	}
 	w.WriteInt(count)
 	return count, nil
