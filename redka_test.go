@@ -2,11 +2,191 @@ package redka_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/testx"
 )
+
+func ExampleOpen() {
+	db, err := redka.Open(":memory:", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	// ...
+}
+
+func ExampleDB_Close() {
+	db, err := redka.Open(":memory:", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	// ...
+}
+
+func ExampleDB_Hash() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open(":memory:", nil)
+	defer db.Close()
+
+	ok, err := db.Hash().Set("user:1", "name", "alice")
+	fmt.Printf("ok=%v, err=%v\n", ok, err)
+	ok, err = db.Hash().Set("user:1", "age", 25)
+	fmt.Printf("ok=%v, err=%v\n", ok, err)
+
+	name, err := db.Hash().Get("user:1", "name")
+	fmt.Printf("name=%v, err=%v\n", name, err)
+	age, err := db.Hash().Get("user:1", "age")
+	fmt.Printf("age=%v, err=%v\n", age, err)
+
+	// Output:
+	// ok=true, err=<nil>
+	// ok=true, err=<nil>
+	// name=alice, err=<nil>
+	// age=25, err=<nil>
+}
+
+func ExampleDB_Key() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open(":memory:", nil)
+	defer db.Close()
+
+	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+
+	key, _ := db.Key().Get("name")
+	fmt.Printf("key=%v, type=%v, version=%v, exists=%v\n",
+		key.Key, key.TypeName(), key.Version, key.Exists())
+
+	key, _ = db.Key().Get("nonexistent")
+	fmt.Printf("key=%v, type=%v, version=%v, exists=%v\n",
+		key.Key, key.TypeName(), key.Version, key.Exists())
+
+	// Output:
+	// key=name, type=string, version=1, exists=true
+	// key=, type=unknown, version=0, exists=false
+}
+
+func ExampleDB_Str() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open(":memory:", nil)
+	defer db.Close()
+
+	_ = db.Str().Set("name", "alice")
+
+	name, _ := db.Str().Get("name")
+	fmt.Printf("name=%v\n", name)
+
+	name, _ = db.Str().Get("nonexistent")
+	fmt.Printf("name=%v\n", name)
+
+	// Output:
+	// name=alice
+	// name=
+}
+
+func ExampleDB_ZSet() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open(":memory:", nil)
+	defer db.Close()
+
+	ok, err := db.ZSet().Add("race", "alice", 11)
+	fmt.Printf("ok=%v, err=%v\n", ok, err)
+	ok, err = db.ZSet().Add("race", "bob", 22)
+	fmt.Printf("ok=%v, err=%v\n", ok, err)
+
+	rank, score, err := db.ZSet().GetRank("race", "alice")
+	fmt.Printf("alice: rank=%v, score=%v, err=%v\n", rank, score, err)
+
+	rank, score, err = db.ZSet().GetRank("race", "bob")
+	fmt.Printf("bob: rank=%v, score=%v, err=%v\n", rank, score, err)
+
+	// Output:
+	// ok=true, err=<nil>
+	// ok=true, err=<nil>
+	// alice: rank=0, score=11, err=<nil>
+	// bob: rank=1, score=22, err=<nil>
+}
+
+func ExampleDB_Update() {
+	db, err := redka.Open(":memory:", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	updCount := 0
+	err = db.Update(func(tx *redka.Tx) error {
+		err := tx.Str().Set("name", "alice")
+		if err != nil {
+			return err
+		}
+		updCount++
+
+		err = tx.Str().Set("age", 25)
+		if err != nil {
+			return err
+		}
+		updCount++
+
+		return nil
+	})
+	fmt.Printf("updated: count=%v, err=%v\n", updCount, err)
+
+	// Output:
+	// updated: count=2, err=<nil>
+}
+
+func ExampleDB_View() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open(":memory:", nil)
+	defer db.Close()
+
+	_ = db.Str().SetMany(map[string]any{
+		"name": "alice",
+		"age":  25,
+	})
+
+	type person struct {
+		name string
+		age  int
+	}
+
+	var p person
+	err := db.View(func(tx *redka.Tx) error {
+		name, err := tx.Str().Get("name")
+		if err != nil {
+			return err
+		}
+		p.name = name.String()
+
+		age, err := tx.Str().Get("age")
+		if err != nil {
+			return err
+		}
+		// Only use MustInt() if you are sure that
+		// the key exists and is an integer.
+		p.age = age.MustInt()
+		return nil
+	})
+	fmt.Printf("person=%+v, err=%v\n", p, err)
+
+	// Output:
+	// person={name:alice age:25}, err=<nil>
+}
 
 func TestDBView(t *testing.T) {
 	db := getDB(t)
