@@ -66,7 +66,18 @@ func parseSet(b baseCmd) (*Set, error) {
 }
 
 func (cmd *Set) Run(w Writer, red Redka) (any, error) {
-	// Build and run the command.
+	if !cmd.ifNX && !cmd.ifXX && !cmd.get && !cmd.keepTTL && cmd.at.IsZero() {
+		// Simple SET without additional options (except ttl).
+		err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
+		if err != nil {
+			w.WriteError(cmd.Error(err))
+			return false, err
+		}
+		w.WriteString("OK")
+		return true, nil
+	}
+
+	// SET with additional options.
 	op := red.Str().SetWith(cmd.key, cmd.value)
 	if cmd.ifXX {
 		op = op.IfExists()
