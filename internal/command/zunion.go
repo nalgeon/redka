@@ -5,18 +5,18 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-// Returns the intersect of multiple sorted sets.
-// ZINTER numkeys key [key ...] [AGGREGATE <SUM | MIN | MAX>] [WITHSCORES]
-// https://redis.io/commands/zinter
-type ZInter struct {
+// Returns the union of multiple sorted sets.
+// ZUNION numkeys key [key ...] [AGGREGATE <SUM | MIN | MAX>] [WITHSCORES]
+// https://redis.io/commands/zunion
+type ZUnion struct {
 	baseCmd
 	keys       []string
 	aggregate  string
 	withScores bool
 }
 
-func parseZInter(b baseCmd) (*ZInter, error) {
-	cmd := &ZInter{baseCmd: b}
+func parseZUnion(b baseCmd) (*ZUnion, error) {
+	cmd := &ZUnion{baseCmd: b}
 	var nKeys int
 	err := parser.New(
 		parser.Int(&nKeys),
@@ -30,18 +30,18 @@ func parseZInter(b baseCmd) (*ZInter, error) {
 	return cmd, nil
 }
 
-func (cmd *ZInter) Run(w Writer, red Redka) (any, error) {
-	inter := red.ZSet().InterWith(cmd.keys...)
+func (cmd *ZUnion) Run(w Writer, red Redka) (any, error) {
+	union := red.ZSet().UnionWith(cmd.keys...)
 	switch cmd.aggregate {
 	case sqlx.Min:
-		inter = inter.Min()
+		union = union.Min()
 	case sqlx.Max:
-		inter = inter.Max()
+		union = union.Max()
 	case sqlx.Sum:
-		inter = inter.Sum()
+		union = union.Sum()
 	}
 
-	items, err := inter.Run()
+	items, err := union.Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

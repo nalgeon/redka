@@ -221,8 +221,8 @@ func (cmd baseCmd) String() string {
 	return b.String()
 }
 
-func floatToString(f float64) string {
-	return strconv.FormatFloat(f, 'f', -1, 64)
+func writeFloat(w Writer, f float64) {
+	w.WriteBulkString(strconv.FormatFloat(f, 'f', -1, 64))
 }
 
 // Parse parses a text representation of a command into a Cmd.
@@ -335,8 +335,38 @@ func Parse(args [][]byte) (Cmd, error) {
 		return parseZCard(b)
 	case "zcount":
 		return parseZCount(b)
+	case "zincrby":
+		return parseZIncrBy(b)
 	case "zinter":
 		return parseZInter(b)
+	case "zinterstore":
+		return parseZInterStore(b)
+	case "zrange":
+		return parseZRange(b)
+	case "zrangebyscore":
+		return parseZRangeByScore(b)
+	case "zrank":
+		return parseZRank(b)
+	case "zrem":
+		return parseZRem(b)
+	case "zremrangebyrank":
+		return parseZRemRangeByRank(b)
+	case "zremrangebyscore":
+		return parseZRemRangeByScore(b)
+	case "zrevrange":
+		return parseZRevRange(b)
+	case "zrevrangebyscore":
+		return parseZRevRangeByScore(b)
+	case "zrevrank":
+		return parseZRevRank(b)
+	case "zscan":
+		return parseZScan(b)
+	case "zscore":
+		return parseZScore(b)
+	case "zunion":
+		return parseZUnion(b)
+	case "zunionstore":
+		return parseZUnionStore(b)
 
 	default:
 		return parseUnknown(b)

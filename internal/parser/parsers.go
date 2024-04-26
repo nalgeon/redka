@@ -86,9 +86,25 @@ func Strings(dest *[]string) ParserFunc {
 	}
 }
 
-// StringsN parses n variadic arguments as a slice of strings.
-func StringsN(dest *[]string, n int) ParserFunc {
+// Anys parses variadic arguments as a slice of any.
+func Anys(dest *[]any) ParserFunc {
 	return func(args [][]byte) (bool, [][]byte, error) {
+		if len(args) == 0 {
+			return false, args, nil
+		}
+		*dest = make([]any, len(args))
+		for i, arg := range args {
+			(*dest)[i] = string(arg)
+		}
+		return true, nil, nil
+	}
+}
+
+// StringsN parses n variadic arguments as a slice of strings.
+// nVar is a pointer to the number of arguments to parse.
+func StringsN(dest *[]string, nVar *int) ParserFunc {
+	return func(args [][]byte) (bool, [][]byte, error) {
+		n := *nVar
 		if len(args) == 0 {
 			return false, args, nil
 		}
@@ -159,17 +175,23 @@ func Named(name string, parsers ...ParserFunc) ParserFunc {
 		if string(args[0]) != name {
 			return false, args, nil
 		}
-		allFired := true
+		nFired := 0
+		args = args[1:]
 		for _, parser := range parsers {
 			var fired bool
 			var err error
-			fired, args, err = parser(args[1:])
+			fired, args, err = parser(args)
 			if err != nil {
 				return fired, args, err
 			}
-			allFired = allFired && fired
+			if fired {
+				nFired++
+			}
+			if len(args) == 0 {
+				break
+			}
 		}
-		if !allFired {
+		if nFired != len(parsers) {
 			return true, args, ErrSyntaxError
 		}
 		return true, args, nil
