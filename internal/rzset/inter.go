@@ -21,20 +21,20 @@ const (
 	having count(distinct key_id) = :nkeys
 	order by sum(score), elem`
 
-	sqlInterStore1 = `
+	sqlInterStore = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
-	returning id`
+	values (:key, :type, :version, :mtime);
 
-	sqlInterStore2 = `
 	insert into rzset (key_id, elem, score)
-	select :key_id, elem, sum(score) as score
+	select
+	  (select id from rkey where key = :key),
+	  elem, sum(score) as score
 	from rzset
 	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
 	where key in (:keys)
 	group by elem
 	having count(distinct key_id) = :nkeys
-	order by sum(score), elem`
+	order by sum(score), elem;`
 )
 
 // InterCmd intersects multiple sets.
@@ -110,13 +110,16 @@ func (c InterCmd) Store() (int, error) {
 // inter returns the intersection of multiple sets.
 func (c InterCmd) inter(tx sqlx.Tx) ([]SetItem, error) {
 	// Prepare query arguments.
-	now := time.Now().UnixMilli()
 	query := sqlInter
 	if c.aggregate != sqlx.Sum {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args := slices.Concat([]any{now}, keyArgs, []any{len(c.keys)})
+	args := slices.Concat(
+		[]any{time.Now().UnixMilli()}, // now
+		keyArgs,                       // keys
+		[]any{len(c.keys)},            // nkeys
+	)
 
 	// Execute the query.
 	var rows *sql.Rows
@@ -153,28 +156,27 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	// Insert the destination key and get its ID.
 	now := time.Now().UnixMilli()
 	args := []any{
-		sql.Named("key", c.dest),
-		sql.Named("type", core.TypeSortedSet),
-		sql.Named("version", core.InitialVersion),
-		sql.Named("mtime", now),
+		// insert into rkey
+		c.dest,              // key
+		core.TypeSortedSet,  // type
+		core.InitialVersion, // version
+		now,                 // mtime
+		// insert into rzset
+		c.dest, // key
+		now,    // now
+		// keys
+		// nkeys
 	}
-	var keyID int
-	err = tx.QueryRow(sqlInterStore1, args...).Scan(&keyID)
-	if err != nil {
-		return 0, sqlx.TypedError(err)
-	}
-
-	// Intersect the sets and store the result.
-	query := sqlInterStore2
+	query := sqlInterStore
 	if c.aggregate != sqlx.Sum {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = slices.Concat([]any{keyID, now}, keyArgs, []any{len(c.keys)})
+	args = slices.Concat(args, keyArgs, []any{len(c.keys)})
 
 	res, err := tx.Exec(query, args...)
 	if err != nil {
-		return 0, err
+		return 0, sqlx.TypedError(err)
 	}
 
 	// Return the number of elements in the resulting set.

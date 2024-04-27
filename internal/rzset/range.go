@@ -1,7 +1,6 @@
 package rzset
 
 import (
-	"database/sql"
 	"strings"
 	"time"
 
@@ -127,10 +126,10 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 
 	// Prepare query arguments.
 	args := []any{
-		sql.Named("key", c.key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("start", c.byRank.start),
-		sql.Named("stop", c.byRank.stop),
+		time.Now().UnixMilli(),
+		c.key,
+		c.byRank.start,
+		c.byRank.stop,
 	}
 
 	// Execute the query.
@@ -164,23 +163,24 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 		query = strings.Replace(query, sqlx.Asc, c.sortDir, -1)
 	}
 
+	// Prepare query arguments.
+	args := []any{
+		time.Now().UnixMilli(),
+		c.key,
+		c.byScore.start,
+		c.byScore.stop,
+	}
+
 	// Add offset and count if necessary.
 	if c.offset > 0 && c.count > 0 {
 		query += " limit :offset, :count"
+		args = append(args, c.offset, c.count)
 	} else if c.count > 0 {
 		query += " limit :count"
+		args = append(args, c.count)
 	} else if c.offset > 0 {
 		query += " limit :offset, -1"
-	}
-
-	// Prepare query arguments.
-	args := []any{
-		sql.Named("key", c.key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("start", c.byScore.start),
-		sql.Named("stop", c.byScore.stop),
-		sql.Named("offset", c.offset),
-		sql.Named("count", c.count),
+		args = append(args, c.offset)
 	}
 
 	// Execute the query.

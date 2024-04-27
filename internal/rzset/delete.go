@@ -1,7 +1,6 @@
 package rzset
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/nalgeon/redka/internal/sqlx"
@@ -17,7 +16,7 @@ const (
 		and (etime is null or etime > :now)
 	  )
 	order by score, elem
-	limit :count offset :start
+	limit :start, :count
 	)
 	delete from rzset
 	where rowid in (select rowid from ranked)`
@@ -99,10 +98,10 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx) (int, error) {
 
 	// Delete elements by rank.
 	args := []any{
-		sql.Named("key", c.key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("start", c.byRank.start),
-		sql.Named("count", c.byRank.stop-c.byRank.start+1),
+		c.key,                              // key
+		time.Now().UnixMilli(),             // now
+		c.byRank.start,                     // start
+		c.byRank.stop - c.byRank.start + 1, // count
 	}
 	res, err := tx.Exec(sqlDeleteRank, args...)
 	if err != nil {
@@ -115,10 +114,10 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx) (int, error) {
 // deleteScore removes elements from a set by score.
 func (c DeleteCmd) deleteScore(tx sqlx.Tx) (int, error) {
 	args := []any{
-		sql.Named("key", c.key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("start", c.byScore.start),
-		sql.Named("stop", c.byScore.stop),
+		c.key,
+		time.Now().UnixMilli(),
+		c.byScore.start,
+		c.byScore.stop,
 	}
 	res, err := tx.Exec(sqlDeleteScore, args...)
 	if err != nil {
