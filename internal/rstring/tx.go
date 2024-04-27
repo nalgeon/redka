@@ -2,7 +2,6 @@ package rstring
 
 import (
 	"database/sql"
-	"slices"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -13,42 +12,40 @@ const (
 	sqlGet = `
 	select value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlGetMany = `
 	select key, value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)`
 
-	sqlSet1 = `
+	sqlSet = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (:key, :type, :version, :etime, :mtime)
+	values (?, ?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  etime = excluded.etime,
-	  mtime = excluded.mtime`
+	  mtime = excluded.mtime;
 
-	sqlSet2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = :key), :value)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (key_id) do update
-	set value = excluded.value`
+	set value = excluded.value;`
 
-	sqlUpdate1 = `
+	sqlUpdate = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (:key, :type, :version, null, :mtime)
+	values (?, ?, ?, null, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  -- not changing etime
-	  mtime = excluded.mtime`
+	  mtime = excluded.mtime;
 
-	sqlUpdate2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = :key), :value)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (key_id) do update
 	set value = excluded.value`
 )
@@ -77,7 +74,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
-	args := slices.Concat([]any{sql.Named("now", now)}, keyArgs)
+	args := append([]any{now}, keyArgs...)
 
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
@@ -212,8 +209,8 @@ func (tx *Tx) SetWith(key string, value any) SetCmd {
 
 func get(tx sqlx.Tx, key string) (core.Value, error) {
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
+		time.Now().UnixMilli(), // now
+		key,                    // key
 	}
 	var val []byte
 	err := tx.QueryRow(sqlGet, args...).Scan(&val)
@@ -228,7 +225,6 @@ func get(tx sqlx.Tx, key string) (core.Value, error) {
 
 // set sets the key value and (optionally) its expiration time.
 func set(tx sqlx.Tx, key string, value any, at time.Time) error {
-	now := time.Now()
 	var etime *int64
 	if !at.IsZero() {
 		etime = new(int64)
@@ -236,39 +232,40 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	}
 
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("type", core.TypeString),
-		sql.Named("version", core.InitialVersion),
-		sql.Named("etime", etime),
-		sql.Named("mtime", now.UnixMilli()),
-		sql.Named("value", value),
+		// insert into rkey
+		key,                    // key
+		core.TypeString,        // type
+		core.InitialVersion,    // version
+		etime,                  // etime
+		time.Now().UnixMilli(), // mtime
+		// insert into rstring
+		key,   // key
+		value, // value
 	}
-
-	_, err := tx.Exec(sqlSet1, args...)
+	_, err := tx.Exec(sqlSet, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-
-	_, err = tx.Exec(sqlSet2, args...)
-	return err
+	return nil
 }
 
 // update updates the value of the existing key without changing its
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
 func update(tx sqlx.Tx, key string, value any) error {
-	now := time.Now().UnixMilli()
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("type", core.TypeString),
-		sql.Named("version", core.InitialVersion),
-		sql.Named("mtime", now),
-		sql.Named("value", value),
+		// insert into rkey
+		key,                    // key
+		core.TypeString,        // type
+		core.InitialVersion,    // version
+		time.Now().UnixMilli(), // mtime
+		// insert into rstring
+		key,   // key
+		value, // value
 	}
-	_, err := tx.Exec(sqlUpdate1, args...)
+	_, err := tx.Exec(sqlUpdate, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-	_, err = tx.Exec(sqlUpdate2, args...)
-	return err
+	return nil
 }
