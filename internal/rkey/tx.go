@@ -11,15 +11,15 @@ import (
 const (
 	sqlCount = `
 	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > ?)`
+	where key in (:keys) and (etime is null or etime > :now)`
 
 	sqlCountType = `
 	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > ?) and type = ?`
+	where key in (:keys) and (etime is null or etime > :now) and type = :type`
 
 	sqlDelete = `
 	delete from rkey where key in (:keys)
-	and (etime is null or etime > ?)`
+	and (etime is null or etime > :now)`
 
 	sqlDeleteAll = `
 	delete from rkey;
@@ -28,64 +28,64 @@ const (
 
 	sqlDeleteAllExpired = `
 	delete from rkey
-	where etime <= ?`
+	where etime <= :now`
 
 	sqlDeleteNExpired = `
 	delete from rkey
 	where rowid in (
 	  select rowid from rkey
-	  where etime <= ?
-	  limit ?
+	  where etime <= :now
+	  limit :n
 	)`
 
 	sqlDeleteType = `
 	delete from rkey where key in (:keys)
-	  and (etime is null or etime > ?)
-	  and type = ?`
+	  and (etime is null or etime > :now)
+	  and type = :type`
 
 	sqlExpire = `
-	update rkey set etime = ?
-	where key = ? and (etime is null or etime > ?)`
+	update rkey set etime = :at
+	where key = :key and (etime is null or etime > :now)`
 
 	sqlGet = `
 	select id, key, type, version, etime, mtime
 	from rkey
-	where key = ? and (etime is null or etime > ?)`
+	where key = :key and (etime is null or etime > :now)`
 
 	sqlKeys = `
 	select id, key, type, version, etime, mtime from rkey
-	where key glob ? and (etime is null or etime > ?)`
+	where key glob :pattern and (etime is null or etime > :now)`
 
 	sqlPersist = `
 	update rkey set etime = null
-	where key = ? and (etime is null or etime > ?)`
+	where key = :key and (etime is null or etime > :now)`
 
 	sqlRandom = `
 	select id, key, type, version, etime, mtime from rkey
-	where etime is null or etime > ?
+	where etime is null or etime > :now
 	order by random() limit 1`
 
 	sqlRename = `
 	update or replace rkey set
 	  id = old.id,
-	  key = ?,
+	  key = :new_key,
 	  type = old.type,
 	  version = old.version+1,
 	  etime = old.etime,
-	  mtime = ?
+	  mtime = :now
 	from (
 	  select id, key, type, version, etime, mtime
 	  from rkey
-	  where key = ? and (etime is null or etime > ?)
+	  where key = :key and (etime is null or etime > :now)
 	) as old
-	where rkey.key = ? and (
-	  rkey.etime is null or rkey.etime > ?
+	where rkey.key = :key and (
+	  rkey.etime is null or rkey.etime > :now
 	)`
 
 	sqlScan = `
 	select id, key, type, version, etime, mtime from rkey
-	where id > ? and key glob ? and (etime is null or etime > ?)
-	limit ?`
+	where id > :cursor and key glob :pattern and (etime is null or etime > :now)
+	limit :count`
 )
 
 const scanPageSize = 10
