@@ -12,71 +12,71 @@ const (
 	sqlCount = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
 	sqlDelete = `
 	delete from rhash
 	where key_id = (
-	    select id from rkey where key = ?
-	    and (etime is null or etime > ?)
+	    select id from rkey where key = :key
+	    and (etime is null or etime > :now)
 	  ) and field in (:fields)`
 
 	sqlFields = `
 	select field
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
 	sqlGet = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field = ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field = :field`
 
 	sqlGetMany = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and field in (:fields)`
 
 	sqlItems = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
 	sqlLen = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 
 	sqlScan = `
 	select rhash.rowid, field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and rhash.rowid > ? and field glob ?
-	limit ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key and rhash.rowid > :cursor and field glob :pattern
+	limit :count`
 
 	sqlSet = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
+	values (:key, :type, :version, :mtime)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  mtime = excluded.mtime;
 
 	insert into rhash (key_id, field, value)
-	values ((select id from rkey where key = ?), ?, ?)
+	values ((select id from rkey where key = :key), :field, :value)
 	on conflict (key_id, field) do update
 	set value = excluded.value;`
 
 	sqlValues = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	where key = :key`
 )
 
 const scanPageSize = 10
