@@ -2,7 +2,6 @@ package rhash
 
 import (
 	"database/sql"
-	"slices"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -13,72 +12,71 @@ const (
 	sqlCount = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field in (:fields)`
 
 	sqlDelete = `
 	delete from rhash
 	where key_id = (
-	    select id from rkey where key = :key
-	    and (etime is null or etime > :now)
+	    select id from rkey where key = ?
+	    and (etime is null or etime > ?)
 	  ) and field in (:fields)`
 
 	sqlFields = `
 	select field
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlGet = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field = :field`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field = ?`
 
 	sqlGetMany = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field in (:fields)`
 
 	sqlItems = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlLen = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlScan = `
 	select rhash.rowid, field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and rhash.rowid > :cursor and field glob :pattern
-	limit :count`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and rhash.rowid > ? and field glob ?
+	limit ?`
 
-	sqlSet1 = `
+	sqlSet = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime`
+	  mtime = excluded.mtime;
 
-	sqlSet2 = `
 	insert into rhash (key_id, field, value)
-	values ((select id from rkey where key = :key), :field, :value)
+	values ((select id from rkey where key = ?), ?, ?)
 	on conflict (key_id, field) do update
-	set value = excluded.value`
+	set value = excluded.value;`
 
 	sqlValues = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 )
 
 const scanPageSize = 10
@@ -100,9 +98,8 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Does nothing if the key does not exist or is not a hash.
 // Does not delete the key if the hash becomes empty.
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
-	now := time.Now().UnixMilli()
 	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
-	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
+	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
@@ -121,11 +118,9 @@ func (tx *Tx) Exists(key, field string) (bool, error) {
 // Fields returns all fields in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (tx *Tx) Fields(key string) ([]string, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
 	// Select hash fields.
 	var rows *sql.Rows
+	args := []any{time.Now().UnixMilli(), key}
 	rows, err := tx.tx.Query(sqlFields, args...)
 	if err != nil {
 		return nil, err
@@ -153,12 +148,8 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a hash, returns ErrNotFound.
 func (tx *Tx) Get(key, field string) (core.Value, error) {
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("field", field),
-	}
 	var val []byte
+	args := []any{time.Now().UnixMilli(), key, field}
 	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return core.Value(nil), core.ErrNotFound
@@ -174,10 +165,8 @@ func (tx *Tx) Get(key, field string) (core.Value, error) {
 // If the key does not exist or is not a hash, returns an empty map.
 func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
 	// Get the values of the requested fields.
-	now := time.Now().UnixMilli()
 	query, fieldArgs := sqlx.ExpandIn(sqlGetMany, ":fields", fields)
-	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
-
+	args := append([]any{time.Now().UnixMilli(), key}, fieldArgs...)
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
 	if err != nil {
@@ -262,11 +251,9 @@ func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 // Items returns a map of all fields and values in a hash.
 // If the key does not exist or is not a hash, returns an empty map.
 func (tx *Tx) Items(key string) (map[string]core.Value, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
 	// Select hash rows.
 	var rows *sql.Rows
+	args := []any{time.Now().UnixMilli(), key}
 	rows, err := tx.tx.Query(sqlItems, args...)
 	if err != nil {
 		return nil, err
@@ -292,9 +279,8 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 // Len returns the number of fields in a hash.
 // If the key does not exist or is not a hash, returns 0.
 func (tx *Tx) Len(key string) (int, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
 	var n int
+	args := []any{time.Now().UnixMilli(), key}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
 	return n, err
 }
@@ -311,11 +297,8 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 	}
 
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("cursor", cursor),
-		sql.Named("pattern", pattern),
-		sql.Named("count", count),
+		time.Now().UnixMilli(), key,
+		cursor, pattern, count,
 	}
 
 	// Select hash items matching the pattern.
@@ -427,11 +410,9 @@ func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 // Values returns all values in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (tx *Tx) Values(key string) ([]core.Value, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
-
 	// Select hash values.
 	var rows *sql.Rows
+	args := []any{time.Now().UnixMilli(), key}
 	rows, err := tx.tx.Query(sqlValues, args...)
 	if err != nil {
 		return nil, err
@@ -457,9 +438,8 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 
 // count returns the number of existing fields in a hash.
 func (tx *Tx) count(key string, fields ...string) (int, error) {
-	now := time.Now().UnixMilli()
 	query, fieldArgs := sqlx.ExpandIn(sqlCount, ":fields", fields)
-	args := slices.Concat([]any{sql.Named("key", key), sql.Named("now", now)}, fieldArgs)
+	args := append([]any{time.Now().UnixMilli(), key}, fieldArgs...)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err
@@ -468,21 +448,19 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 // set creates or updates the value of a field in a hash.
 func (tx *Tx) set(key string, field string, value any) error {
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("type", core.TypeHash),
-		sql.Named("version", core.InitialVersion),
-		sql.Named("mtime", time.Now().UnixMilli()),
-		sql.Named("field", field),
-		sql.Named("value", value),
+		// insert into rkey
+		key,                    // key
+		core.TypeHash,          // type
+		core.InitialVersion,    // version
+		time.Now().UnixMilli(), // mtime
+		// insert into rhash
+		key, field, value,
 	}
-
-	_, err := tx.tx.Exec(sqlSet1, args...)
+	_, err := tx.tx.Exec(sqlSet, args...)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-
-	_, err = tx.tx.Exec(sqlSet2, args...)
-	return err
+	return nil
 }
 
 // scanValue scans a hash field value the current row.
