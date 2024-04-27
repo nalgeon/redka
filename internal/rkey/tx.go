@@ -2,7 +2,6 @@ package rkey
 
 import (
 	"database/sql"
-	"slices"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -12,15 +11,15 @@ import (
 const (
 	sqlCount = `
 	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > :now)`
+	where key in (:keys) and (etime is null or etime > ?)`
 
 	sqlCountType = `
 	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > :now) and type = :type`
+	where key in (:keys) and (etime is null or etime > ?) and type = ?`
 
 	sqlDelete = `
 	delete from rkey where key in (:keys)
-	and (etime is null or etime > :now)`
+	and (etime is null or etime > ?)`
 
 	sqlDeleteAll = `
 	delete from rkey;
@@ -29,37 +28,37 @@ const (
 
 	sqlDeleteAllExpired = `
 	delete from rkey
-	where etime <= :now`
+	where etime <= ?`
 
 	sqlDeleteNExpired = `
 	delete from rkey
 	where rowid in (
 	  select rowid from rkey
-	  where etime <= :now
-	  limit :n
+	  where etime <= ?
+	  limit ?
 	)`
 
 	sqlDeleteType = `
 	delete from rkey where key in (:keys)
-	  and (etime is null or etime > :now)
-	  and type = :type`
+	  and (etime is null or etime > ?)
+	  and type = ?`
 
 	sqlExpire = `
-	update rkey set etime = :at
-	where key = :key and (etime is null or etime > :now)`
+	update rkey set etime = ?
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlGet = `
 	select id, key, type, version, etime, mtime
 	from rkey
-	where key = :key and (etime is null or etime > :now)`
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlKeys = `
 	select id, key, type, version, etime, mtime from rkey
-	where key glob :pattern and (etime is null or etime > :now)`
+	where key glob ? and (etime is null or etime > ?)`
 
 	sqlPersist = `
 	update rkey set etime = null
-	where key = :key and (etime is null or etime > :now)`
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlRandom = `
 	select id, key, type, version, etime, mtime from rkey
@@ -69,24 +68,24 @@ const (
 	sqlRename = `
 	update or replace rkey set
 	  id = old.id,
-	  key = :new_key,
+	  key = ?,
 	  type = old.type,
 	  version = old.version+1,
 	  etime = old.etime,
-	  mtime = :now
+	  mtime = ?
 	from (
 	  select id, key, type, version, etime, mtime
 	  from rkey
-	  where key = :key and (etime is null or etime > :now)
+	  where key = ? and (etime is null or etime > ?)
 	) as old
-	where rkey.key = :key and (
-	  rkey.etime is null or rkey.etime > :now
+	where rkey.key = ? and (
+	  rkey.etime is null or rkey.etime > ?
 	)`
 
 	sqlScan = `
 	select id, key, type, version, etime, mtime from rkey
-	where id > :cursor and key glob :pattern and (etime is null or etime > :now)
-	limit :count`
+	where id > ? and key glob ? and (etime is null or etime > ?)
+	limit ?`
 )
 
 const scanPageSize = 10
@@ -106,7 +105,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 func (tx *Tx) Count(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	args := append(keyArgs, now)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err
@@ -117,7 +116,7 @@ func (tx *Tx) Count(keys ...string) (int, error) {
 func (tx *Tx) Delete(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now)})
+	args := append(keyArgs, now)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
@@ -151,11 +150,7 @@ func (tx *Tx) Expire(key string, ttl time.Duration) error {
 // the key is expired and no longer exists.
 // If the key does not exist, returns ErrNotFound.
 func (tx *Tx) ExpireAt(key string, at time.Time) error {
-	args := []any{
-		sql.Named("key", key),
-		sql.Named("now", time.Now().UnixMilli()),
-		sql.Named("at", at.UnixMilli()),
-	}
+	args := []any{at.UnixMilli(), key, time.Now().UnixMilli()}
 	res, err := tx.tx.Exec(sqlExpire, args...)
 	if err != nil {
 		return err
@@ -181,10 +176,7 @@ func (tx *Tx) Get(key string) (core.Key, error) {
 // Use this method only if you are sure that the number of keys is
 // limited. Otherwise, use the [Tx.Scan] or [Tx.Scanner] methods.
 func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
-	args := []any{
-		sql.Named("pattern", pattern),
-		sql.Named("now", time.Now().UnixMilli()),
-	}
+	args := []any{pattern, time.Now().UnixMilli()}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
 		err := rows.Scan(&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime)
@@ -198,8 +190,7 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 // Persist removes the expiration time for the key.
 // If the key does not exist, returns ErrNotFound.
 func (tx *Tx) Persist(key string) error {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
+	args := []any{key, time.Now().UnixMilli()}
 	res, err := tx.tx.Exec(sqlPersist, args...)
 	if err != nil {
 		return err
@@ -256,9 +247,9 @@ func (tx *Tx) Rename(key, newKey string) error {
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("new_key", newKey),
-		sql.Named("now", now),
+		newKey, now,
+		key, now,
+		key, now,
 	}
 	_, err = tx.tx.Exec(sqlRename, args...)
 	return err
@@ -294,9 +285,9 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
 	args := []any{
-		sql.Named("key", key),
-		sql.Named("new_key", newKey),
-		sql.Named("now", now),
+		newKey, now,
+		key, now,
+		key, now,
 	}
 	_, err = tx.tx.Exec(sqlRename, args...)
 	return err == nil, err
@@ -308,15 +299,14 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 // Returns an empty slice when there are no more keys.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
-	now := time.Now().UnixMilli()
 	if count == 0 {
 		count = scanPageSize
 	}
 	args := []any{
-		sql.Named("now", now),
-		sql.Named("cursor", cursor),
-		sql.Named("pattern", pattern),
-		sql.Named("count", count),
+		cursor,
+		pattern,
+		time.Now().UnixMilli(),
+		count,
 	}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
@@ -352,9 +342,8 @@ func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 // CountType returns the number of existing keys
 // of a specific type among specified keys.
 func CountType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlCountType, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now), sql.Named("type", typ)})
+	args := append(keyArgs, time.Now().UnixMilli(), typ)
 	var count int
 	err := tx.QueryRow(query, args...).Scan(&count)
 	return count, err
@@ -364,9 +353,8 @@ func CountType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
 // Returns the number of deleted keys.
 // Non-existing keys and keys of other types are ignored.
 func DeleteType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
-	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlDeleteType, ":keys", keys)
-	args := slices.Concat(keyArgs, []any{sql.Named("now", now), sql.Named("type", typ)})
+	args := append(keyArgs, time.Now().UnixMilli(), typ)
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
@@ -377,8 +365,7 @@ func DeleteType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
 
 // Get returns the key data structure.
 func Get(tx sqlx.Tx, key string) (core.Key, error) {
-	now := time.Now().UnixMilli()
-	args := []any{sql.Named("key", key), sql.Named("now", now)}
+	args := []any{key, time.Now().UnixMilli()}
 	var k core.Key
 	err := tx.QueryRow(sqlGet, args...).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
@@ -402,8 +389,7 @@ func (tx *Tx) deleteExpired(n int) (int, error) {
 	var res sql.Result
 	var err error
 	if n > 0 {
-		args := []any{sql.Named("now", now), sql.Named("n", n)}
-		res, err = tx.tx.Exec(sqlDeleteNExpired, args...)
+		res, err = tx.tx.Exec(sqlDeleteNExpired, now, n)
 	} else {
 		res, err = tx.tx.Exec(sqlDeleteAllExpired, now)
 	}
