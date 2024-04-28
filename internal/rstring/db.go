@@ -19,15 +19,15 @@ type DB struct {
 
 // New connects to the string repository.
 // Does not create the database schema.
-func New(db *sql.DB) *DB {
-	d := sqlx.New(db, NewTx)
+func New(rw *sql.DB, ro *sql.DB) *DB {
+	d := sqlx.New(rw, ro, NewTx)
 	return &DB{d}
 }
 
 // Get returns the value of the key.
 // If the key does not exist or is not a string, returns ErrNotFound.
 func (d *DB) Get(key string) (core.Value, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Get(key)
 }
 
@@ -35,7 +35,7 @@ func (d *DB) Get(key string) (core.Value, error) {
 // Ignores keys that do not exist or not strings,
 // and does not return them in the map.
 func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.GetMany(keys...)
 }
 
@@ -70,14 +70,14 @@ func (d *DB) IncrFloat(key string, delta float64) (float64, error) {
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
 func (d *DB) Set(key string, value any) error {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.Set(key, value)
 }
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 func (d *DB) SetExpires(key string, value any, ttl time.Duration) error {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.SetExpires(key, value, ttl)
 }
 

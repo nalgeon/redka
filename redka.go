@@ -83,21 +83,34 @@ type DB struct {
 // [simple]: https://github.com/nalgeon/redka/blob/main/example/simple/main.go
 // [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
 func Open(path string, opts *Options) (*DB, error) {
-	db, err := sql.Open(driverName, path)
+	// Open the read-write database handle.
+	dataSource := sqlx.DataSource(path, true)
+	rw, err := sql.Open(driverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
-	sdb, err := sqlx.Open(db, newTx)
+
+	// Open the read-only database handle.
+	dataSource = sqlx.DataSource(path, false)
+	ro, err := sql.Open(driverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
+
+	// Create the database-backed repository.
+	sdb, err := sqlx.Open(rw, ro, newTx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the database instance.
 	opts = applyOptions(defaultOptions, opts)
 	rdb := &DB{
 		DB:       sdb,
-		hashDB:   rhash.New(db),
-		keyDB:    rkey.New(db),
-		stringDB: rstring.New(db),
-		zsetDB:   rzset.New(db),
+		hashDB:   rhash.New(rw, ro),
+		keyDB:    rkey.New(rw, ro),
+		stringDB: rstring.New(rw, ro),
+		zsetDB:   rzset.New(rw, ro),
 		log:      opts.Logger,
 	}
 	rdb.bg = rdb.startBgManager()
@@ -172,7 +185,14 @@ func (db *DB) ViewContext(ctx context.Context, f func(tx *Tx) error) error {
 // It's safe for concurrent use by multiple goroutines.
 func (db *DB) Close() error {
 	db.bg.Stop()
-	return db.SQL.Close()
+	var allErr error
+	if err := db.RW.Close(); err != nil {
+		allErr = err
+	}
+	if err := db.RO.Close(); allErr == nil {
+		allErr = err
+	}
+	return allErr
 }
 
 // startBgManager starts the goroutine than runs

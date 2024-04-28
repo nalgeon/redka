@@ -24,8 +24,8 @@ type DB struct {
 
 // New connects to the sorted set repository.
 // Does not create the database schema.
-func New(db *sql.DB) *DB {
-	d := sqlx.New(db, NewTx)
+func New(rw *sql.DB, ro *sql.DB) *DB {
+	d := sqlx.New(rw, ro, NewTx)
 	return &DB{d}
 }
 
@@ -60,7 +60,7 @@ func (d *DB) AddMany(key string, items map[any]float64) (int, error) {
 // min and max (inclusive). Exclusive ranges are not supported.
 // Returns 0 if the key does not exist or is not a set.
 func (d *DB) Count(key string, min, max float64) (int, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Count(key, min, max)
 }
 
@@ -70,13 +70,13 @@ func (d *DB) Count(key string, min, max float64) (int, error) {
 // Does nothing if the key does not exist or is not a set.
 // Does not delete the key if the set becomes empty.
 func (d *DB) Delete(key string, elems ...any) (int, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.Delete(key, elems...)
 }
 
 // DeleteWith removes elements from a set with additional options.
 func (d *DB) DeleteWith(key string) DeleteCmd {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.DeleteWith(key)
 }
 
@@ -86,7 +86,7 @@ func (d *DB) DeleteWith(key string) DeleteCmd {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.GetRank(key, elem)
 }
 
@@ -96,7 +96,7 @@ func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) 
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRankRev(key string, elem any) (rank int, score float64, err error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.GetRankRev(key, elem)
 }
 
@@ -104,7 +104,7 @@ func (d *DB) GetRankRev(key string, elem any) (rank int, score float64, err erro
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetScore(key string, elem any) (float64, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.GetScore(key, elem)
 }
 
@@ -127,20 +127,20 @@ func (d *DB) Incr(key string, elem any, delta float64) (float64, error) {
 // The score of each element is the sum of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (d *DB) Inter(keys ...string) ([]SetItem, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Inter(keys...)
 }
 
 // InterWith intersects multiple sets with additional options.
 func (d *DB) InterWith(keys ...string) InterCmd {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.InterWith(keys...)
 }
 
 // Len returns the number of elements in a set.
 // Returns 0 if the key does not exist or is not a set.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Len(key)
 }
 
@@ -150,13 +150,13 @@ func (d *DB) Len(key string) (int, error) {
 // Start and stop are 0-based, inclusive. Negative values are not supported.
 // If the key does not exist or is not a set, returns a nil slice.
 func (d *DB) Range(key string, start, stop int) ([]SetItem, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Range(key, start, stop)
 }
 
 // RangeWith ranges elements from a set with additional options.
 func (d *DB) RangeWith(key string) RangeCmd {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.RangeWith(key)
 }
 
@@ -167,7 +167,7 @@ func (d *DB) RangeWith(key string) RangeCmd {
 // If the key does not exist or is not a set, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Scan(key, cursor, pattern, count)
 }
 
@@ -177,7 +177,7 @@ func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult
 // or an error occurs. If the key does not exist or is not a set, stops immediately.
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Scanner(key, pattern, pageSize)
 }
 
@@ -187,12 +187,12 @@ func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
 // Ignores the keys that do not exist or are not sets.
 // If no keys exist, returns a nil slice.
 func (d *DB) Union(keys ...string) ([]SetItem, error) {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RO)
 	return tx.Union(keys...)
 }
 
 // UnionWith unions multiple sets with additional options.
 func (d *DB) UnionWith(keys ...string) UnionCmd {
-	tx := NewTx(d.SQL)
+	tx := NewTx(d.RW)
 	return tx.UnionWith(keys...)
 }
