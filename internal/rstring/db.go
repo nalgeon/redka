@@ -43,7 +43,6 @@ func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an integer, returns ErrValueType.
-// If the key exists but is not a string, returns ErrKeyType.
 func (d *DB) Incr(key string, delta int) (int, error) {
 	var val int
 	err := d.Update(func(tx *Tx) error {
@@ -58,7 +57,6 @@ func (d *DB) Incr(key string, delta int) (int, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an float, returns ErrValueType.
-// If the key exists but is not a string, returns ErrKeyType.
 func (d *DB) IncrFloat(key string, delta float64) (float64, error) {
 	var val float64
 	err := d.Update(func(tx *Tx) error {
@@ -71,7 +69,6 @@ func (d *DB) IncrFloat(key string, delta float64) (float64, error) {
 
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
 func (d *DB) Set(key string, value any) error {
 	err := d.Update(func(tx *Tx) error {
 		return tx.Set(key, value)
@@ -81,7 +78,6 @@ func (d *DB) Set(key string, value any) error {
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
 func (d *DB) SetExpires(key string, value any, ttl time.Duration) error {
 	err := d.Update(func(tx *Tx) error {
 		return tx.SetExpires(key, value, ttl)
@@ -93,7 +89,6 @@ func (d *DB) SetExpires(key string, value any, ttl time.Duration) error {
 // Overwrites values for keys that already exist and
 // creates new keys/values for keys that do not exist.
 // Removes the TTL for existing keys.
-// If any of the keys exists but is not a string, returns ErrKeyType.
 func (d *DB) SetMany(items map[string]any) error {
 	err := d.Update(func(tx *Tx) error {
 		return tx.SetMany(items)

@@ -18,15 +18,6 @@ create index if not exists
 rkey_etime_idx on rkey (etime)
 where etime is not null;
 
-create trigger if not exists
-rkey_on_type_update
-before update of type on rkey
-for each row
-when old.type is not new.type
-begin
-  select raise(abort, 'key type mismatch');
-end;
-
 -- strings
 create table if not exists
 rstring (

@@ -105,7 +105,6 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an integer, returns ErrValueType.
-// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Incr(key string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key)
@@ -133,7 +132,6 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an float, returns ErrValueType.
-// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key)
@@ -159,14 +157,12 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
 }
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
-// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if !core.IsValueType(value) {
 		return core.ErrValueType
@@ -183,7 +179,6 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 // Overwrites values for keys that already exist and
 // creates new keys/values for keys that do not exist.
 // Removes the TTL for existing keys.
-// If any of the keys exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetMany(items map[string]any) error {
 	for _, val := range items {
 		if !core.IsValueType(val) {

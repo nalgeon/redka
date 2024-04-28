@@ -24,7 +24,6 @@ const InitialVersion = 1
 // Common errors returned by data structure methods.
 var (
 	ErrNotFound   = errors.New("key not found")
-	ErrKeyType    = errors.New("key type mismatch") // the key already exists with a different type.
 	ErrValueType  = errors.New("invalid value type")
 	ErrNotAllowed = errors.New("operation not allowed")
 )

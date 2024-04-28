@@ -243,11 +243,11 @@ func TestZUnionStoreExec(t *testing.T) {
 		cmd := mustParse[*ZUnionStore]("zunionstore dest 1 key")
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.out(), ErrKeyType.Error()+" (zunionstore)")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, res, 1)
+		testx.AssertEqual(t, conn.out(), "1")
 
-		dest, _ := db.Str().Get("dest")
-		testx.AssertEqual(t, dest.String(), "value")
+		count, _ := db.ZSet().Len("dest")
+		testx.AssertEqual(t, count, 1)
 	})
 }

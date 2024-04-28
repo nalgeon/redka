@@ -67,9 +67,16 @@ func TestAdd(t *testing.T) {
 		red, db := getDB(t)
 		defer red.Close()
 		_ = red.Str().Set("key", "string")
+
 		created, err := db.Add("key", "one", 1)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, created, false)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, created, true)
+
+		one, _ := db.GetScore("key", "one")
+		testx.AssertEqual(t, one, 1.0)
+
+		sval, _ := red.Str().Get("key")
+		testx.AssertEqual(t, sval.String(), "string")
 	})
 }
 
@@ -139,8 +146,20 @@ func TestAddMany(t *testing.T) {
 			"thr": 3,
 		}
 		count, err := db.AddMany("key", items)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 3)
+
+		count, _ = db.Len("key")
+		testx.AssertEqual(t, count, 3)
+		one, _ := db.GetScore("key", "one")
+		testx.AssertEqual(t, one, 1.0)
+		two, _ := db.GetScore("key", "two")
+		testx.AssertEqual(t, two, 2.0)
+		thr, _ := db.GetScore("key", "thr")
+		testx.AssertEqual(t, thr, 3.0)
+
+		sval, _ := red.Str().Get("key")
+		testx.AssertEqual(t, sval.String(), "str")
 	})
 }
 
@@ -481,8 +500,8 @@ func TestIncr(t *testing.T) {
 		defer red.Close()
 		_ = red.Str().Set("key", "one")
 		val, err := db.Incr("key", "one", 25.0)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, 0.0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, val, 25.0)
 	})
 }
 
@@ -761,11 +780,14 @@ func TestInterStore(t *testing.T) {
 		_ = red.Str().Set("dest", 10)
 
 		count, err := db.InterWith("key1", "key2").Dest("dest").Store()
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 1)
 
-		old, _ := red.Str().Get("dest")
-		testx.AssertEqual(t, old.String(), "10")
+		one, _ := db.GetScore("dest", "one")
+		testx.AssertEqual(t, one, 3.0)
+
+		sval, _ := red.Str().Get("dest")
+		testx.AssertEqual(t, sval.String(), "10")
 	})
 }
 
@@ -1471,11 +1493,14 @@ func TestUnionStore(t *testing.T) {
 		_ = red.Str().Set("dest", 10)
 
 		count, err := db.UnionWith("key1", "key2").Dest("dest").Store()
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 1)
 
-		old, _ := red.Str().Get("dest")
-		testx.AssertEqual(t, old.String(), "10")
+		one, _ := db.GetScore("dest", "one")
+		testx.AssertEqual(t, one, 3.0)
+
+		sval, _ := red.Str().Get("dest")
+		testx.AssertEqual(t, sval.String(), "10")
 	})
 }
 

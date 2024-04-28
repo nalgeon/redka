@@ -3,7 +3,6 @@ package command
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -122,8 +121,8 @@ func TestZIncrByExec(t *testing.T) {
 		cmd := mustParse[*ZIncrBy]("zincrby key 25.5 one")
 		conn := new(fakeConn)
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.out(), ErrKeyType.Error()+" (zincrby)")
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, res, 25.5)
+		testx.AssertEqual(t, conn.out(), "25.5")
 	})
 }

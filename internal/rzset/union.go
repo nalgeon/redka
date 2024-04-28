@@ -95,7 +95,6 @@ func (c UnionCmd) Run() ([]SetItem, error) {
 // Returns the number of elements in the resulting set.
 // If the destination key already exists, it is fully overwritten
 // (all old elements are removed and the new ones are inserted).
-// If the destination key already exists and is not a set, returns ErrKeyType.
 // Ignores the source keys that do not exist or are not sets.
 // If all of the source keys do not exist or are not sets, does nothing,
 // except deleting the destination key if it exists.

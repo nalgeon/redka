@@ -105,7 +105,6 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Add adds or updates an element in a set.
 // Returns true if the element was created, false if it was updated.
 // If the key does not exist, creates it.
-// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) Add(key string, elem any, score float64) (bool, error) {
 	existCount, err := tx.count(key, elem)
 	if err != nil {
@@ -121,7 +120,6 @@ func (tx *Tx) Add(key string, elem any, score float64) (bool, error) {
 // AddMany adds or updates multiple elements in a set.
 // Returns the number of elements created (as opposed to updated).
 // If the key does not exist, creates it.
-// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) AddMany(key string, items map[any]float64) (int, error) {
 	// Count the number of existing elements.
 	elems := make([]any, 0, len(items))
@@ -230,7 +228,6 @@ func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 // Returns the score after the increment.
 // If the element does not exist, adds it and sets the score to 0.0
 // before the increment. If the key does not exist, creates it.
-// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 	if !core.IsValueType(elem) {
 		return 0, core.ErrValueType

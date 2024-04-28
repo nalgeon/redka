@@ -24,7 +24,6 @@ var (
 	ErrInvalidExpireTime = errors.New("ERR invalid expire time")
 	ErrInvalidFloat      = errors.New("ERR value is not a float")
 	ErrInvalidInt        = errors.New("ERR value is not an integer")
-	ErrKeyType           = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 	ErrNestedMulti       = errors.New("ERR MULTI calls can not be nested")
 	ErrNotFound          = errors.New("ERR no such key")
 	ErrNotInMulti        = errors.New("ERR EXEC without MULTI")
@@ -200,8 +199,6 @@ func (cmd baseCmd) Error(err error) string {
 	switch err {
 	case core.ErrNotFound:
 		err = ErrNotFound
-	case core.ErrKeyType:
-		err = ErrKeyType
 	}
 	return fmt.Sprintf("%s (%s)", err, cmd.Name())
 }

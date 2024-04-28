@@ -398,10 +398,10 @@ func TestRename(t *testing.T) {
 		_, _ = red.Hash().Set("hash", "field", "value")
 
 		err := db.Rename("str", "hash")
-		testx.AssertEqual(t, err, core.ErrKeyType)
+		testx.AssertNoErr(t, err)
 
 		exists, _ := db.Exists("str")
-		testx.AssertEqual(t, exists, true)
+		testx.AssertEqual(t, exists, false)
 
 		exists, _ = db.Exists("hash")
 		testx.AssertEqual(t, exists, true)

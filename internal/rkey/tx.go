@@ -218,7 +218,6 @@ func (tx *Tx) Random() (core.Key, error) {
 // Rename changes the key name.
 // If there is an existing key with the new name, it is replaced.
 // If the old key does not exist, returns ErrNotFound.
-// If the new key has a different type, returns ErrKeyType.
 func (tx *Tx) Rename(key, newKey string) error {
 	// Make sure the old key exists.
 	oldK, err := tx.Get(key)
@@ -232,15 +231,6 @@ func (tx *Tx) Rename(key, newKey string) error {
 	// If the keys are the same, do nothing.
 	if key == newKey {
 		return nil
-	}
-
-	// Make sure the new key does not exist or has the same type.
-	newK, err := tx.Get(newKey)
-	if err != nil && err != core.ErrNotFound {
-		return err
-	}
-	if newK.Exists() && newK.Type != oldK.Type {
-		return core.ErrKeyType
 	}
 
 	// Rename the old key to the new key.

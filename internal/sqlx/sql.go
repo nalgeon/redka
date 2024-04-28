@@ -5,8 +5,6 @@ package sqlx
 import (
 	"database/sql"
 	"strings"
-
-	"github.com/nalgeon/redka/internal/core"
 )
 
 // Sorting direction.
@@ -72,10 +70,5 @@ func Select[T any](db Tx, query string, args []any,
 
 // Returns typed errors for some specific cases.
 func TypedError(err error) error {
-	switch err.Error() {
-	case "key type mismatch", "UNIQUE constraint failed: rkey.key":
-		return core.ErrKeyType
-	default:
-		return err
-	}
+	return err
 }

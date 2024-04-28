@@ -124,7 +124,6 @@ func (db *DB) Random() (core.Key, error) {
 // Rename changes the key name.
 // If there is an existing key with the new name, it is replaced.
 // If the old key does not exist, returns ErrNotFound.
-// If the new key has a different type, returns ErrKeyType.
 func (db *DB) Rename(key, newKey string) error {
 	err := db.Update(func(tx *Tx) error {
 		err := tx.Rename(key, newKey)
