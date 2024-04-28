@@ -156,7 +156,15 @@ func (tx *Tx) ExpireAt(key string, at time.Time) error {
 // Get returns a specific key with all associated details.
 // If the key does not exist, returns ErrNotFound.
 func (tx *Tx) Get(key string) (core.Key, error) {
-	return Get(tx.tx, key)
+	args := []any{key, time.Now().UnixMilli()}
+	var k core.Key
+	err := tx.tx.QueryRow(sqlGet, args...).Scan(
+		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
+	)
+	if err == sql.ErrNoRows {
+		return core.Key{}, core.ErrNotFound
+	}
+	return k, err
 }
 
 // Keys returns all keys matching pattern.
@@ -213,7 +221,7 @@ func (tx *Tx) Random() (core.Key, error) {
 // If the new key has a different type, returns ErrKeyType.
 func (tx *Tx) Rename(key, newKey string) error {
 	// Make sure the old key exists.
-	oldK, err := Get(tx.tx, key)
+	oldK, err := tx.Get(key)
 	if err != nil {
 		return err
 	}
@@ -227,7 +235,7 @@ func (tx *Tx) Rename(key, newKey string) error {
 	}
 
 	// Make sure the new key does not exist or has the same type.
-	newK, err := Get(tx.tx, newKey)
+	newK, err := tx.Get(newKey)
 	if err != nil && err != core.ErrNotFound {
 		return err
 	}
@@ -251,7 +259,7 @@ func (tx *Tx) Rename(key, newKey string) error {
 // Returns true if the key was renamed, false otherwise.
 func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 	// Make sure the old key exists.
-	oldK, err := Get(tx.tx, key)
+	oldK, err := tx.Get(key)
 	if err != nil {
 		return false, err
 	}
@@ -328,19 +336,6 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 	return newScanner(tx, pattern, pageSize)
-}
-
-// Get returns the key data structure.
-func Get(tx sqlx.Tx, key string) (core.Key, error) {
-	args := []any{key, time.Now().UnixMilli()}
-	var k core.Key
-	err := tx.QueryRow(sqlGet, args...).Scan(
-		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
-	)
-	if err == sql.ErrNoRows {
-		return core.Key{}, core.ErrNotFound
-	}
-	return k, err
 }
 
 // ScanResult represents a result of the Scan call.
