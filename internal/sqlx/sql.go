@@ -67,8 +67,3 @@ func Select[T any](db Tx, query string, args []any,
 
 	return vals, err
 }
-
-// Returns typed errors for some specific cases.
-func TypedError(err error) error {
-	return err
-}

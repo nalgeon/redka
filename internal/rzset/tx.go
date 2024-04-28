@@ -241,7 +241,7 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 	}
 	_, err := tx.tx.Exec(sqlIncr1, args...)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, err
 	}
 
 	var score float64
@@ -373,7 +373,7 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 
 	_, err := tx.tx.Exec(sqlAdd, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return err
 	}
 	return nil
 }

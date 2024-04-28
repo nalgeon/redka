@@ -176,7 +176,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 
 	res, err := tx.Exec(query, args...)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, err
 	}
 
 	// Return the number of elements in the resulting set.

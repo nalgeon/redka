@@ -453,7 +453,7 @@ func (tx *Tx) set(key string, field string, value any) error {
 	}
 	_, err := tx.tx.Exec(sqlSet, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return err
 	}
 	return nil
 }

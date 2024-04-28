@@ -239,7 +239,7 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	}
 	_, err := tx.Exec(sqlSet, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return err
 	}
 	return nil
 }
@@ -260,7 +260,7 @@ func update(tx sqlx.Tx, key string, value any) error {
 	}
 	_, err := tx.Exec(sqlUpdate, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return err
 	}
 	return nil
 }
