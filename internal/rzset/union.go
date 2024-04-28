@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
-	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -20,8 +19,18 @@ const (
 	order by sum(score), elem`
 
 	sqlUnionStore = `
+	delete from rzset
+	where key_id = (
+		select id from rkey where key = :key
+		and (etime is null or etime > :now)
+	  );
+
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime);
+	values (:key, :type, :version, :mtime)
+	on conflict (key) do update set
+	  version = version+1,
+	  type = excluded.type,
+	  mtime = excluded.mtime;
 
 	insert into rzset (key_id, elem, score)
 	select
@@ -143,15 +152,12 @@ func (c UnionCmd) union(tx sqlx.Tx) ([]SetItem, error) {
 
 // store unions multiple sets and stores the result in a new set.
 func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
-	// Delete the destination key if it exists.
-	_, err := rkey.DeleteType(tx, core.TypeSortedSet, c.dest)
-	if err != nil {
-		return 0, err
-	}
-
 	// Union the sets and store the result.
 	now := time.Now().UnixMilli()
 	args := []any{
+		// delete from rzset
+		c.dest, // key
+		now,    // now
 		// insert into rkey
 		c.dest,              // key
 		core.TypeSortedSet,  // type
