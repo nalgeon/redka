@@ -45,8 +45,7 @@ const (
 
 // UnionCmd unions multiple sets.
 type UnionCmd struct {
-	db        *DB
-	tx        *Tx
+	tx        sqlx.Tx
 	dest      string
 	keys      []string
 	aggregate string
@@ -82,40 +81,6 @@ func (c UnionCmd) Max() UnionCmd {
 // Ignores the keys that do not exist or are not sets.
 // If no keys exist, returns a nil slice.
 func (c UnionCmd) Run() ([]SetItem, error) {
-	if c.db != nil {
-		return c.union(c.db.SQL)
-	}
-	if c.tx != nil {
-		return c.union(c.tx.tx)
-	}
-	return nil, nil
-}
-
-// Store unions multiple sets and stores the result in a new set.
-// Returns the number of elements in the resulting set.
-// If the destination key already exists, it is fully overwritten
-// (all old elements are removed and the new ones are inserted).
-// Ignores the source keys that do not exist or are not sets.
-// If all of the source keys do not exist or are not sets, does nothing,
-// except deleting the destination key if it exists.
-func (c UnionCmd) Store() (int, error) {
-	if c.db != nil {
-		var count int
-		err := c.db.Update(func(tx *Tx) error {
-			var err error
-			count, err = c.store(tx.tx)
-			return err
-		})
-		return count, err
-	}
-	if c.tx != nil {
-		return c.store(c.tx.tx)
-	}
-	return 0, nil
-}
-
-// union returns the union of multiple sets.
-func (c UnionCmd) union(tx sqlx.Tx) ([]SetItem, error) {
 	// Prepare query arguments.
 	now := time.Now().UnixMilli()
 	query := sqlUnion
@@ -127,7 +92,7 @@ func (c UnionCmd) union(tx sqlx.Tx) ([]SetItem, error) {
 
 	// Execute the query.
 	var rows *sql.Rows
-	rows, err := tx.Query(query, args...)
+	rows, err := c.tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +114,14 @@ func (c UnionCmd) union(tx sqlx.Tx) ([]SetItem, error) {
 	return items, nil
 }
 
-// store unions multiple sets and stores the result in a new set.
-func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
+// Store unions multiple sets and stores the result in a new set.
+// Returns the number of elements in the resulting set.
+// If the destination key already exists, it is fully overwritten
+// (all old elements are removed and the new ones are inserted).
+// Ignores the source keys that do not exist or are not sets.
+// If all of the source keys do not exist or are not sets, does nothing,
+// except deleting the destination key if it exists.
+func (c UnionCmd) Store() (int, error) {
 	// Union the sets and store the result.
 	now := time.Now().UnixMilli()
 	args := []any{
@@ -174,7 +145,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
 	args = append(args, keyArgs...)
 
-	res, err := tx.Exec(query, args...)
+	res, err := c.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}

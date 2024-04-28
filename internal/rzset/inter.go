@@ -48,8 +48,7 @@ const (
 
 // InterCmd intersects multiple sets.
 type InterCmd struct {
-	db        *DB
-	tx        *Tx
+	tx        sqlx.Tx
 	dest      string
 	keys      []string
 	aggregate string
@@ -84,39 +83,6 @@ func (c InterCmd) Max() InterCmd {
 // The score of each element is the aggregate of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (c InterCmd) Run() ([]SetItem, error) {
-	if c.db != nil {
-		return c.inter(c.db.SQL)
-	}
-	if c.tx != nil {
-		return c.inter(c.tx.tx)
-	}
-	return nil, nil
-}
-
-// Store intersects multiple sets and stores the result in a new set.
-// Returns the number of elements in the resulting set.
-// If the destination key already exists, it is fully overwritten
-// (all old elements are removed and the new ones are inserted).
-// If any of the source keys do not exist or are not sets, does nothing,
-// except deleting the destination key if it exists.
-func (c InterCmd) Store() (int, error) {
-	if c.db != nil {
-		var count int
-		err := c.db.Update(func(tx *Tx) error {
-			var err error
-			count, err = c.store(tx.tx)
-			return err
-		})
-		return count, err
-	}
-	if c.tx != nil {
-		return c.store(c.tx.tx)
-	}
-	return 0, nil
-}
-
-// inter returns the intersection of multiple sets.
-func (c InterCmd) inter(tx sqlx.Tx) ([]SetItem, error) {
 	// Prepare query arguments.
 	query := sqlInter
 	if c.aggregate != sqlx.Sum {
@@ -131,7 +97,7 @@ func (c InterCmd) inter(tx sqlx.Tx) ([]SetItem, error) {
 
 	// Execute the query.
 	var rows *sql.Rows
-	rows, err := tx.Query(query, args...)
+	rows, err := c.tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +119,13 @@ func (c InterCmd) inter(tx sqlx.Tx) ([]SetItem, error) {
 	return items, nil
 }
 
-// store intersects multiple sets and stores the result in a new set.
-func (c InterCmd) store(tx sqlx.Tx) (int, error) {
+// Store intersects multiple sets and stores the result in a new set.
+// Returns the number of elements in the resulting set.
+// If the destination key already exists, it is fully overwritten
+// (all old elements are removed and the new ones are inserted).
+// If any of the source keys do not exist or are not sets, does nothing,
+// except deleting the destination key if it exists.
+func (c InterCmd) Store() (int, error) {
 	// Insert the destination key and get its ID.
 	now := time.Now().UnixMilli()
 	args := []any{
@@ -179,7 +150,7 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
 	args = slices.Concat(args, keyArgs, []any{len(c.keys)})
 
-	res, err := tx.Exec(query, args...)
+	res, err := c.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}

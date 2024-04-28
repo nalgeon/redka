@@ -34,13 +34,8 @@ func (db *DB) Count(keys ...string) (int, error) {
 // Delete deletes keys and their values, regardless of the type.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (db *DB) Delete(keys ...string) (int, error) {
-	var count int
-	err := db.Update(func(tx *Tx) error {
-		var err error
-		count, err = tx.Delete(keys...)
-		return err
-	})
-	return count, err
+	tx := NewTx(db.SQL)
+	return tx.Delete(keys...)
 }
 
 // DeleteAll deletes all keys and their values, effectively resetting
@@ -53,11 +48,8 @@ func (db *DB) DeleteAll() error {
 // DeleteExpired deletes keys with expired TTL, but no more than n keys.
 // If n = 0, deletes all expired keys.
 func (db *DB) DeleteExpired(n int) (count int, err error) {
-	err = db.Update(func(tx *Tx) error {
-		count, err = tx.deleteExpired(n)
-		return err
-	})
-	return count, err
+	tx := NewTx(db.SQL)
+	return tx.deleteExpired(n)
 }
 
 // Exists reports whether the key exists.
@@ -70,20 +62,16 @@ func (db *DB) Exists(key string) (bool, error) {
 // After the ttl passes, the key is expired and no longer exists.
 // If the key does not exist, returns ErrNotFound.
 func (db *DB) Expire(key string, ttl time.Duration) error {
-	err := db.Update(func(tx *Tx) error {
-		return tx.Expire(key, ttl)
-	})
-	return err
+	tx := NewTx(db.SQL)
+	return tx.Expire(key, ttl)
 }
 
 // ExpireAt sets an expiration time for the key. After this time,
 // the key is expired and no longer exists.
 // If the key does not exist, returns ErrNotFound.
 func (db *DB) ExpireAt(key string, at time.Time) error {
-	err := db.Update(func(tx *Tx) error {
-		return tx.ExpireAt(key, at)
-	})
-	return err
+	tx := NewTx(db.SQL)
+	return tx.ExpireAt(key, at)
 }
 
 // Get returns a specific key with all associated details.
@@ -108,10 +96,8 @@ func (db *DB) Keys(pattern string) ([]core.Key, error) {
 // Persist removes the expiration time for the key.
 // If the key does not exist, returns ErrNotFound.
 func (db *DB) Persist(key string) error {
-	err := db.Update(func(tx *Tx) error {
-		return tx.Persist(key)
-	})
-	return err
+	tx := NewTx(db.SQL)
+	return tx.Persist(key)
 }
 
 // Random returns a random key.

@@ -182,7 +182,7 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 
 // DeleteWith removes elements from a set with additional options.
 func (tx *Tx) DeleteWith(key string) DeleteCmd {
-	return DeleteCmd{tx: tx, key: key}
+	return DeleteCmd{tx: tx.tx, key: key}
 }
 
 // GetRank returns the rank and score of an element in a set.
@@ -259,13 +259,12 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 // The score of each element is the sum of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (tx *Tx) Inter(keys ...string) ([]SetItem, error) {
-	cmd := InterCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
-	return cmd.Run()
+	return tx.InterWith(keys...).Run()
 }
 
 // InterWith intersects multiple sets with additional options.
 func (tx *Tx) InterWith(keys ...string) InterCmd {
-	return InterCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
+	return InterCmd{tx: tx.tx, keys: keys, aggregate: sqlx.Sum}
 }
 
 // Len returns the number of elements in a set.
@@ -346,13 +345,12 @@ func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
 // Ignores the keys that do not exist or are not sets.
 // If no keys exist, returns a nil slice.
 func (tx *Tx) Union(keys ...string) ([]SetItem, error) {
-	cmd := UnionCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
-	return cmd.Run()
+	return tx.UnionWith(keys...).Run()
 }
 
 // UnionWith unions multiple sets with additional options.
 func (tx *Tx) UnionWith(keys ...string) UnionCmd {
-	return UnionCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
+	return UnionCmd{tx: tx.tx, keys: keys, aggregate: sqlx.Sum}
 }
 
 // add adds or updates the element in a set.

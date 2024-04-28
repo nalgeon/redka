@@ -32,8 +32,7 @@ const (
 
 // DeleteCmd removes elements from a set.
 type DeleteCmd struct {
-	db      *DB
-	tx      *Tx
+	tx      sqlx.Tx
 	key     string
 	byRank  *byRank
 	byScore *byScore
@@ -63,34 +62,17 @@ func (c DeleteCmd) ByScore(start, stop float64) DeleteCmd {
 // Does nothing if the key does not exist or is not a set.
 // Does not delete the key if the set becomes empty.
 func (c DeleteCmd) Run() (int, error) {
-	if c.db != nil {
-		var count int
-		err := c.db.Update(func(tx *Tx) error {
-			var err error
-			count, err = c.delete(tx.tx)
-			return err
-		})
-		return count, err
-	}
-	if c.tx != nil {
-		return c.delete(c.tx.tx)
-	}
-	return 0, nil
-}
-
-// delete removes elements from a set in a transaction.
-func (c DeleteCmd) delete(tx sqlx.Tx) (int, error) {
 	if c.byRank != nil {
-		return c.deleteRank(tx)
+		return c.deleteRank()
 	}
 	if c.byScore != nil {
-		return c.deleteScore(tx)
+		return c.deleteScore()
 	}
 	return 0, nil
 }
 
 // deleteRank removes elements from a set by rank.
-func (c DeleteCmd) deleteRank(tx sqlx.Tx) (int, error) {
+func (c DeleteCmd) deleteRank() (int, error) {
 	// Check start and stop values.
 	if c.byRank.start < 0 || c.byRank.stop < 0 {
 		return 0, nil
@@ -103,7 +85,7 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx) (int, error) {
 		c.byRank.start,                     // start
 		c.byRank.stop - c.byRank.start + 1, // count
 	}
-	res, err := tx.Exec(sqlDeleteRank, args...)
+	res, err := c.tx.Exec(sqlDeleteRank, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -112,14 +94,14 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx) (int, error) {
 }
 
 // deleteScore removes elements from a set by score.
-func (c DeleteCmd) deleteScore(tx sqlx.Tx) (int, error) {
+func (c DeleteCmd) deleteScore() (int, error) {
 	args := []any{
 		c.key,
 		time.Now().UnixMilli(),
 		c.byScore.start,
 		c.byScore.stop,
 	}
-	res, err := tx.Exec(sqlDeleteScore, args...)
+	res, err := c.tx.Exec(sqlDeleteScore, args...)
 	if err != nil {
 		return 0, err
 	}

@@ -70,18 +70,14 @@ func (d *DB) Count(key string, min, max float64) (int, error) {
 // Does nothing if the key does not exist or is not a set.
 // Does not delete the key if the set becomes empty.
 func (d *DB) Delete(key string, elems ...any) (int, error) {
-	var count int
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		count, err = tx.Delete(key, elems...)
-		return err
-	})
-	return count, err
+	tx := NewTx(d.SQL)
+	return tx.Delete(key, elems...)
 }
 
 // DeleteWith removes elements from a set with additional options.
 func (d *DB) DeleteWith(key string) DeleteCmd {
-	return DeleteCmd{db: d, key: key}
+	tx := NewTx(d.SQL)
+	return tx.DeleteWith(key)
 }
 
 // GetRank returns the rank and score of an element in a set.
@@ -137,7 +133,8 @@ func (d *DB) Inter(keys ...string) ([]SetItem, error) {
 
 // InterWith intersects multiple sets with additional options.
 func (d *DB) InterWith(keys ...string) InterCmd {
-	return InterCmd{db: d, keys: keys, aggregate: sqlx.Sum}
+	tx := NewTx(d.SQL)
+	return tx.InterWith(keys...)
 }
 
 // Len returns the number of elements in a set.
@@ -196,5 +193,6 @@ func (d *DB) Union(keys ...string) ([]SetItem, error) {
 
 // UnionWith unions multiple sets with additional options.
 func (d *DB) UnionWith(keys ...string) UnionCmd {
-	return UnionCmd{db: d, keys: keys, aggregate: sqlx.Sum}
+	tx := NewTx(d.SQL)
+	return tx.UnionWith(keys...)
 }

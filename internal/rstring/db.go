@@ -70,19 +70,15 @@ func (d *DB) IncrFloat(key string, delta float64) (float64, error) {
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
 func (d *DB) Set(key string, value any) error {
-	err := d.Update(func(tx *Tx) error {
-		return tx.Set(key, value)
-	})
-	return err
+	tx := NewTx(d.SQL)
+	return tx.Set(key, value)
 }
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 func (d *DB) SetExpires(key string, value any, ttl time.Duration) error {
-	err := d.Update(func(tx *Tx) error {
-		return tx.SetExpires(key, value, ttl)
-	})
-	return err
+	tx := NewTx(d.SQL)
+	return tx.SetExpires(key, value, ttl)
 }
 
 // SetMany sets the values of multiple keys.

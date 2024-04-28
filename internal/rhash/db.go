@@ -30,13 +30,8 @@ func New(db *sql.DB) *DB {
 // Does nothing if the key does not exist or is not a hash.
 // Does not delete the key if the hash becomes empty.
 func (d *DB) Delete(key string, fields ...string) (int, error) {
-	var count int
-	err := d.Update(func(tx *Tx) error {
-		var err error
-		count, err = tx.Delete(key, fields...)
-		return err
-	})
-	return count, err
+	tx := NewTx(d.SQL)
+	return tx.Delete(key, fields...)
 }
 
 // Exists checks if a field exists in a hash.
