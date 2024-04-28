@@ -13,10 +13,6 @@ const (
 	select count(id) from rkey
 	where key in (:keys) and (etime is null or etime > :now)`
 
-	sqlCountType = `
-	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > :now) and type = :type`
-
 	sqlDelete = `
 	delete from rkey where key in (:keys)
 	and (etime is null or etime > :now)`
@@ -332,16 +328,6 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
 	return newScanner(tx, pattern, pageSize)
-}
-
-// CountType returns the number of existing keys
-// of a specific type among specified keys.
-func CountType(tx sqlx.Tx, typ core.TypeID, keys ...string) (int, error) {
-	query, keyArgs := sqlx.ExpandIn(sqlCountType, ":keys", keys)
-	args := append(keyArgs, time.Now().UnixMilli(), typ)
-	var count int
-	err := tx.QueryRow(query, args...).Scan(&count)
-	return count, err
 }
 
 // Get returns the key data structure.
