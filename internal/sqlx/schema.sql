@@ -41,6 +41,32 @@ from rkey join rstring on rkey.id = rstring.key_id
 where rkey.type = 1
   and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
 
+-- lists
+create table if not exists
+rlist (
+  key_id integer not null,
+  pos    real not null,
+  elem   blob not null,
+
+  foreign key (key_id) references rkey (id)
+    on delete cascade
+);
+
+create unique index if not exists
+rlist_pk_idx on rlist (key_id, pos);
+
+create view if not exists
+vlist as
+select
+  rkey.id as key_id, rkey.key,
+  row_number() over w as idx, rlist.elem,
+  datetime(etime/1000, 'unixepoch') as etime,
+  datetime(mtime/1000, 'unixepoch') as mtime
+from rkey join rlist on rkey.id = rlist.key_id
+where rkey.type = 2
+  and (rkey.etime is null or rkey.etime > unixepoch('subsec'))
+window w as (partition by key_id order by pos);
+
 -- hashes
 create table if not exists
 rhash (

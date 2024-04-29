@@ -18,6 +18,7 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
+	"github.com/nalgeon/redka/internal/rlist"
 	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/sqlx"
@@ -62,6 +63,7 @@ type DB struct {
 	*sqlx.DB[*Tx]
 	hashDB   *rhash.DB
 	keyDB    *rkey.DB
+	listDB   *rlist.DB
 	stringDB *rstring.DB
 	zsetDB   *rzset.DB
 	bg       *time.Ticker
@@ -109,6 +111,7 @@ func Open(path string, opts *Options) (*DB, error) {
 		DB:       sdb,
 		hashDB:   rhash.New(rw, ro),
 		keyDB:    rkey.New(rw, ro),
+		listDB:   rlist.New(rw, ro),
 		stringDB: rstring.New(rw, ro),
 		zsetDB:   rzset.New(rw, ro),
 		log:      opts.Logger,
@@ -131,6 +134,13 @@ func (db *DB) Hash() *rhash.DB {
 // to manage all keys regardless of their type.
 func (db *DB) Key() *rkey.DB {
 	return db.keyDB
+}
+
+// List returns the list repository.
+// A list is a sequence of strings ordered by insertion order.
+// Use the list repository to work with lists and their elements.
+func (db *DB) List() *rlist.DB {
+	return db.listDB
 }
 
 // Str returns the string repository.
@@ -234,6 +244,7 @@ type Tx struct {
 	tx     sqlx.Tx
 	hashTx *rhash.Tx
 	keyTx  *rkey.Tx
+	listTx *rlist.Tx
 	strTx  *rstring.Tx
 	zsetTx *rzset.Tx
 }
@@ -243,6 +254,7 @@ func newTx(tx sqlx.Tx) *Tx {
 	return &Tx{tx: tx,
 		hashTx: rhash.NewTx(tx),
 		keyTx:  rkey.NewTx(tx),
+		listTx: rlist.NewTx(tx),
 		strTx:  rstring.NewTx(tx),
 		zsetTx: rzset.NewTx(tx),
 	}
@@ -255,6 +267,11 @@ func (tx *Tx) Hash() *rhash.Tx {
 
 // Keys returns the key transaction.
 func (tx *Tx) Key() *rkey.Tx {
+	return tx.keyTx
+}
+
+// List returns the list transaction.
+func (tx *Tx) List() *rkey.Tx {
 	return tx.keyTx
 }
 
