@@ -1,0 +1,38 @@
+package zset
+
+import (
+	"github.com/nalgeon/redka/internal/parser"
+	"github.com/nalgeon/redka/internal/redis"
+)
+
+// Adds one or more members to a sorted set, or updates their scores.
+// Creates the key if it doesn't exist.
+// ZADD key score member [score member ...]
+// https://redis.io/commands/zadd
+type ZAdd struct {
+	redis.BaseCmd
+	Key   string
+	Items map[any]float64
+}
+
+func ParseZAdd(b redis.BaseCmd) (*ZAdd, error) {
+	cmd := &ZAdd{BaseCmd: b}
+	err := parser.New(
+		parser.String(&cmd.Key),
+		parser.FloatMap(&cmd.Items),
+	).Required(3).Run(cmd.Args())
+	if err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
+func (cmd *ZAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
+	count, err := red.ZSet().AddMany(cmd.Key, cmd.Items)
+	if err != nil {
+		w.WriteError(cmd.Error(err))
+		return nil, err
+	}
+	w.WriteInt(count)
+	return count, nil
+}

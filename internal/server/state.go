@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nalgeon/redka/internal/command"
+	"github.com/nalgeon/redka/internal/redis"
 	"github.com/tidwall/redcon"
 )
 
@@ -26,27 +26,27 @@ func getState(conn redcon.Conn) *connState {
 // connState represents the connection state.
 type connState struct {
 	inMulti bool
-	cmds    []command.Cmd
+	cmds    []redis.Cmd
 }
 
 // push adds a command to the state.
-func (s *connState) push(cmd command.Cmd) {
+func (s *connState) push(cmd redis.Cmd) {
 	s.cmds = append(s.cmds, cmd)
 }
 
 // pop removes the last command from the state and returns it.
-func (s *connState) pop() command.Cmd {
+func (s *connState) pop() redis.Cmd {
 	if len(s.cmds) == 0 {
 		return nil
 	}
-	var last command.Cmd
+	var last redis.Cmd
 	s.cmds, last = s.cmds[:len(s.cmds)-1], s.cmds[len(s.cmds)-1]
 	return last
 }
 
 // clear removes all commands from the state.
 func (s *connState) clear() {
-	s.cmds = []command.Cmd{}
+	s.cmds = []redis.Cmd{}
 }
 
 // String returns the string representation of the state.

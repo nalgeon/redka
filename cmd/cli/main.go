@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/command"
+	"github.com/nalgeon/redka/internal/redis"
 )
 
 const dbURI = ":memory:"
@@ -79,13 +80,13 @@ func readCommands(filename string) ([][]byte, error) {
 // multiHandlers executes commands when the runner is in a MULTI state.
 var multiHandlers = map[string]func(*runner, []byte) error{
 	"multi": func(r *runner, cmd []byte) error {
-		fmt.Println(command.ErrNestedMulti)
-		return command.ErrNestedMulti
+		fmt.Println(redis.ErrNestedMulti)
+		return redis.ErrNestedMulti
 	},
 	"exec": func(r *runner, cmd []byte) error {
 		fmt.Println(len(r.cmds))
 		err := r.db.Update(func(tx *redka.Tx) error {
-			return r.runBatch(r.cmds, command.RedkaTx(tx))
+			return r.runBatch(r.cmds, redis.RedkaTx(tx))
 		})
 		r.inMulti = false
 		r.clear()
@@ -112,15 +113,15 @@ var singleHandlers = map[string]func(*runner, []byte) error{
 		return nil
 	},
 	"exec": func(r *runner, cmd []byte) error {
-		fmt.Println(command.ErrNotInMulti)
-		return command.ErrNotInMulti
+		fmt.Println(redis.ErrNotInMulti)
+		return redis.ErrNotInMulti
 	},
 	"discard": func(r *runner, cmd []byte) error {
-		fmt.Println(command.ErrNotInMulti)
-		return command.ErrNotInMulti
+		fmt.Println(redis.ErrNotInMulti)
+		return redis.ErrNotInMulti
 	},
 	"_": func(r *runner, cmd []byte) error {
-		return r.runSingle(cmd, command.RedkaDB(r.db))
+		return r.runSingle(cmd, redis.RedkaDB(r.db))
 	},
 }
 
@@ -138,7 +139,7 @@ func newRunner(db *redka.DB) *runner {
 // run executes commands.
 func (r *runner) run(cmds [][]byte) error {
 	if len(cmds) == 1 {
-		return r.runSingle(cmds[0], command.RedkaDB(r.db))
+		return r.runSingle(cmds[0], redis.RedkaDB(r.db))
 	}
 	for _, cmd := range cmds {
 		r.print(cmd)
@@ -167,7 +168,7 @@ func (r *runner) handle(cmd []byte) error {
 }
 
 // runBatch executes a batch of commands.
-func (r *runner) runBatch(cmds [][]byte, red command.Redka) error {
+func (r *runner) runBatch(cmds [][]byte, red redis.Redka) error {
 	for _, cmd := range cmds {
 		err := r.runSingle(cmd, red)
 		if err != nil {
@@ -178,7 +179,7 @@ func (r *runner) runBatch(cmds [][]byte, red command.Redka) error {
 }
 
 // runSingle executes a single command.
-func (r *runner) runSingle(cmd []byte, red command.Redka) error {
+func (r *runner) runSingle(cmd []byte, red redis.Redka) error {
 	c, err := command.Parse(bytes.Fields(cmd))
 	if err != nil {
 		return fmt.Errorf("parse command '%s': %v", cmd, err)
