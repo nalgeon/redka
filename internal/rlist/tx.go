@@ -13,9 +13,9 @@ const (
 	sqlDelete = `
 	delete from rlist
 	where key_id = (
-		select id from rkey where key = ?
-		and (etime is null or etime > ?)
-	) and elem = ?`
+			select id from rkey
+			where key = ? and (etime is null or etime > ?)
+		) and elem = ?`
 
 	sqlDeleteBack = `
 	with ids as (

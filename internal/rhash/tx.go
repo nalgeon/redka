@@ -12,50 +12,50 @@ const (
 	sqlCount = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and field in (:fields)`
 
 	sqlDelete = `
 	delete from rhash
 	where key_id = (
-	    select id from rkey where key = ?
-	    and (etime is null or etime > ?)
-	  ) and field in (:fields)`
+			select id from rkey
+			where key = ? and (etime is null or etime > ?)
+		) and field in (:fields)`
 
 	sqlFields = `
 	select field
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 
 	sqlGet = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and field = ?`
 
 	sqlGetMany = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and field in (:fields)`
 
 	sqlItems = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 
 	sqlLen = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 
 	sqlScan = `
 	select rhash.rowid, field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and rhash.rowid > ? and field glob ?
 	limit ?`
 
@@ -63,9 +63,9 @@ const (
 	insert into rkey (key, type, version, mtime)
 	values (?, ?, ?, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  mtime = excluded.mtime`
+		version = version+1,
+		type = excluded.type,
+		mtime = excluded.mtime`
 
 	sqlSet2 = `
 	insert into rhash (key_id, field, value)
@@ -76,7 +76,7 @@ const (
 	sqlValues = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 )
 

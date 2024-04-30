@@ -10,11 +10,11 @@ import (
 const (
 	sqlRangeRank = `
 	with ranked as (
-	  select elem, score, (row_number() over w - 1) as rank
-	  from rzset
-	    join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	  where key = ?
-	  window w as (partition by key_id order by score asc, elem asc)
+		select elem, score, (row_number() over w - 1) as rank
+		from rzset
+			join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		where key = ?
+		window w as (partition by key_id order by score asc, elem asc)
 	)
 	select elem, score
 	from ranked
@@ -24,7 +24,7 @@ const (
 	sqlRangeScore = `
 	select elem, score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?
 	and score between ? and ?
 	order by score asc, elem asc`

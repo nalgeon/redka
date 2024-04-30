@@ -14,9 +14,9 @@ const (
 	insert into rkey (key, type, version, mtime)
 	values (?, ?, ?, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  mtime = excluded.mtime`
+		version = version+1,
+		type = excluded.type,
+		mtime = excluded.mtime`
 
 	sqlAdd2 = `
 	insert into rzset (key_id, elem, score)
@@ -27,29 +27,29 @@ const (
 	sqlCount = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and elem in (:elems)`
 
 	sqlCountScore = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and score between ? and ?`
 
 	sqlDelete = `
 	delete from rzset
 	where key_id = (
-		select id from rkey where key = ?
-		and (etime is null or etime > ?)
-	  ) and elem in (:elems)`
+			select id from rkey where key = ?
+			and (etime is null or etime > ?)
+		) and elem in (:elems)`
 
 	sqlGetRank = `
 	with ranked as (
-	  select elem, score, (row_number() over w - 1) as rank
-	  from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	  where key = ?
-	  window w as (partition by key_id order by score asc, elem asc)
+		select elem, score, (row_number() over w - 1) as rank
+		from rzset
+			join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		where key = ?
+		window w as (partition by key_id order by score asc, elem asc)
 	)
 	select rank, score
 	from ranked
@@ -58,16 +58,16 @@ const (
 	sqlGetScore = `
 	select score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and elem = ?`
 
 	sqlIncr1 = `
 	insert into rkey (key, type, version, mtime)
 	values (?, ?, ?, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  mtime = excluded.mtime`
+		version = version+1,
+		type = excluded.type,
+		mtime = excluded.mtime`
 
 	sqlIncr2 = `
 	insert into rzset (key_id, elem, score)
@@ -79,13 +79,13 @@ const (
 	sqlLen = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 
 	sqlScan = `
 	select rzset.rowid, elem, score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ? and rzset.rowid > ? and elem glob ?
 	limit ?`
 )

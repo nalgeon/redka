@@ -9,14 +9,14 @@ import (
 const (
 	sqlDeleteRank = `
 	with ranked as (
-	select rowid, elem, score
-	from rzset
-	where key_id = (
-		select id from rkey where key = ?
-		and (etime is null or etime > ?)
-	  )
-	order by score, elem
-	limit ?, ?
+		select rowid, elem, score
+		from rzset
+		where key_id = (
+			select id from rkey
+			where key = ? and (etime is null or etime > ?)
+		)
+		order by score, elem
+		limit ?, ?
 	)
 	delete from rzset
 	where rowid in (select rowid from ranked)`
@@ -24,10 +24,9 @@ const (
 	sqlDeleteScore = `
 	delete from rzset
 	where key_id = (
-	    select id from rkey where key = ?
-		and (etime is null or etime > ?)
-	  )
-	  and score between ? and ?`
+			select id from rkey
+			where key = ? and (etime is null or etime > ?)
+		) and score between ? and ?`
 )
 
 // DeleteCmd removes elements from a set.

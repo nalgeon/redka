@@ -14,8 +14,8 @@ const (
 	where key in (:keys) and (etime is null or etime > ?)`
 
 	sqlDelete = `
-	delete from rkey where key in (:keys)
-	and (etime is null or etime > ?)`
+	delete from rkey
+	where key in (:keys) and (etime is null or etime > ?)`
 
 	sqlDeleteAll = `
 	delete from rkey;
@@ -29,9 +29,9 @@ const (
 	sqlDeleteNExpired = `
 	delete from rkey
 	where rowid in (
-	  select rowid from rkey
-	  where etime <= ?
-	  limit ?
+		select rowid from rkey
+		where etime <= ?
+		limit ?
 	)`
 
 	sqlExpire = `
@@ -58,20 +58,18 @@ const (
 
 	sqlRename = `
 	update or replace rkey set
-	  id = old.id,
-	  key = ?,
-	  type = old.type,
-	  version = old.version+1,
-	  etime = old.etime,
-	  mtime = ?
+		id = old.id,
+		key = ?,
+		type = old.type,
+		version = old.version+1,
+		etime = old.etime,
+		mtime = ?
 	from (
-	  select id, key, type, version, etime, mtime
-	  from rkey
-	  where key = ? and (etime is null or etime > ?)
+		select id, key, type, version, etime, mtime
+		from rkey
+		where key = ? and (etime is null or etime > ?)
 	) as old
-	where rkey.key = ? and (
-	  rkey.etime is null or rkey.etime > ?
-	)`
+	where rkey.key = ? and (rkey.etime is null or rkey.etime > ?)`
 
 	sqlScan = `
 	select id, key, type, version, etime, mtime from rkey

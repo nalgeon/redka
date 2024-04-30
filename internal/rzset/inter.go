@@ -14,7 +14,7 @@ const (
 	sqlInter = `
 	select elem, sum(score) as score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)
 	group by elem
 	having count(distinct key_id) = ?
@@ -25,22 +25,22 @@ const (
 	where key_id = (
 		select id from rkey where key = ?
 		and (etime is null or etime > ?)
-	  )`
+	)`
 
 	sqlInterStore2 = `
 	insert into rkey (key, type, version, mtime)
 	values (?, ?, ?, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  mtime = excluded.mtime
+		version = version+1,
+		type = excluded.type,
+		mtime = excluded.mtime
 	returning id`
 
 	sqlInterStore3 = `
 	insert into rzset (key_id, elem, score)
 	select ?, elem, sum(score) as score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)
 	group by elem
 	having count(distinct key_id) = ?

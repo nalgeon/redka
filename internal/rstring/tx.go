@@ -12,23 +12,23 @@ const (
 	sqlGet = `
 	select value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key = ?`
 
 	sqlGetMany = `
 	select key, value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)`
 
 	sqlSet1 = `
 	insert into rkey (key, type, version, etime, mtime)
 	values (?, ?, ?, ?, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  etime = excluded.etime,
-	  mtime = excluded.mtime`
+		version = version+1,
+		type = excluded.type,
+		etime = excluded.etime,
+		mtime = excluded.mtime`
 
 	sqlSet2 = `
 	insert into rstring (key_id, value)
@@ -40,10 +40,10 @@ const (
 	insert into rkey (key, type, version, etime, mtime)
 	values (?, ?, ?, null, ?)
 	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  -- not changing etime
-	  mtime = excluded.mtime`
+		version = version+1,
+		type = excluded.type,
+		-- not changing etime
+		mtime = excluded.mtime`
 
 	sqlUpdate2 = `
 	insert into rstring (key_id, value)
