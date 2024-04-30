@@ -38,7 +38,7 @@ func TestPingParse(t *testing.T) {
 			cmd, err := Parse(test.args)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*Echo).parts, test.want)
+				testx.AssertEqual(t, cmd.(*Ping).parts, test.want)
 			}
 		})
 	}
@@ -50,25 +50,25 @@ func TestPingExec(t *testing.T) {
 
 	tests := []struct {
 		name string
-		cmd  *Echo
+		cmd  *Ping
 		res  any
 		out  string
 	}{
 		{
 			name: "ping",
-			cmd:  mustParse[*Echo]("ping"),
+			cmd:  mustParse[*Ping]("ping"),
 			res:  "PONG",
 			out:  "PONG",
 		},
 		{
 			name: "ping hello",
-			cmd:  mustParse[*Echo]("ping hello"),
+			cmd:  mustParse[*Ping]("ping hello"),
 			res:  "hello",
 			out:  "hello",
 		},
 		{
 			name: "ping one two",
-			cmd:  mustParse[*Echo]("ping one two"),
+			cmd:  mustParse[*Ping]("ping one two"),
 			res:  "one two",
 			out:  "one two",
 		},
