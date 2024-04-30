@@ -443,17 +443,21 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 
 // set creates or updates the value of a field in a hash.
 func (tx *Tx) set(key string, field string, value any) error {
+	valueb, err := core.ToBytes(value)
+	if err != nil {
+		return err
+	}
 	args := []any{
 		key,                    // key
 		core.TypeHash,          // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err := tx.tx.Exec(sqlSet1, args...)
+	_, err = tx.tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlSet2, key, field, value)
+	_, err = tx.tx.Exec(sqlSet2, key, field, valueb)
 	return err
 }
 

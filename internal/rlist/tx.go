@@ -268,7 +268,11 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (tx *Tx) Delete(key string, elem any) (int, error) {
-	args := []any{key, time.Now().UnixMilli(), elem}
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
+	}
+	args := []any{key, time.Now().UnixMilli(), elemb}
 	res, err := tx.tx.Exec(sqlDelete, args...)
 	if err != nil {
 		return 0, err
@@ -436,8 +440,9 @@ func (tx *Tx) Range(key string, start, stop int) ([]core.Value, error) {
 // If the index is out of bounds, returns ErrNotFound.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (tx *Tx) Set(key string, idx int, elem any) error {
-	if !core.IsValueType(elem) {
-		return core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return err
 	}
 
 	var query = sqlSet
@@ -447,7 +452,7 @@ func (tx *Tx) Set(key string, idx int, elem any) error {
 		idx = -idx - 1
 	}
 
-	args := []any{key, time.Now().UnixMilli(), elem, idx}
+	args := []any{key, time.Now().UnixMilli(), elemb, idx}
 	out, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return err
@@ -488,8 +493,12 @@ func (tx *Tx) delete(key string, elem any, count int, query string) (int, error)
 	if count <= 0 {
 		return 0, nil
 	}
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
+	}
 
-	args := []any{time.Now().UnixMilli(), key, elem, count}
+	args := []any{time.Now().UnixMilli(), key, elemb, count}
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
@@ -503,13 +512,18 @@ func (tx *Tx) delete(key string, elem any, count int, query string) (int, error)
 
 // insert inserts an element before or after a pivot in a list.
 func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
-	if !core.IsValueType(elem) {
-		return 0, core.ErrValueType
+	pivotb, err := core.ToBytes(pivot)
+	if err != nil {
+		return 0, err
+	}
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
 	}
 
-	args := []any{key, time.Now().UnixMilli(), pivot, elem}
+	args := []any{key, time.Now().UnixMilli(), pivotb, elemb}
 	var count int
-	err := tx.tx.QueryRow(query, args...).Scan(&count)
+	err = tx.tx.QueryRow(query, args...).Scan(&count)
 	if err == sql.ErrNoRows {
 		return 0, core.ErrNotFound
 	}
@@ -538,8 +552,9 @@ func (tx *Tx) pop(key string, query string) (core.Value, error) {
 
 // push inserts an element to the front or back of a list.
 func (tx *Tx) push(key string, elem any, query string) (int, error) {
-	if !core.IsValueType(elem) {
-		return 0, core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
 	}
 
 	// Set the key if it does not exist.
@@ -550,14 +565,14 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 		time.Now().UnixMilli(), // mtime
 	}
 	var keyID int
-	err := tx.tx.QueryRow(sqlSetKey, args...).Scan(&keyID)
+	err = tx.tx.QueryRow(sqlSetKey, args...).Scan(&keyID)
 	if err != nil {
 		return 0, err
 	}
 
 	// Insert the element.
 	var count int
-	args = []any{keyID, elem, keyID, keyID}
+	args = []any{keyID, elemb, keyID, keyID}
 	err = tx.tx.QueryRow(query, args...).Scan(&count)
 	if err != nil {
 		return 0, err

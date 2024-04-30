@@ -163,14 +163,13 @@ func (tx *Tx) Count(key string, min, max float64) (int, error) {
 // Does not delete the key if the set becomes empty.
 func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 	// Check the types of the elements.
-	for elem := range elems {
-		if !core.IsValueType(elem) {
-			return 0, core.ErrValueType
-		}
+	elembs, err := core.ToBytesMany(elems...)
+	if err != nil {
+		return 0, err
 	}
 
 	// Remove the elements.
-	query, elemArgs := sqlx.ExpandIn(sqlDelete, ":elems", elems)
+	query, elemArgs := sqlx.ExpandIn(sqlDelete, ":elems", elembs)
 	args := append([]any{key, time.Now().UnixMilli()}, elemArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -208,14 +207,15 @@ func (tx *Tx) GetRankRev(key string, elem any) (rank int, score float64, err err
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (tx *Tx) GetScore(key string, elem any) (float64, error) {
-	if !core.IsValueType(elem) {
-		return 0, core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
 	}
 
 	var score float64
-	args := []any{time.Now().UnixMilli(), key, elem}
+	args := []any{time.Now().UnixMilli(), key, elemb}
 	row := tx.tx.QueryRow(sqlGetScore, args...)
-	err := row.Scan(&score)
+	err = row.Scan(&score)
 	if err == sql.ErrNoRows {
 		return 0, core.ErrNotFound
 	}
@@ -230,8 +230,9 @@ func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 // If the element does not exist, adds it and sets the score to 0.0
 // before the increment. If the key does not exist, creates it.
 func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
-	if !core.IsValueType(elem) {
-		return 0, core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, err
 	}
 
 	args := []any{
@@ -240,13 +241,13 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err := tx.tx.Exec(sqlIncr1, args...)
+	_, err = tx.tx.Exec(sqlIncr1, args...)
 	if err != nil {
 		return 0, err
 	}
 
 	var score float64
-	args = []any{key, elem, delta}
+	args = []any{key, elemb, delta}
 	err = tx.tx.QueryRow(sqlIncr2, args...).Scan(&score)
 	if err != nil {
 		return 0, err
@@ -358,8 +359,9 @@ func (tx *Tx) UnionWith(keys ...string) UnionCmd {
 
 // add adds or updates the element in a set.
 func (tx *Tx) add(key string, elem any, score float64) error {
-	if !core.IsValueType(elem) {
-		return core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return err
 	}
 
 	args := []any{
@@ -368,36 +370,35 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err := tx.tx.Exec(sqlAdd1, args...)
+	_, err = tx.tx.Exec(sqlAdd1, args...)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlAdd2, key, elem, score)
+	_, err = tx.tx.Exec(sqlAdd2, key, elemb, score)
 	return err
 }
 
 // count returns the number of existing elements in a set.
 func (tx *Tx) count(key string, elems ...any) (int, error) {
-	for _, elem := range elems {
-		if !core.IsValueType(elem) {
-			return 0, core.ErrValueType
-		}
+	elembs, err := core.ToBytesMany(elems...)
+	if err != nil {
+		return 0, err
 	}
-
-	query, elemArgs := sqlx.ExpandIn(sqlCount, ":elems", elems)
+	query, elemArgs := sqlx.ExpandIn(sqlCount, ":elems", elembs)
 	args := append([]any{time.Now().UnixMilli(), key}, elemArgs...)
 	var count int
-	err := tx.tx.QueryRow(query, args...).Scan(&count)
+	err = tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err
 }
 
 // getRank returns the rank and score of an element in a set.
 func (tx *Tx) getRank(key string, elem any, sortDir string) (rank int, score float64, err error) {
-	if !core.IsValueType(elem) {
-		return 0, 0, core.ErrValueType
+	elemb, err := core.ToBytes(elem)
+	if err != nil {
+		return 0, 0, err
 	}
 
-	args := []any{time.Now().UnixMilli(), key, elem}
+	args := []any{time.Now().UnixMilli(), key, elemb}
 	query := sqlGetRank
 	if sortDir != sqlx.Asc {
 		query = strings.Replace(query, sqlx.Asc, sortDir, 2)

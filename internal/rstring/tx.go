@@ -166,9 +166,6 @@ func (tx *Tx) Set(key string, value any) error {
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
-	if !core.IsValueType(value) {
-		return core.ErrValueType
-	}
 	var at time.Time
 	if ttl > 0 {
 		at = time.Now().Add(ttl)
@@ -226,6 +223,11 @@ func get(tx sqlx.Tx, key string) (core.Value, error) {
 
 // set sets the key value and (optionally) its expiration time.
 func set(tx sqlx.Tx, key string, value any, at time.Time) error {
+	valueb, err := core.ToBytes(value)
+	if err != nil {
+		return err
+	}
+
 	var etime *int64
 	if !at.IsZero() {
 		etime = new(int64)
@@ -239,11 +241,11 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 		etime,                  // etime
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err := tx.Exec(sqlSet1, args...)
+	_, err = tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(sqlSet2, key, value)
+	_, err = tx.Exec(sqlSet2, key, valueb)
 	return err
 }
 
@@ -251,16 +253,20 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
 func update(tx sqlx.Tx, key string, value any) error {
+	valueb, err := core.ToBytes(value)
+	if err != nil {
+		return err
+	}
 	args := []any{
 		key,                    // key
 		core.TypeString,        // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err := tx.Exec(sqlUpdate1, args...)
+	_, err = tx.Exec(sqlUpdate1, args...)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(sqlUpdate2, key, value)
+	_, err = tx.Exec(sqlUpdate2, key, valueb)
 	return err
 }

@@ -148,8 +148,42 @@ func (v Value) Exists() bool {
 //   - byte slice
 func IsValueType(v any) bool {
 	switch v.(type) {
-	case string, int, float64, bool, []byte:
+	case bool, float64, int, string, []byte:
 		return true
 	}
 	return false
+}
+
+// ToBytesMany converts multiple values to byte slices.
+func ToBytesMany(values ...any) ([][]byte, error) {
+	blobs := make([][]byte, len(values))
+	for i, v := range values {
+		b, err := ToBytes(v)
+		if err != nil {
+			return nil, err
+		}
+		blobs[i] = b
+	}
+	return blobs, nil
+}
+
+// ToBytes converts a value to a byte slice.
+func ToBytes(v any) ([]byte, error) {
+	switch v := v.(type) {
+	case bool:
+		if v {
+			return []byte{'1'}, nil
+		} else {
+			return []byte{'0'}, nil
+		}
+	case float64:
+		return []byte(strconv.FormatFloat(v, 'f', -1, 64)), nil
+	case int:
+		return []byte(strconv.Itoa(v)), nil
+	case string:
+		return []byte(v), nil
+	case []byte:
+		return v, nil
+	}
+	return nil, ErrValueType
 }
