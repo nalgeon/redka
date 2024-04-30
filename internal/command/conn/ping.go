@@ -15,14 +15,14 @@ const (
 // https://redis.io/commands/ping
 type Ping struct {
 	redis.BaseCmd
-	parts []string
+	Parts []string
 }
 
 
 func ParsePing(b redis.BaseCmd) (*Ping, error) {
 	cmd := &Ping{BaseCmd: b}
 	err := parser.New(
-		parser.Strings(&cmd.parts),
+		parser.Strings(&cmd.Parts),
 	).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
@@ -31,11 +31,11 @@ func ParsePing(b redis.BaseCmd) (*Ping, error) {
 }
 
 func (c *Ping) Run(w redis.Writer, _ redis.Redka) (any, error) {
-	if len(c.parts) == 0 {
+	if len(c.Parts) == 0 {
 		w.WriteAny(PONG)
 		return PONG, nil
 	}
-	out := strings.Join(c.parts, " ")
+	out := strings.Join(c.Parts, " ")
 	w.WriteAny(out)
 	return out, nil
 }
