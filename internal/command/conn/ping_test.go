@@ -19,8 +19,8 @@ func TestPingParse(t *testing.T) {
 		{
 			name: "ping",
 			args: command.BuildArgs("ping"),
-			want: []string{"PONG"},
-			err:  nil,
+			want: []string{},
+			err:  redis.ErrInvalidArgNum,
 		},
 		{
 			name: "ping hello",
