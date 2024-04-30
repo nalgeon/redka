@@ -1,10 +1,8 @@
-package string_test
+package string
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,37 +10,33 @@ import (
 
 func TestGetParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
+		cmd  string
 		want string
 		err  error
 	}{
 		{
-			name: "get",
-			args: command.BuildArgs("get"),
+			cmd:  "get",
 			want: "",
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "get name",
-			args: command.BuildArgs("get", "name"),
+			cmd:  "get name",
 			want: "name",
 			err:  nil,
 		},
 		{
-			name: "get name age",
-			args: command.BuildArgs("get", "name", "age"),
+			cmd:  "get name age",
 			want: "",
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseGet, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*str.Get).Key, test.want)
+				testx.AssertEqual(t, cmd.key, test.want)
 			}
 		})
 	}
@@ -55,29 +49,27 @@ func TestGetExec(t *testing.T) {
 	_ = db.Str().Set("name", "alice")
 
 	tests := []struct {
-		name string
-		cmd  *str.Get
-		res  any
-		out  string
+		cmd string
+		res any
+		out string
 	}{
 		{
-			name: "get found",
-			cmd:  command.MustParse[*str.Get]("get name"),
-			res:  core.Value("alice"),
-			out:  "alice",
+			cmd: "get name",
+			res: core.Value("alice"),
+			out: "alice",
 		},
 		{
-			name: "get not found",
-			cmd:  command.MustParse[*str.Get]("get age"),
-			res:  core.Value(nil),
-			out:  "(nil)",
+			cmd: "get age",
+			res: core.Value(nil),
+			out: "(nil)",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.cmd, func(t *testing.T) {
 			conn := redis.NewFakeConn()
-			res, err := test.cmd.Run(conn, red)
+			cmd := redis.MustParse(ParseGet, test.cmd)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.Out(), test.out)

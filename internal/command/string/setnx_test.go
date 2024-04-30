@@ -1,55 +1,47 @@
-package string_test
+package string
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSetNXParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want str.SetNX
+		cmd  string
+		want SetNX
 		err  error
 	}{
 		{
-			name: "setnx",
-			args: command.BuildArgs("setnx"),
-			want: str.SetNX{},
+			cmd:  "setnx",
+			want: SetNX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "setnx name",
-			args: command.BuildArgs("setnx", "name"),
-			want: str.SetNX{},
+			cmd:  "setnx name",
+			want: SetNX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "setnx name alice",
-			args: command.BuildArgs("setnx", "name", "alice"),
-			want: str.SetNX{Key: "name", Value: []byte("alice")},
+			cmd:  "setnx name alice",
+			want: SetNX{key: "name", value: []byte("alice")},
 			err:  nil,
 		},
 		{
-			name: "setnx name alice 60",
-			args: command.BuildArgs("setnx", "name", "alice", "60"),
-			want: str.SetNX{},
+			cmd:  "setnx name alice 60",
+			want: SetNX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseSetNX, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*str.SetNX)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Value, test.want.Value)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.value, test.want.value)
 			}
 		})
 	}
@@ -60,7 +52,7 @@ func TestSetNXExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*str.SetNX]("setnx name alice")
+		cmd := redis.MustParse(ParseSetNX, "setnx name alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -77,7 +69,7 @@ func TestSetNXExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*str.SetNX]("setnx name bob")
+		cmd := redis.MustParse(ParseSetNX, "setnx name bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

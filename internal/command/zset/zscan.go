@@ -10,35 +10,35 @@ import (
 // https://redis.io/commands/zscan
 type ZScan struct {
 	redis.BaseCmd
-	Key    string
-	Cursor int
-	Match  string
-	Count  int
+	key    string
+	cursor int
+	match  string
+	count  int
 }
 
 func ParseZScan(b redis.BaseCmd) (*ZScan, error) {
 	cmd := &ZScan{BaseCmd: b}
 
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Int(&cmd.Cursor),
-		parser.Named("match", parser.String(&cmd.Match)),
-		parser.Named("count", parser.Int(&cmd.Count)),
+		parser.String(&cmd.key),
+		parser.Int(&cmd.cursor),
+		parser.Named("match", parser.String(&cmd.match)),
+		parser.Named("count", parser.Int(&cmd.count)),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
 	}
 
 	// all elements by default
-	if cmd.Match == "" {
-		cmd.Match = "*"
+	if cmd.match == "" {
+		cmd.match = "*"
 	}
 
 	return cmd, nil
 }
 
 func (cmd *ZScan) Run(w redis.Writer, red redis.Redka) (any, error) {
-	res, err := red.ZSet().Scan(cmd.Key, cmd.Cursor, cmd.Match, cmd.Count)
+	res, err := red.ZSet().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

@@ -7,7 +7,7 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/hgetall
 type HGetAll struct {
 	redis.BaseCmd
-	Key string
+	key string
 }
 
 func ParseHGetAll(b redis.BaseCmd) (*HGetAll, error) {
@@ -15,12 +15,12 @@ func ParseHGetAll(b redis.BaseCmd) (*HGetAll, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
+	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
 func (cmd *HGetAll) Run(w redis.Writer, red redis.Redka) (any, error) {
-	items, err := red.Hash().Items(cmd.Key)
+	items, err := red.Hash().Items(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

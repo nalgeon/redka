@@ -10,15 +10,15 @@ import (
 // https://redis.io/commands/zrem
 type ZRem struct {
 	redis.BaseCmd
-	Key     string
-	Members []any
+	key     string
+	members []any
 }
 
 func ParseZRem(b redis.BaseCmd) (*ZRem, error) {
 	cmd := &ZRem{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Anys(&cmd.Members),
+		parser.String(&cmd.key),
+		parser.Anys(&cmd.members),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func ParseZRem(b redis.BaseCmd) (*ZRem, error) {
 }
 
 func (cmd *ZRem) Run(w redis.Writer, red redis.Redka) (any, error) {
-	n, err := red.ZSet().Delete(cmd.Key, cmd.Members...)
+	n, err := red.ZSet().Delete(cmd.key, cmd.members...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

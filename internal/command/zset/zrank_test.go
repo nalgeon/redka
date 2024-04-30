@@ -1,56 +1,48 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZRankParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZRank
+		cmd  string
+		want ZRank
 		err  error
 	}{
 		{
-			name: "zrank",
-			args: command.BuildArgs("zrank"),
-			want: zset.ZRank{},
+			cmd:  "zrank",
+			want: ZRank{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrank key",
-			args: command.BuildArgs("zrank", "key"),
-			want: zset.ZRank{},
+			cmd:  "zrank key",
+			want: ZRank{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrank key member",
-			args: command.BuildArgs("zrank", "key", "member"),
-			want: zset.ZRank{Key: "key", Member: "member"},
+			cmd:  "zrank key member",
+			want: ZRank{key: "key", member: "member"},
 			err:  nil,
 		},
 		{
-			name: "zrank key member withscore",
-			args: command.BuildArgs("zrank", "key", "member", "withscore"),
-			want: zset.ZRank{Key: "key", Member: "member", WithScore: true},
+			cmd:  "zrank key member withscore",
+			want: ZRank{key: "key", member: "member", withScore: true},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZRank, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZRank)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Member, test.want.Member)
-				testx.AssertEqual(t, cm.WithScore, test.want.WithScore)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.member, test.want.member)
+				testx.AssertEqual(t, cmd.withScore, test.want.withScore)
 			}
 		})
 	}
@@ -63,7 +55,7 @@ func TestZRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Add("key", "two", 22)
 
-		cmd := command.MustParse[*zset.ZRank]("zrank key two")
+		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -76,7 +68,7 @@ func TestZRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Add("key", "two", 22)
 
-		cmd := command.MustParse[*zset.ZRank]("zrank key two withscore")
+		cmd := redis.MustParse(ParseZRank, "zrank key two withscore")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -88,7 +80,7 @@ func TestZRankExec(t *testing.T) {
 		defer db.Close()
 		_, _ = db.ZSet().Add("key", "one", 11)
 
-		cmd := command.MustParse[*zset.ZRank]("zrank key two")
+		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -99,7 +91,7 @@ func TestZRankExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZRank]("zrank key two")
+		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -111,7 +103,7 @@ func TestZRankExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZRank]("zrank key two")
+		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

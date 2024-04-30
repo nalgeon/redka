@@ -10,22 +10,22 @@ import (
 // https://redis.io/commands/zrangebyscore
 type ZRevRangeByScore struct {
 	redis.BaseCmd
-	Key        string
-	Min        float64
-	Max        float64
-	WithScores bool
-	Offset     int
-	Count      int
+	key        string
+	min        float64
+	max        float64
+	withScores bool
+	offset     int
+	count      int
 }
 
 func ParseZRevRangeByScore(b redis.BaseCmd) (*ZRevRangeByScore, error) {
 	cmd := &ZRevRangeByScore{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Float(&cmd.Min),
-		parser.Float(&cmd.Max),
-		parser.Flag("withscores", &cmd.WithScores),
-		parser.Named("limit", parser.Int(&cmd.Offset), parser.Int(&cmd.Count)),
+		parser.String(&cmd.key),
+		parser.Float(&cmd.min),
+		parser.Float(&cmd.max),
+		parser.Flag("withscores", &cmd.withScores),
+		parser.Named("limit", parser.Int(&cmd.offset), parser.Int(&cmd.count)),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -34,14 +34,14 @@ func ParseZRevRangeByScore(b redis.BaseCmd) (*ZRevRangeByScore, error) {
 }
 
 func (cmd *ZRevRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
-	rang := red.ZSet().RangeWith(cmd.Key).ByScore(cmd.Min, cmd.Max).Desc()
+	rang := red.ZSet().RangeWith(cmd.key).ByScore(cmd.min, cmd.max).Desc()
 
 	// limit and offset
-	if cmd.Offset > 0 {
-		rang = rang.Offset(cmd.Offset)
+	if cmd.offset > 0 {
+		rang = rang.Offset(cmd.offset)
 	}
-	if cmd.Count > 0 {
-		rang = rang.Count(cmd.Count)
+	if cmd.count > 0 {
+		rang = rang.Count(cmd.count)
 	}
 
 	// run the command
@@ -52,7 +52,7 @@ func (cmd *ZRevRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	}
 
 	// write the response with/without scores
-	if cmd.WithScores {
+	if cmd.withScores {
 		w.WriteArray(len(items) * 2)
 		for _, item := range items {
 			w.WriteBulk(item.Elem)

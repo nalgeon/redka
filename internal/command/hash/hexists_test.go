@@ -1,46 +1,39 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHExistsParse(t *testing.T) {
 	tests := []struct {
-		name  string
-		args  [][]byte
+		cmd   string
 		key   string
 		field string
 		err   error
 	}{
 		{
-			name:  "hexists",
-			args:  command.BuildArgs("hexists"),
+			cmd:   "hexists",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hexists person",
-			args:  command.BuildArgs("hexists", "person"),
+			cmd:   "hexists person",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hexists person name",
-			args:  command.BuildArgs("hexists", "person", "name"),
+			cmd:   "hexists person name",
 			key:   "person",
 			field: "name",
 			err:   nil,
 		},
 		{
-			name:  "hexists person name age",
-			args:  command.BuildArgs("hexists", "person", "name", "age"),
+			cmd:   "hexists person name age",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
@@ -48,13 +41,12 @@ func TestHExistsParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHExists, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HExists)
-				testx.AssertEqual(t, cm.Key, test.key)
-				testx.AssertEqual(t, cm.Field, test.field)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.field, test.field)
 			}
 		})
 	}
@@ -67,7 +59,7 @@ func TestHExistsExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HExists]("hexists person name")
+		cmd := redis.MustParse(ParseHExists, "hexists person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -81,7 +73,7 @@ func TestHExistsExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HExists]("hexists person age")
+		cmd := redis.MustParse(ParseHExists, "hexists person age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -93,7 +85,7 @@ func TestHExistsExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HExists]("hexists person name")
+		cmd := redis.MustParse(ParseHExists, "hexists person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

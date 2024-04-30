@@ -10,7 +10,7 @@ import (
 // https://redis.io/commands/mget
 type MGet struct {
 	redis.BaseCmd
-	Keys []string
+	keys []string
 }
 
 func ParseMGet(b redis.BaseCmd) (*MGet, error) {
@@ -18,16 +18,16 @@ func ParseMGet(b redis.BaseCmd) (*MGet, error) {
 	if len(cmd.Args()) < 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Keys = make([]string, len(cmd.Args()))
+	cmd.keys = make([]string, len(cmd.Args()))
 	for i, arg := range cmd.Args() {
-		cmd.Keys[i] = string(arg)
+		cmd.keys[i] = string(arg)
 	}
 	return cmd, nil
 }
 
 func (cmd *MGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Get the key-value map for requested keys.
-	items, err := red.Str().GetMany(cmd.Keys...)
+	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err
@@ -36,8 +36,8 @@ func (cmd *MGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Build the result slice.
 	// It will contain all values in the order of keys.
 	// Missing keys will have nil values.
-	vals := make([]core.Value, len(cmd.Keys))
-	for i, key := range cmd.Keys {
+	vals := make([]core.Value, len(cmd.keys))
+	for i, key := range cmd.keys {
 		vals[i] = items[key]
 	}
 

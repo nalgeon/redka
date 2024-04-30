@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,46 +10,40 @@ import (
 
 func TestZRemRangeByScoreParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZRemRangeByScore
+		cmd  string
+		want ZRemRangeByScore
 		err  error
 	}{
 		{
-			name: "zremrangebyscore",
-			args: command.BuildArgs("zremrangebyscore"),
-			want: zset.ZRemRangeByScore{},
+			cmd:  "zremrangebyscore",
+			want: ZRemRangeByScore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyscore key",
-			args: command.BuildArgs("zremrangebyscore", "key"),
-			want: zset.ZRemRangeByScore{},
+			cmd:  "zremrangebyscore key",
+			want: ZRemRangeByScore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyscore key 1.1",
-			args: command.BuildArgs("zremrangebyscore", "key", "1.1"),
-			want: zset.ZRemRangeByScore{},
+			cmd:  "zremrangebyscore key 1.1",
+			want: ZRemRangeByScore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyscore key 1.1 2.2",
-			args: command.BuildArgs("zremrangebyscore", "key", "1.1", "2.2"),
-			want: zset.ZRemRangeByScore{Key: "key", Min: 1.1, Max: 2.2},
+			cmd:  "zremrangebyscore key 1.1 2.2",
+			want: ZRemRangeByScore{key: "key", min: 1.1, max: 2.2},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZRemRangeByScore, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZRemRangeByScore)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Min, test.want.Min)
-				testx.AssertEqual(t, cm.Max, test.want.Max)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.min, test.want.min)
+				testx.AssertEqual(t, cmd.max, test.want.max)
 			}
 		})
 	}
@@ -66,7 +58,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 20)
 		_, _ = db.ZSet().Add("key", "thr", 30)
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key 10 20")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key 10 20")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -93,7 +85,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 20)
 		_, _ = db.ZSet().Add("key", "thr", 30)
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key 0 30")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key 0 30")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -111,7 +103,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 20)
 		_, _ = db.ZSet().Add("key", "thr", 30)
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key 40 50")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key 40 50")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -129,7 +121,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", -20)
 		_, _ = db.ZSet().Add("key", "thr", -30)
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key -20 -10")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key -20 -10")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -145,7 +137,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key 0 30")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key 0 30")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -157,7 +149,7 @@ func TestZRemRangeByScoreExec(t *testing.T) {
 		defer db.Close()
 		_ = red.Str().Set("key", "str")
 
-		cmd := command.MustParse[*zset.ZRemRangeByScore]("zremrangebyscore key 0 30")
+		cmd := redis.MustParse(ParseZRemRangeByScore, "zremrangebyscore key 0 30")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

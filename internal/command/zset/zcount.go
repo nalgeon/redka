@@ -10,17 +10,17 @@ import (
 // https://redis.io/commands/zcount
 type ZCount struct {
 	redis.BaseCmd
-	Key string
-	Min float64
-	Max float64
+	key string
+	min float64
+	max float64
 }
 
 func ParseZCount(b redis.BaseCmd) (*ZCount, error) {
 	cmd := &ZCount{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Float(&cmd.Min),
-		parser.Float(&cmd.Max),
+		parser.String(&cmd.key),
+		parser.Float(&cmd.min),
+		parser.Float(&cmd.max),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func ParseZCount(b redis.BaseCmd) (*ZCount, error) {
 }
 
 func (cmd *ZCount) Run(w redis.Writer, red redis.Redka) (any, error) {
-	n, err := red.ZSet().Count(cmd.Key, cmd.Min, cmd.Max)
+	n, err := red.ZSet().Count(cmd.key, cmd.min, cmd.max)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

@@ -1,62 +1,53 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZCountParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZCount
+		cmd  string
+		want ZCount
 		err  error
 	}{
 		{
-			name: "zcount",
-			args: command.BuildArgs("zcount"),
-			want: zset.ZCount{},
+			cmd:  "zcount",
+			want: ZCount{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zcount key",
-			args: command.BuildArgs("zcount", "key"),
-			want: zset.ZCount{},
+			cmd:  "zcount key",
+			want: ZCount{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zcount key 11",
-			args: command.BuildArgs("zcount", "key", "11"),
-			want: zset.ZCount{},
+			cmd:  "zcount key 1.1",
+			want: ZCount{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zcount key 11 22",
-			args: command.BuildArgs("zcount", "key", "1.1", "2.2"),
-			want: zset.ZCount{Key: "key", Min: 1.1, Max: 2.2},
+			cmd:  "zcount key 1.1 2.2",
+			want: ZCount{key: "key", min: 1.1, max: 2.2},
 			err:  nil,
 		},
 		{
-			name: "zcount key 11 22 33",
-			args: command.BuildArgs("zcount", "key", "1.1", "2.2", "3.3"),
-			want: zset.ZCount{},
+			cmd:  "zcount key 1.1 2.2 3.3",
+			want: ZCount{},
 			err:  redis.ErrSyntaxError,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZCount, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZCount)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Min, test.want.Min)
-				testx.AssertEqual(t, cm.Max, test.want.Max)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.min, test.want.min)
+				testx.AssertEqual(t, cmd.max, test.want.max)
 			}
 		})
 	}
@@ -70,7 +61,7 @@ func TestZCountExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 22)
 		_, _ = db.ZSet().Add("key", "thr", 33)
 
-		cmd := command.MustParse[*zset.ZCount]("zcount key 15 25")
+		cmd := redis.MustParse(ParseZCount, "zcount key 15 25")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -84,7 +75,7 @@ func TestZCountExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 22)
 		_, _ = db.ZSet().Add("key", "thr", 33)
 
-		cmd := command.MustParse[*zset.ZCount]("zcount key 11 33")
+		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -98,7 +89,7 @@ func TestZCountExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 22)
 		_, _ = db.ZSet().Add("key", "thr", 33)
 
-		cmd := command.MustParse[*zset.ZCount]("zcount key 44 55")
+		cmd := redis.MustParse(ParseZCount, "zcount key 44 55")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -109,7 +100,7 @@ func TestZCountExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZCount]("zcount key 11 33")
+		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -121,7 +112,7 @@ func TestZCountExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZCount]("zcount key 11 33")
+		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

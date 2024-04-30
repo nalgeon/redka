@@ -1,55 +1,46 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZAddParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZAdd
+		cmd  string
+		want ZAdd
 		err  error
 	}{
 		{
-			name: "zadd",
-			args: command.BuildArgs("zadd"),
-			want: zset.ZAdd{},
+			cmd:  "zadd",
+			want: ZAdd{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zadd key",
-			args: command.BuildArgs("zadd", "key"),
-			want: zset.ZAdd{},
+			cmd:  "zadd key",
+			want: ZAdd{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zadd key one",
-			args: command.BuildArgs("zadd", "key", "one"),
-			want: zset.ZAdd{},
+			cmd:  "zadd key one",
+			want: ZAdd{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zadd key 1 one",
-			args: command.BuildArgs("zadd", "key", "1.1", "one"),
-			want: zset.ZAdd{Key: "key", Items: map[any]float64{"one": 1.1}},
+			cmd:  "zadd key 1.1 one",
+			want: ZAdd{key: "key", items: map[any]float64{"one": 1.1}},
 			err:  nil,
 		},
 		{
-			name: "zadd key 1 one 2",
-			args: command.BuildArgs("zadd", "key", "1.1", "one", "2.2"),
-			want: zset.ZAdd{},
+			cmd:  "zadd key 1.1 one 2.2",
+			want: ZAdd{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zadd key one 1.1 two 2.2",
-			args: command.BuildArgs("zadd", "key", "1.1", "one", "2.2", "two"),
-			want: zset.ZAdd{Key: "key", Items: map[any]float64{
+			cmd: "zadd key 1.1 one 2.2 two",
+			want: ZAdd{key: "key", items: map[any]float64{
 				"one": 1.1,
 				"two": 2.2,
 			}},
@@ -58,13 +49,12 @@ func TestZAddParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZAdd, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZAdd)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Items, test.want.Items)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.items, test.want.items)
 			}
 		})
 	}
@@ -75,7 +65,7 @@ func TestZAddExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZAdd]("zadd key 11 one")
+		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -89,7 +79,7 @@ func TestZAddExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZAdd]("zadd key 11 one 22 two")
+		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one 22 two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -108,7 +98,7 @@ func TestZAddExec(t *testing.T) {
 
 		_, _ = db.ZSet().Add("key", "one", 11)
 
-		cmd := command.MustParse[*zset.ZAdd]("zadd key 12 one 22 two")
+		cmd := redis.MustParse(ParseZAdd, "zadd key 12 one 22 two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -127,7 +117,7 @@ func TestZAddExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Add("key", "two", 22)
 
-		cmd := command.MustParse[*zset.ZAdd]("zadd key 12 one 23 two")
+		cmd := redis.MustParse(ParseZAdd, "zadd key 12 one 23 two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -144,7 +134,7 @@ func TestZAddExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZAdd]("zadd key 11 one")
+		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

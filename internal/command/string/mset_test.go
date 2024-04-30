@@ -1,49 +1,41 @@
-package string_test
+package string
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestMSetParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want str.MSet
+		cmd  string
+		want MSet
 		err  error
 	}{
 		{
-			name: "mset",
-			args: command.BuildArgs("mset"),
-			want: str.MSet{},
+			cmd:  "mset",
+			want: MSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "mset name",
-			args: command.BuildArgs("mset", "name"),
-			want: str.MSet{},
+			cmd:  "mset name",
+			want: MSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "mset name alice",
-			args: command.BuildArgs("mset", "name", "alice"),
-			want: str.MSet{Items: map[string]any{"name": []byte("alice")}},
+			cmd:  "mset name alice",
+			want: MSet{items: map[string]any{"name": []byte("alice")}},
 			err:  nil,
 		},
 		{
-			name: "mset name alice age",
-			args: command.BuildArgs("mset", "name", "alice", "age"),
-			want: str.MSet{},
+			cmd:  "mset name alice age",
+			want: MSet{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "mset name alice age 25",
-			args: command.BuildArgs("mset", "name", "alice", "age", "25"),
-			want: str.MSet{Items: map[string]any{
+			cmd: "mset name alice age 25",
+			want: MSet{items: map[string]any{
 				"name": []byte("alice"),
 				"age":  []byte("25"),
 			}},
@@ -52,12 +44,11 @@ func TestMSetParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseMSet, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*str.MSet)
-				testx.AssertEqual(t, cm.Items, test.want.Items)
+				testx.AssertEqual(t, cmd.items, test.want.items)
 			}
 		})
 	}
@@ -68,7 +59,7 @@ func TestMSetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*str.MSet]("mset name alice")
+		cmd := redis.MustParse(ParseMSet, "mset name alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -83,7 +74,7 @@ func TestMSetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*str.MSet]("mset name alice age 25")
+		cmd := redis.MustParse(ParseMSet, "mset name alice age 25")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -102,7 +93,7 @@ func TestMSetExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*str.MSet]("mset name bob age 50")
+		cmd := redis.MustParse(ParseMSet, "mset name bob age 50")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -122,7 +113,7 @@ func TestMSetExec(t *testing.T) {
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
 
-		cmd := command.MustParse[*str.MSet]("mset name bob age 50")
+		cmd := redis.MustParse(ParseMSet, "mset name bob age 50")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

@@ -11,15 +11,15 @@ import (
 // https://redis.io/commands/hmget
 type HMGet struct {
 	redis.BaseCmd
-	Key    string
-	Fields []string
+	key    string
+	fields []string
 }
 
 func ParseHMGet(b redis.BaseCmd) (*HMGet, error) {
 	cmd := &HMGet{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Strings(&cmd.Fields),
+		parser.String(&cmd.key),
+		parser.Strings(&cmd.fields),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func ParseHMGet(b redis.BaseCmd) (*HMGet, error) {
 
 func (cmd *HMGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Get the field-value map for requested fields.
-	items, err := red.Hash().GetMany(cmd.Key, cmd.Fields...)
+	items, err := red.Hash().GetMany(cmd.key, cmd.fields...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err
@@ -38,8 +38,8 @@ func (cmd *HMGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Build the result slice.
 	// It will contain all values in the order of fields.
 	// Missing fields will have nil values.
-	vals := make([]core.Value, len(cmd.Fields))
-	for i, field := range cmd.Fields {
+	vals := make([]core.Value, len(cmd.fields))
+	for i, field := range cmd.fields {
 		vals[i] = items[field]
 	}
 

@@ -10,17 +10,17 @@ import (
 // https://redis.io/commands/zremrangebyscore
 type ZRemRangeByScore struct {
 	redis.BaseCmd
-	Key string
-	Min float64
-	Max float64
+	key string
+	min float64
+	max float64
 }
 
 func ParseZRemRangeByScore(b redis.BaseCmd) (*ZRemRangeByScore, error) {
 	cmd := &ZRemRangeByScore{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Float(&cmd.Min),
-		parser.Float(&cmd.Max),
+		parser.String(&cmd.key),
+		parser.Float(&cmd.min),
+		parser.Float(&cmd.max),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func ParseZRemRangeByScore(b redis.BaseCmd) (*ZRemRangeByScore, error) {
 }
 
 func (cmd *ZRemRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
-	n, err := red.ZSet().DeleteWith(cmd.Key).ByScore(cmd.Min, cmd.Max).Run()
+	n, err := red.ZSet().DeleteWith(cmd.key).ByScore(cmd.min, cmd.max).Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

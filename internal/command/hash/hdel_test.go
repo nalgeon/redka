@@ -1,46 +1,39 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHDelParse(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   [][]byte
+		cmd    string
 		key    string
 		fields []string
 		err    error
 	}{
 		{
-			name:   "hdel",
-			args:   command.BuildArgs("hdel"),
+			cmd:    "hdel",
 			key:    "",
 			fields: nil,
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "hdel person",
-			args:   command.BuildArgs("hdel", "person"),
+			cmd:    "hdel person",
 			key:    "",
 			fields: nil,
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "hdel person name",
-			args:   command.BuildArgs("hdel", "person", "name"),
+			cmd:    "hdel person name",
 			key:    "person",
 			fields: []string{"name"},
 			err:    nil,
 		},
 		{
-			name:   "hdel person name age",
-			args:   command.BuildArgs("hdel", "person", "name", "age"),
+			cmd:    "hdel person name age",
 			key:    "person",
 			fields: []string{"name", "age"},
 			err:    nil,
@@ -48,13 +41,12 @@ func TestHDelParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHDel, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HDel)
-				testx.AssertEqual(t, cm.Key, test.key)
-				testx.AssertEqual(t, cm.Fields, test.fields)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.fields, test.fields)
 			}
 		})
 	}
@@ -68,7 +60,7 @@ func TestHDelExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HDel]("hdel person name")
+		cmd := redis.MustParse(ParseHDel, "hdel person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -89,7 +81,7 @@ func TestHDelExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "age", 25)
 		_, _ = db.Hash().Set("person", "happy", true)
 
-		cmd := command.MustParse[*hash.HDel]("hdel person name happy city")
+		cmd := redis.MustParse(ParseHDel, "hdel person name happy city")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -111,7 +103,7 @@ func TestHDelExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HDel]("hdel person name age")
+		cmd := redis.MustParse(ParseHDel, "hdel person name age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

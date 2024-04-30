@@ -14,25 +14,6 @@ import (
 	"github.com/nalgeon/redka/internal/redis"
 )
 
-func MustParse[T redis.Cmd](s string) T {
-	parts := strings.Split(s, " ")
-	args := BuildArgs(parts[0], parts[1:]...)
-	cmd, err := Parse(args)
-	if err != nil {
-		panic(err)
-	}
-	return cmd.(T)
-}
-
-func BuildArgs(name string, args ...string) [][]byte {
-	rargs := make([][]byte, len(args)+1)
-	rargs[0] = []byte(name)
-	for i, arg := range args {
-		rargs[i+1] = []byte(arg)
-	}
-	return rargs
-}
-
 // Parse parses a text representation of a command into a Cmd.
 func Parse(args [][]byte) (redis.Cmd, error) {
 	name := strings.ToLower(string(args[0]))

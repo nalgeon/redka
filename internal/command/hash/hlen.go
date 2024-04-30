@@ -7,7 +7,7 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/hlen
 type HLen struct {
 	redis.BaseCmd
-	Key string
+	key string
 }
 
 func ParseHLen(b redis.BaseCmd) (*HLen, error) {
@@ -15,12 +15,12 @@ func ParseHLen(b redis.BaseCmd) (*HLen, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
+	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
 func (cmd *HLen) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.Hash().Len(cmd.Key)
+	count, err := red.Hash().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

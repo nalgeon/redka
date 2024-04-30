@@ -1,10 +1,8 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,36 +10,31 @@ import (
 
 func TestHGetParse(t *testing.T) {
 	tests := []struct {
-		name  string
-		args  [][]byte
+		cmd   string
 		key   string
 		field string
 		err   error
 	}{
 		{
-			name:  "hget",
-			args:  command.BuildArgs("hget"),
+			cmd:   "hget",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hget person",
-			args:  command.BuildArgs("hget", "person"),
+			cmd:   "hget person",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hget person name",
-			args:  command.BuildArgs("hget", "person", "name"),
+			cmd:   "hget person name",
 			key:   "person",
 			field: "name",
 			err:   nil,
 		},
 		{
-			name:  "hget person name age",
-			args:  command.BuildArgs("hget", "person", "name", "age"),
+			cmd:   "hget person name age",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
@@ -49,13 +42,12 @@ func TestHGetParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHGet, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HGet)
-				testx.AssertEqual(t, cm.Key, test.key)
-				testx.AssertEqual(t, cm.Field, test.field)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.field, test.field)
 			}
 		})
 	}
@@ -68,7 +60,7 @@ func TestHGetExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HGet]("hget person name")
+		cmd := redis.MustParse(ParseHGet, "hget person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -82,7 +74,7 @@ func TestHGetExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HGet]("hget person age")
+		cmd := redis.MustParse(ParseHGet, "hget person age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -94,7 +86,7 @@ func TestHGetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HGet]("hget person name")
+		cmd := redis.MustParse(ParseHGet, "hget person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

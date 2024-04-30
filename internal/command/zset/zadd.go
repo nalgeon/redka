@@ -11,15 +11,15 @@ import (
 // https://redis.io/commands/zadd
 type ZAdd struct {
 	redis.BaseCmd
-	Key   string
-	Items map[any]float64
+	key   string
+	items map[any]float64
 }
 
 func ParseZAdd(b redis.BaseCmd) (*ZAdd, error) {
 	cmd := &ZAdd{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.FloatMap(&cmd.Items),
+		parser.String(&cmd.key),
+		parser.FloatMap(&cmd.items),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func ParseZAdd(b redis.BaseCmd) (*ZAdd, error) {
 }
 
 func (cmd *ZAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.ZSet().AddMany(cmd.Key, cmd.Items)
+	count, err := red.ZSet().AddMany(cmd.key, cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

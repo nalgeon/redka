@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,45 +10,39 @@ import (
 
 func TestZRemParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZRem
+		cmd  string
+		want ZRem
 		err  error
 	}{
 		{
-			name: "zrem",
-			args: command.BuildArgs("zrem"),
-			want: zset.ZRem{},
+			cmd:  "zrem",
+			want: ZRem{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrem key",
-			args: command.BuildArgs("zrem", "key"),
-			want: zset.ZRem{},
+			cmd:  "zrem key",
+			want: ZRem{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrem key member",
-			args: command.BuildArgs("zrem", "key", "member"),
-			want: zset.ZRem{Key: "key", Members: []any{"member"}},
+			cmd:  "zrem key member",
+			want: ZRem{key: "key", members: []any{"member"}},
 			err:  nil,
 		},
 		{
-			name: "zrem key one two thr",
-			args: command.BuildArgs("zrem", "key", "one", "two", "thr"),
-			want: zset.ZRem{Key: "key", Members: []any{"one", "two", "thr"}},
+			cmd:  "zrem key one two thr",
+			want: ZRem{key: "key", members: []any{"one", "two", "thr"}},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZRem, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZRem)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Members, test.want.Members)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.members, test.want.members)
 			}
 		})
 	}
@@ -64,7 +56,7 @@ func TestZRemExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRem]("zrem key one two")
+		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -86,7 +78,7 @@ func TestZRemExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRem]("zrem key one two thr")
+		cmd := redis.MustParse(ParseZRem, "zrem key one two thr")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -103,7 +95,7 @@ func TestZRemExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "two", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRem]("zrem key fou fiv")
+		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -117,7 +109,7 @@ func TestZRemExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZRem]("zrem key one two")
+		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -129,7 +121,7 @@ func TestZRemExec(t *testing.T) {
 		defer db.Close()
 		_ = red.Str().Set("key", "str")
 
-		cmd := command.MustParse[*zset.ZRem]("zrem key fou fiv")
+		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

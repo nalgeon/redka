@@ -1,47 +1,41 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestExistsParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
+		cmd  string
 		want []string
 		err  error
 	}{
 		{
-			name: "exists",
-			args: command.BuildArgs("exists"),
+			cmd:  "exists",
 			want: nil,
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "exists name",
-			args: command.BuildArgs("exists", "name"),
+			cmd:  "exists name",
 			want: []string{"name"},
 			err:  nil,
 		},
 		{
-			name: "exists name age",
-			args: command.BuildArgs("exists", "name", "age"),
+			cmd:  "exists name age",
 			want: []string{"name", "age"},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseExists, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Exists).Keys, test.want)
+				testx.AssertEqual(t, cmd.keys, test.want)
 			}
 		})
 	}
@@ -56,35 +50,32 @@ func TestExistsExec(t *testing.T) {
 	_ = db.Str().Set("city", "paris")
 
 	tests := []struct {
-		name string
-		cmd  *key.Exists
-		res  any
-		out  string
+		cmd string
+		res any
+		out string
 	}{
 		{
-			name: "exists one",
-			cmd:  command.MustParse[*key.Exists]("exists name"),
-			res:  1,
-			out:  "1",
+			cmd: "exists name",
+			res: 1,
+			out: "1",
 		},
 		{
-			name: "exists all",
-			cmd:  command.MustParse[*key.Exists]("exists name age"),
-			res:  2,
-			out:  "2",
+			cmd: "exists name age",
+			res: 2,
+			out: "2",
 		},
 		{
-			name: "exists some",
-			cmd:  command.MustParse[*key.Exists]("exists name age street"),
-			res:  2,
-			out:  "2",
+			cmd: "exists name age street",
+			res: 2,
+			out: "2",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.cmd, func(t *testing.T) {
 			conn := redis.NewFakeConn()
-			res, err := test.cmd.Run(conn, red)
+			cmd := redis.MustParse(ParseExists, test.cmd)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.Out(), test.out)

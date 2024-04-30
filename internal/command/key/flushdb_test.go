@@ -1,40 +1,34 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestFlushDBParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		err  error
+		cmd string
+		err error
 	}{
 		{
-			name: "flushdb",
-			args: command.BuildArgs("flushdb"),
-			err:  nil,
+			cmd: "flushdb",
+			err: nil,
 		},
 		{
-			name: "flushdb name",
-			args: command.BuildArgs("flushdb", "name"),
-			err:  redis.ErrSyntaxError,
+			cmd: "flushdb name",
+			err: redis.ErrSyntaxError,
 		},
 		{
-			name: "flushdb 1",
-			args: command.BuildArgs("flushdb", "1"),
-			err:  redis.ErrSyntaxError,
+			cmd: "flushdb 1",
+			err: redis.ErrSyntaxError,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			_, err := redis.Parse(ParseFlushDB, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 		})
 	}
@@ -48,7 +42,7 @@ func TestFlushDBExec(t *testing.T) {
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
 
-		cmd := command.MustParse[*key.FlushDB]("flushdb")
+		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -63,7 +57,7 @@ func TestFlushDBExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*key.FlushDB]("flushdb")
+		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

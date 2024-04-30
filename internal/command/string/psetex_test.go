@@ -1,74 +1,73 @@
-package string_test
+package string
 
 import (
 	"testing"
 	"time"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestPSetEXParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want str.SetEX
+		cmd  string
+		want SetEX
 		err  error
 	}{
 		{
-			name: "psetex",
-			args: command.BuildArgs("psetex"),
-			want: str.SetEX{},
+			cmd:  "psetex",
+			want: SetEX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "psetex name",
-			args: command.BuildArgs("psetex", "name"),
-			want: str.SetEX{},
+			cmd:  "psetex name",
+			want: SetEX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "psetex name alice",
-			args: command.BuildArgs("psetex", "name", "alice"),
-			want: str.SetEX{},
+			cmd:  "psetex name alice",
+			want: SetEX{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "psetex name alice 60",
-			args: command.BuildArgs("psetex", "name", "alice", "60"),
-			want: str.SetEX{},
+			cmd:  "psetex name alice 60",
+			want: SetEX{},
 			err:  redis.ErrInvalidInt,
 		},
 		{
-			name: "psetex name 60 alice",
-			args: command.BuildArgs("psetex", "name", "60", "alice"),
-			want: str.SetEX{Key: "name", Value: []byte("alice"), TTL: 60 * time.Millisecond},
+			cmd:  "psetex name 60 alice",
+			want: SetEX{key: "name", value: []byte("alice"), ttl: 60 * time.Millisecond},
 			err:  nil,
 		},
 	}
 
+	parse := func(b redis.BaseCmd) (*SetEX, error) {
+		return ParseSetEX(b, 1)
+	}
+
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(parse, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*str.SetEX)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Value, test.want.Value)
-				testx.AssertEqual(t, cm.TTL, test.want.TTL)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.value, test.want.value)
+				testx.AssertEqual(t, cmd.ttl, test.want.ttl)
 			}
 		})
 	}
 }
 
 func TestPSetEXExec(t *testing.T) {
+	parse := func(b redis.BaseCmd) (*SetEX, error) {
+		return ParseSetEX(b, 1)
+	}
+
 	t.Run("create", func(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*str.SetEX]("psetex name 60000 alice")
+		cmd := redis.MustParse(parse, "psetex name 60000 alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -89,7 +88,7 @@ func TestPSetEXExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*str.SetEX]("psetex name 60000 bob")
+		cmd := redis.MustParse(parse, "psetex name 60000 bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -110,7 +109,7 @@ func TestPSetEXExec(t *testing.T) {
 
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
-		cmd := command.MustParse[*str.SetEX]("psetex name 10000 bob")
+		cmd := redis.MustParse(parse, "psetex name 10000 bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

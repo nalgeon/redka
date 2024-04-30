@@ -1,10 +1,8 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,38 +10,33 @@ import (
 
 func TestHValsParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		err  error
+		cmd string
+		key string
+		err error
 	}{
 		{
-			name: "hvals",
-			args: command.BuildArgs("hvals"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hvals",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hvals person",
-			args: command.BuildArgs("hvals", "person"),
-			key:  "person",
-			err:  nil,
+			cmd: "hvals person",
+			key: "person",
+			err: nil,
 		},
 		{
-			name: "hvals person name",
-			args: command.BuildArgs("hvals", "person", "name"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hvals person name",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHVals, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HVals)
-				testx.AssertEqual(t, cm.Key, test.key)
+				testx.AssertEqual(t, cmd.key, test.key)
 			}
 		})
 	}
@@ -57,7 +50,7 @@ func TestHValsExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HVals]("hvals person")
+		cmd := redis.MustParse(ParseHVals, "hvals person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -69,7 +62,7 @@ func TestHValsExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HVals]("hvals person")
+		cmd := redis.MustParse(ParseHVals, "hvals person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

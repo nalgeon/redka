@@ -10,8 +10,8 @@ import (
 // https://redis.io/commands/hget
 type HGet struct {
 	redis.BaseCmd
-	Key   string
-	Field string
+	key   string
+	field string
 }
 
 func ParseHGet(b redis.BaseCmd) (*HGet, error) {
@@ -19,13 +19,13 @@ func ParseHGet(b redis.BaseCmd) (*HGet, error) {
 	if len(cmd.Args()) != 2 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
-	cmd.Field = string(cmd.Args()[1])
+	cmd.key = string(cmd.Args()[0])
+	cmd.field = string(cmd.Args()[1])
 	return cmd, nil
 }
 
 func (cmd *HGet) Run(w redis.Writer, red redis.Redka) (any, error) {
-	val, err := red.Hash().Get(cmd.Key, cmd.Field)
+	val, err := red.Hash().Get(cmd.key, cmd.field)
 	if err == core.ErrNotFound {
 		w.WriteNull()
 		return val, nil

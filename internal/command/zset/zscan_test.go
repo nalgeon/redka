@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
@@ -13,8 +11,7 @@ import (
 
 func TestZScanParse(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   [][]byte
+		cmd    string
 		key    string
 		cursor int
 		match  string
@@ -22,8 +19,7 @@ func TestZScanParse(t *testing.T) {
 		err    error
 	}{
 		{
-			name:   "zscan",
-			args:   command.BuildArgs("zscan"),
+			cmd:    "zscan",
 			key:    "",
 			cursor: 0,
 			match:  "*",
@@ -31,8 +27,7 @@ func TestZScanParse(t *testing.T) {
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "zscan key",
-			args:   command.BuildArgs("zscan", "key"),
+			cmd:    "zscan key",
 			key:    "",
 			cursor: 0,
 			match:  "*",
@@ -40,8 +35,7 @@ func TestZScanParse(t *testing.T) {
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "zscan key 15",
-			args:   command.BuildArgs("zscan", "key", "15"),
+			cmd:    "zscan key 15",
 			key:    "key",
 			cursor: 15,
 			match:  "*",
@@ -49,8 +43,7 @@ func TestZScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "zscan key 15 match *",
-			args:   command.BuildArgs("zscan", "key", "15", "match", "*"),
+			cmd:    "zscan key 15 match *",
 			key:    "key",
 			cursor: 15,
 			match:  "*",
@@ -58,8 +51,7 @@ func TestZScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "zscan key 15 match * count 5",
-			args:   command.BuildArgs("zscan", "key", "15", "match", "*", "count", "5"),
+			cmd:    "zscan key 15 match * count 5",
 			key:    "key",
 			cursor: 15,
 			match:  "*",
@@ -67,8 +59,7 @@ func TestZScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "zscan key 15 count 5 match *",
-			args:   command.BuildArgs("zscan", "key", "15", "count", "5", "match", "*"),
+			cmd:    "zscan key 15 count 5 match *",
 			key:    "key",
 			cursor: 15,
 			match:  "*",
@@ -76,8 +67,7 @@ func TestZScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "zscan key 15 match m2* count 5",
-			args:   command.BuildArgs("zscan", "key", "15", "match", "m2*", "count", "5"),
+			cmd:    "zscan key 15 match m2* count 5",
 			key:    "key",
 			cursor: 15,
 			match:  "m2*",
@@ -85,8 +75,7 @@ func TestZScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "zscan key ten",
-			args:   command.BuildArgs("zscan", "key", "ten"),
+			cmd:    "zscan key ten",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -94,8 +83,7 @@ func TestZScanParse(t *testing.T) {
 			err:    redis.ErrInvalidInt,
 		},
 		{
-			name:   "zscan key 15 *",
-			args:   command.BuildArgs("zscan", "key", "15", "*"),
+			cmd:    "zscan key 15 *",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -103,8 +91,7 @@ func TestZScanParse(t *testing.T) {
 			err:    redis.ErrSyntaxError,
 		},
 		{
-			name:   "zscan key 15 * 5",
-			args:   command.BuildArgs("zscan", "key", "15", "*", "5"),
+			cmd:    "zscan key 15 * 5",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -114,15 +101,14 @@ func TestZScanParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZScan, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				scmd := cmd.(*zset.ZScan)
-				testx.AssertEqual(t, scmd.Key, test.key)
-				testx.AssertEqual(t, scmd.Cursor, test.cursor)
-				testx.AssertEqual(t, scmd.Match, test.match)
-				testx.AssertEqual(t, scmd.Count, test.count)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.cursor, test.cursor)
+				testx.AssertEqual(t, cmd.match, test.match)
+				testx.AssertEqual(t, cmd.count, test.count)
 			}
 		})
 	}
@@ -140,7 +126,7 @@ func TestZScanExec(t *testing.T) {
 
 	t.Run("zscan all", func(t *testing.T) {
 		{
-			cmd := command.MustParse[*zset.ZScan]("zscan key 0")
+			cmd := redis.MustParse(ParseZScan, "zscan key 0")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -156,7 +142,7 @@ func TestZScanExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "2,5,10,m11,11,m12,12,m21,21,m22,22,m31,31")
 		}
 		{
-			cmd := command.MustParse[*zset.ZScan]("zscan key 5")
+			cmd := redis.MustParse(ParseZScan, "zscan key 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -169,7 +155,7 @@ func TestZScanExec(t *testing.T) {
 		}
 	})
 	t.Run("zscan pattern", func(t *testing.T) {
-		cmd := command.MustParse[*zset.ZScan]("zscan key 0 match m2*")
+		cmd := redis.MustParse(ParseZScan, "zscan key 0 match m2*")
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
@@ -187,7 +173,7 @@ func TestZScanExec(t *testing.T) {
 	t.Run("zscan count", func(t *testing.T) {
 		{
 			// page 1
-			cmd := command.MustParse[*zset.ZScan]("zscan key 0 match * count 2")
+			cmd := redis.MustParse(ParseZScan, "zscan key 0 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -204,7 +190,7 @@ func TestZScanExec(t *testing.T) {
 		}
 		{
 			// page 2
-			cmd := command.MustParse[*zset.ZScan]("zscan key 2 match * count 2")
+			cmd := redis.MustParse(ParseZScan, "zscan key 2 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -221,7 +207,7 @@ func TestZScanExec(t *testing.T) {
 		}
 		{
 			// page 3
-			cmd := command.MustParse[*zset.ZScan]("zscan key 4 match * count 2")
+			cmd := redis.MustParse(ParseZScan, "zscan key 4 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -236,7 +222,7 @@ func TestZScanExec(t *testing.T) {
 		}
 		{
 			// no more pages
-			cmd := command.MustParse[*zset.ZScan]("zscan key 5 match * count 2")
+			cmd := redis.MustParse(ParseZScan, "zscan key 5 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)

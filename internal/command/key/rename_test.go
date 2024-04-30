@@ -1,10 +1,8 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,29 +10,25 @@ import (
 
 func TestRenameParse(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   [][]byte
+		cmd    string
 		key    string
 		newKey string
 		err    error
 	}{
 		{
-			name:   "rename",
-			args:   command.BuildArgs("rename"),
+			cmd:    "rename",
 			key:    "",
 			newKey: "",
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "rename name",
-			args:   command.BuildArgs("rename", "name"),
+			cmd:    "rename name",
 			key:    "",
 			newKey: "",
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "rename name title",
-			args:   command.BuildArgs("rename", "name", "title"),
+			cmd:    "rename name title",
 			key:    "name",
 			newKey: "title",
 			err:    nil,
@@ -42,12 +36,12 @@ func TestRenameParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseRename, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Rename).Key, test.key)
-				testx.AssertEqual(t, cmd.(*key.Rename).NewKey, test.newKey)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.newKey, test.newKey)
 			}
 		})
 	}
@@ -60,7 +54,7 @@ func TestRenameExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Rename]("rename name title")
+		cmd := redis.MustParse(ParseRename, "rename name title")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -80,7 +74,7 @@ func TestRenameExec(t *testing.T) {
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("title", "bob")
 
-		cmd := command.MustParse[*key.Rename]("rename name title")
+		cmd := redis.MustParse(ParseRename, "rename name title")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -101,7 +95,7 @@ func TestRenameExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Rename]("rename name name")
+		cmd := redis.MustParse(ParseRename, "rename name name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -120,7 +114,7 @@ func TestRenameExec(t *testing.T) {
 
 		_ = db.Str().Set("title", "bob")
 
-		cmd := command.MustParse[*key.Rename]("rename name title")
+		cmd := redis.MustParse(ParseRename, "rename name title")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertEqual(t, err, core.ErrNotFound)

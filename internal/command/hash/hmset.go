@@ -10,15 +10,15 @@ import (
 // https://redis.io/commands/hmset
 type HMSet struct {
 	redis.BaseCmd
-	Key   string
-	Items map[string]any
+	key   string
+	items map[string]any
 }
 
 func ParseHMSet(b redis.BaseCmd) (*HMSet, error) {
 	cmd := &HMSet{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.AnyMap(&cmd.Items),
+		parser.String(&cmd.key),
+		parser.AnyMap(&cmd.items),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func ParseHMSet(b redis.BaseCmd) (*HMSet, error) {
 }
 
 func (cmd *HMSet) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.Hash().SetMany(cmd.Key, cmd.Items)
+	count, err := red.Hash().SetMany(cmd.key, cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

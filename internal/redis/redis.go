@@ -102,7 +102,35 @@ func (cmd BaseCmd) String() string {
 	return b.String()
 }
 
+// MustParse parses a text representation of a command
+// into a command and panics if an error occurs.
+func MustParse[T Cmd](parse func(BaseCmd) (T, error), s string) T {
+	cmd, err := Parse(parse, s)
+	if err != nil {
+		panic(err)
+	}
+	return cmd
+}
+
+// Parse parses a text representation of a command into a command.
+func Parse[T Cmd](parse func(BaseCmd) (T, error), s string) (T, error) {
+	parts := strings.Split(s, " ")
+	args := buildArgs(parts[0], parts[1:]...)
+	b := NewBaseCmd(args)
+	return parse(b)
+}
+
 // WriteFloat writes a float64 value to the writer.
 func WriteFloat(w Writer, f float64) {
 	w.WriteBulkString(strconv.FormatFloat(f, 'f', -1, 64))
+}
+
+// buildArgs builds a list of arguments for a command.
+func buildArgs(name string, args ...string) [][]byte {
+	rargs := make([][]byte, len(args)+1)
+	rargs[0] = []byte(name)
+	for i, arg := range args {
+		rargs[i+1] = []byte(arg)
+	}
+	return rargs
 }

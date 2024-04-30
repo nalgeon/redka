@@ -14,14 +14,14 @@ import (
 // https://redis.io/commands/set
 type Set struct {
 	redis.BaseCmd
-	Key     string
-	Value   []byte
-	IfNX    bool
-	IfXX    bool
-	Get     bool
-	TTL     time.Duration
-	At      time.Time
-	KeepTTL bool
+	key     string
+	value   []byte
+	ifNX    bool
+	ifXX    bool
+	get     bool
+	ttl     time.Duration
+	at      time.Time
+	keepTTL bool
 }
 
 func ParseSet(b redis.BaseCmd) (*Set, error) {
@@ -30,19 +30,19 @@ func ParseSet(b redis.BaseCmd) (*Set, error) {
 	// Parse the command arguments.
 	var ttlSec, ttlMs, atSec, atMs int
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Bytes(&cmd.Value),
+		parser.String(&cmd.key),
+		parser.Bytes(&cmd.value),
 		parser.OneOf(
-			parser.Flag("nx", &cmd.IfNX),
-			parser.Flag("xx", &cmd.IfXX),
+			parser.Flag("nx", &cmd.ifNX),
+			parser.Flag("xx", &cmd.ifXX),
 		),
-		parser.Flag("get", &cmd.Get),
+		parser.Flag("get", &cmd.get),
 		parser.OneOf(
 			parser.Named("ex", parser.Int(&ttlSec)),
 			parser.Named("px", parser.Int(&ttlMs)),
 			parser.Named("exat", parser.Int(&atSec)),
 			parser.Named("pxat", parser.Int(&atMs)),
-			parser.Flag("keepttl", &cmd.KeepTTL),
+			parser.Flag("keepttl", &cmd.keepTTL),
 		),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
@@ -51,15 +51,15 @@ func ParseSet(b redis.BaseCmd) (*Set, error) {
 
 	// Set the expiration time.
 	if ttlSec > 0 {
-		cmd.TTL = time.Duration(ttlSec) * time.Second
+		cmd.ttl = time.Duration(ttlSec) * time.Second
 	} else if ttlMs > 0 {
-		cmd.TTL = time.Duration(ttlMs) * time.Millisecond
+		cmd.ttl = time.Duration(ttlMs) * time.Millisecond
 	} else if atSec > 0 {
-		cmd.At = time.Unix(int64(atSec), 0)
+		cmd.at = time.Unix(int64(atSec), 0)
 	} else if atMs > 0 {
-		cmd.At = time.Unix(0, int64(atMs)*int64(time.Millisecond))
+		cmd.at = time.Unix(0, int64(atMs)*int64(time.Millisecond))
 	}
-	if cmd.TTL < 0 {
+	if cmd.ttl < 0 {
 		return cmd, redis.ErrInvalidExpireTime
 	}
 
@@ -67,9 +67,9 @@ func ParseSet(b redis.BaseCmd) (*Set, error) {
 }
 
 func (cmd *Set) Run(w redis.Writer, red redis.Redka) (any, error) {
-	if !cmd.IfNX && !cmd.IfXX && !cmd.Get && !cmd.KeepTTL && cmd.At.IsZero() {
+	if !cmd.ifNX && !cmd.ifXX && !cmd.get && !cmd.keepTTL && cmd.at.IsZero() {
 		// Simple SET without additional options (except ttl).
-		err := red.Str().SetExpires(cmd.Key, cmd.Value, cmd.TTL)
+		err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 		if err != nil {
 			w.WriteError(cmd.Error(err))
 			return nil, err
@@ -79,26 +79,26 @@ func (cmd *Set) Run(w redis.Writer, red redis.Redka) (any, error) {
 	}
 
 	// SET with additional options.
-	op := red.Str().SetWith(cmd.Key, cmd.Value)
-	if cmd.IfXX {
+	op := red.Str().SetWith(cmd.key, cmd.value)
+	if cmd.ifXX {
 		op = op.IfExists()
-	} else if cmd.IfNX {
+	} else if cmd.ifNX {
 		op = op.IfNotExists()
 	}
-	if cmd.TTL > 0 {
-		op = op.TTL(cmd.TTL)
-	} else if !cmd.At.IsZero() {
-		op = op.At(cmd.At)
-	} else if cmd.KeepTTL {
+	if cmd.ttl > 0 {
+		op = op.TTL(cmd.ttl)
+	} else if !cmd.at.IsZero() {
+		op = op.At(cmd.at)
+	} else if cmd.keepTTL {
 		op = op.KeepTTL()
 	}
 	out, err := op.Run()
 
 	// Determine the output status.
 	var ok bool
-	if cmd.IfXX {
+	if cmd.ifXX {
 		ok = out.Updated
-	} else if cmd.IfNX {
+	} else if cmd.ifNX {
 		ok = out.Created
 	} else {
 		ok = err == nil
@@ -110,7 +110,7 @@ func (cmd *Set) Run(w redis.Writer, red redis.Redka) (any, error) {
 		return nil, err
 	}
 
-	if cmd.Get {
+	if cmd.get {
 		// GET given: The key didn't exist before the SET.
 		if !out.Prev.Exists() {
 			w.WriteNull()

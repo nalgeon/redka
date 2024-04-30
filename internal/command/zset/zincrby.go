@@ -10,17 +10,17 @@ import (
 // https://redis.io/commands/zincrby
 type ZIncrBy struct {
 	redis.BaseCmd
-	Key    string
-	Delta  float64
-	Member string
+	key    string
+	delta  float64
+	member string
 }
 
 func ParseZIncrBy(b redis.BaseCmd) (*ZIncrBy, error) {
 	cmd := &ZIncrBy{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Float(&cmd.Delta),
-		parser.String(&cmd.Member),
+		parser.String(&cmd.key),
+		parser.Float(&cmd.delta),
+		parser.String(&cmd.member),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func ParseZIncrBy(b redis.BaseCmd) (*ZIncrBy, error) {
 }
 
 func (cmd *ZIncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
-	score, err := red.ZSet().Incr(cmd.Key, cmd.Member, cmd.Delta)
+	score, err := red.ZSet().Incr(cmd.key, cmd.member, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

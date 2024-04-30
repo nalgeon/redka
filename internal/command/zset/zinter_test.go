@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,82 +10,70 @@ import (
 
 func TestZInterParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZInter
+		cmd  string
+		want ZInter
 		err  error
 	}{
 		{
-			name: "zinter",
-			args: command.BuildArgs("zinter"),
-			want: zset.ZInter{},
+			cmd:  "zinter",
+			want: ZInter{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zinter 1",
-			args: command.BuildArgs("zinter", "1"),
-			want: zset.ZInter{},
+			cmd:  "zinter 1",
+			want: ZInter{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zinter 1 key",
-			args: command.BuildArgs("zinter", "1", "key"),
-			want: zset.ZInter{Keys: []string{"key"}},
+			cmd:  "zinter 1 key",
+			want: ZInter{keys: []string{"key"}},
 			err:  nil,
 		},
 		{
-			name: "zinter 2 k1 k2",
-			args: command.BuildArgs("zinter", "2", "k1", "k2"),
-			want: zset.ZInter{Keys: []string{"k1", "k2"}},
+			cmd:  "zinter 2 k1 k2",
+			want: ZInter{keys: []string{"k1", "k2"}},
 			err:  nil,
 		},
 		{
-			name: "zinter 1 k1 k2",
-			args: command.BuildArgs("zinter", "1", "k1", "k2"),
-			want: zset.ZInter{},
+			cmd:  "zinter 1 k1 k2",
+			want: ZInter{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zinter 2 k1 k2 min",
-			args: command.BuildArgs("zinter", "2", "k1", "k2", "min"),
-			want: zset.ZInter{},
+			cmd:  "zinter 2 k1 k2 min",
+			want: ZInter{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zinter 2 k1 k2 aggregate min",
-			args: command.BuildArgs("zinter", "2", "k1", "k2", "aggregate", "min"),
-			want: zset.ZInter{Keys: []string{"k1", "k2"}, Aggregate: "min"},
+			cmd:  "zinter 2 k1 k2 aggregate min",
+			want: ZInter{keys: []string{"k1", "k2"}, aggregate: "min"},
 			err:  nil,
 		},
 		{
-			name: "zinter 2 k1 k2 aggregate avg",
-			args: command.BuildArgs("zinter", "2", "k1", "k2", "aggregate", "avg"),
-			want: zset.ZInter{},
+			cmd:  "zinter 2 k1 k2 aggregate avg",
+			want: ZInter{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zinter 2 k1 k2 withscores",
-			args: command.BuildArgs("zinter", "2", "k1", "k2", "withscores"),
-			want: zset.ZInter{Keys: []string{"k1", "k2"}, WithScores: true},
+			cmd:  "zinter 2 k1 k2 withscores",
+			want: ZInter{keys: []string{"k1", "k2"}, withScores: true},
 			err:  nil,
 		},
 		{
-			name: "zinter 3 k1 k2 k3 withscores aggregate sum",
-			args: command.BuildArgs("zinter", "3", "k1", "k2", "k3", "withscores", "aggregate", "sum"),
-			want: zset.ZInter{Keys: []string{"k1", "k2", "k3"}, Aggregate: "sum", WithScores: true},
+			cmd:  "zinter 3 k1 k2 k3 withscores aggregate sum",
+			want: ZInter{keys: []string{"k1", "k2", "k3"}, aggregate: "sum", withScores: true},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZInter, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZInter)
-				testx.AssertEqual(t, cm.Keys, test.want.Keys)
-				testx.AssertEqual(t, cm.Aggregate, test.want.Aggregate)
-				testx.AssertEqual(t, cm.WithScores, test.want.WithScores)
+				testx.AssertEqual(t, cmd.keys, test.want.keys)
+				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
+				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
 			}
 		})
 	}
@@ -114,7 +100,7 @@ func TestZInterExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -141,7 +127,7 @@ func TestZInterExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 3 key1 key2 key3 withscores")
+		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3 withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -168,7 +154,7 @@ func TestZInterExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 3 key1 key2 key3 aggregate min withscores")
+		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3 aggregate min withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -184,7 +170,7 @@ func TestZInterExec(t *testing.T) {
 			"thr": 3,
 		})
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 1 key1")
+		cmd := redis.MustParse(ParseZInter, "zinter 1 key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -198,7 +184,7 @@ func TestZInterExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key2", "two", 1)
 		_, _ = db.ZSet().Add("key3", "thr", 1)
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -209,7 +195,7 @@ func TestZInterExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 1 key")
+		cmd := redis.MustParse(ParseZInter, "zinter 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -221,7 +207,7 @@ func TestZInterExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZInter]("zinter 1 key")
+		cmd := redis.MustParse(ParseZInter, "zinter 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

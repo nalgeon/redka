@@ -1,49 +1,42 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZScoreParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZScore
+		cmd  string
+		want ZScore
 		err  error
 	}{
 		{
-			name: "zscore",
-			args: command.BuildArgs("zscore"),
-			want: zset.ZScore{},
+			cmd:  "zscore",
+			want: ZScore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zscore key",
-			args: command.BuildArgs("zscore", "key"),
-			want: zset.ZScore{},
+			cmd:  "zscore key",
+			want: ZScore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zscore key member",
-			args: command.BuildArgs("zscore", "key", "member"),
-			want: zset.ZScore{Key: "key", Member: "member"},
+			cmd:  "zscore key member",
+			want: ZScore{key: "key", member: "member"},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZScore, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZScore)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Member, test.want.Member)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.member, test.want.member)
 			}
 		})
 	}
@@ -56,7 +49,7 @@ func TestZScoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Add("key", "two", 22)
 
-		cmd := command.MustParse[*zset.ZScore]("zscore key two")
+		cmd := redis.MustParse(ParseZScore, "zscore key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -68,7 +61,7 @@ func TestZScoreExec(t *testing.T) {
 		defer db.Close()
 		_, _ = db.ZSet().Add("key", "one", 11)
 
-		cmd := command.MustParse[*zset.ZScore]("zscore key two")
+		cmd := redis.MustParse(ParseZScore, "zscore key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -79,7 +72,7 @@ func TestZScoreExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZScore]("zscore key two")
+		cmd := redis.MustParse(ParseZScore, "zscore key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -91,7 +84,7 @@ func TestZScoreExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZScore]("zscore key two")
+		cmd := redis.MustParse(ParseZScore, "zscore key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

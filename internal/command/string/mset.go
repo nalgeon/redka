@@ -10,13 +10,13 @@ import (
 // https://redis.io/commands/mset
 type MSet struct {
 	redis.BaseCmd
-	Items map[string]any
+	items map[string]any
 }
 
 func ParseMSet(b redis.BaseCmd) (*MSet, error) {
 	cmd := &MSet{BaseCmd: b}
 	err := parser.New(
-		parser.AnyMap(&cmd.Items),
+		parser.AnyMap(&cmd.items),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func ParseMSet(b redis.BaseCmd) (*MSet, error) {
 }
 
 func (cmd *MSet) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Str().SetMany(cmd.Items)
+	err := red.Str().SetMany(cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

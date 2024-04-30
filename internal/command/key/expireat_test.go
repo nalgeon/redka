@@ -1,74 +1,73 @@
-package key_test
+package key
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestExpireAtParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		at   time.Time
-		err  error
+		cmd string
+		key string
+		at  time.Time
+		err error
 	}{
 		{
-			name: "expireat",
-			args: command.BuildArgs("expireat"),
-			key:  "",
-			at:   time.Time{},
-			err:  redis.ErrInvalidArgNum,
+			cmd: "expireat",
+			key: "",
+			at:  time.Time{},
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "expireat name",
-			args: command.BuildArgs("expire", "name"),
-			key:  "",
-			at:   time.Time{},
-			err:  redis.ErrInvalidArgNum,
+			cmd: "expireat name",
+			key: "",
+			at:  time.Time{},
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "expireat name 60",
-			args: command.BuildArgs("expireat", "name", fmt.Sprintf("%d", time.Now().Add(60*time.Second).Unix())),
-			key:  "name",
-			at:   time.Now().Add(60 * time.Second),
-			err:  nil,
+			cmd: "expireat name 60",
+			key: "name",
+			at:  time.UnixMilli(60 * 1000),
+			err: nil,
 		},
 		{
-			name: "expireat name age",
-			args: command.BuildArgs("expireat", "name", "age"),
-			key:  "",
-			at:   time.Time{},
-			err:  redis.ErrInvalidInt,
+			cmd: "expireat name age",
+			key: "",
+			at:  time.Time{},
+			err: redis.ErrInvalidInt,
 		},
 		{
-			name: "expireat name 60 age 60",
-			args: command.BuildArgs("expireat", "name", "60", "age", "60"),
-			key:  "",
-			at:   time.Time{},
-			err:  redis.ErrSyntaxError,
+			cmd: "expireat name 60 age 60",
+			key: "",
+			at:  time.Time{},
+			err: redis.ErrSyntaxError,
 		},
 	}
 
+	parse := func(b redis.BaseCmd) (*ExpireAt, error) {
+		return ParseExpireAt(b, 1000)
+	}
+
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(parse, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.ExpireAt).Key, test.key)
-				testx.AssertEqual(t, cmd.(*key.ExpireAt).At.Unix(), test.at.Unix())
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.at.Unix(), test.at.Unix())
 			}
 		})
 	}
 }
 
 func TestExpireAtExec(t *testing.T) {
+	parse := func(b redis.BaseCmd) (*ExpireAt, error) {
+		return ParseExpireAt(b, 1000)
+	}
 	t.Run("create expireat", func(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
@@ -76,7 +75,7 @@ func TestExpireAtExec(t *testing.T) {
 		_ = db.Str().Set("name", "alice")
 
 		expireAt := time.Now().Add(60 * time.Second)
-		cmd := command.MustParse[*key.ExpireAt](fmt.Sprintf("expireat name %d", expireAt.Unix()))
+		cmd := redis.MustParse(parse, fmt.Sprintf("expireat name %d", expireAt.Unix()))
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -94,14 +93,14 @@ func TestExpireAtExec(t *testing.T) {
 		_ = db.Str().Set("name", "alice")
 
 		expireAt := time.Now()
-		cmd := command.MustParse[*key.ExpireAt](fmt.Sprintf("expireat name %d", expireAt.Add(60*time.Second).Unix()))
+		cmd := redis.MustParse(parse, fmt.Sprintf("expireat name %d", expireAt.Add(60*time.Second).Unix()))
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, res, true)
 		testx.AssertEqual(t, conn.Out(), "1")
 
-		cmd = command.MustParse[*key.ExpireAt](fmt.Sprintf("expireat name %d", expireAt.Add(20*time.Second).Unix()))
+		cmd = redis.MustParse(parse, fmt.Sprintf("expireat name %d", expireAt.Add(20*time.Second).Unix()))
 		conn = redis.NewFakeConn()
 		res, err = cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -118,7 +117,7 @@ func TestExpireAtExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.ExpireAt]("expireat name 0")
+		cmd := redis.MustParse(parse, "expireat name 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -135,7 +134,7 @@ func TestExpireAtExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.ExpireAt]("expireat name -10")
+		cmd := redis.MustParse(parse, "expireat name -10")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -152,7 +151,7 @@ func TestExpireAtExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.ExpireAt]("expireat age 1700000000")
+		cmd := redis.MustParse(parse, "expireat age 1700000000")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

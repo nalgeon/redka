@@ -1,10 +1,8 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rhash"
@@ -13,8 +11,7 @@ import (
 
 func TestHScanParse(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   [][]byte
+		cmd    string
 		key    string
 		cursor int
 		match  string
@@ -22,8 +19,7 @@ func TestHScanParse(t *testing.T) {
 		err    error
 	}{
 		{
-			name:   "hscan",
-			args:   command.BuildArgs("hscan"),
+			cmd:    "hscan",
 			key:    "",
 			cursor: 0,
 			match:  "*",
@@ -31,8 +27,7 @@ func TestHScanParse(t *testing.T) {
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "hscan person",
-			args:   command.BuildArgs("hscan", "person"),
+			cmd:    "hscan person",
 			key:    "",
 			cursor: 0,
 			match:  "*",
@@ -40,8 +35,7 @@ func TestHScanParse(t *testing.T) {
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "hscan person 15",
-			args:   command.BuildArgs("hscan", "person", "15"),
+			cmd:    "hscan person 15",
 			key:    "person",
 			cursor: 15,
 			match:  "*",
@@ -49,8 +43,7 @@ func TestHScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "hscan person 15 match *",
-			args:   command.BuildArgs("hscan", "person", "15", "match", "*"),
+			cmd:    "hscan person 15 match *",
 			key:    "person",
 			cursor: 15,
 			match:  "*",
@@ -58,8 +51,7 @@ func TestHScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "hscan person 15 match * count 5",
-			args:   command.BuildArgs("hscan", "person", "15", "match", "*", "count", "5"),
+			cmd:    "hscan person 15 match * count 5",
 			key:    "person",
 			cursor: 15,
 			match:  "*",
@@ -67,8 +59,7 @@ func TestHScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "hscan person 15 count 5 match *",
-			args:   command.BuildArgs("hscan", "person", "15", "count", "5", "match", "*"),
+			cmd:    "hscan person 15 count 5 match *",
 			key:    "person",
 			cursor: 15,
 			match:  "*",
@@ -76,8 +67,7 @@ func TestHScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "hscan person 15 match k2* count 5",
-			args:   command.BuildArgs("hscan", "person", "15", "match", "k2*", "count", "5"),
+			cmd:    "hscan person 15 match k2* count 5",
 			key:    "person",
 			cursor: 15,
 			match:  "k2*",
@@ -85,8 +75,7 @@ func TestHScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "hscan person ten",
-			args:   command.BuildArgs("hscan", "person", "ten"),
+			cmd:    "hscan person ten",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -94,8 +83,7 @@ func TestHScanParse(t *testing.T) {
 			err:    redis.ErrInvalidInt,
 		},
 		{
-			name:   "hscan person 15 *",
-			args:   command.BuildArgs("hscan", "person", "15", "*"),
+			cmd:    "hscan person 15 *",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -103,8 +91,7 @@ func TestHScanParse(t *testing.T) {
 			err:    redis.ErrSyntaxError,
 		},
 		{
-			name:   "hscan person 15 * 5",
-			args:   command.BuildArgs("hscan", "person", "15", "*", "5"),
+			cmd:    "hscan person 15 * 5",
 			key:    "",
 			cursor: 0,
 			match:  "",
@@ -114,15 +101,14 @@ func TestHScanParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHScan, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				scmd := cmd.(*hash.HScan)
-				testx.AssertEqual(t, scmd.Key, test.key)
-				testx.AssertEqual(t, scmd.Cursor, test.cursor)
-				testx.AssertEqual(t, scmd.Match, test.match)
-				testx.AssertEqual(t, scmd.Count, test.count)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.cursor, test.cursor)
+				testx.AssertEqual(t, cmd.match, test.match)
+				testx.AssertEqual(t, cmd.count, test.count)
 			}
 		})
 	}
@@ -140,7 +126,7 @@ func TestHScanExec(t *testing.T) {
 
 	t.Run("hscan all", func(t *testing.T) {
 		{
-			cmd := command.MustParse[*hash.HScan]("hscan key 0")
+			cmd := redis.MustParse(ParseHScan, "hscan key 0")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -156,7 +142,7 @@ func TestHScanExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "2,5,10,f11,11,f12,12,f21,21,f22,22,f31,31")
 		}
 		{
-			cmd := command.MustParse[*hash.HScan]("hscan key 5")
+			cmd := redis.MustParse(ParseHScan, "hscan key 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -170,7 +156,7 @@ func TestHScanExec(t *testing.T) {
 	})
 
 	t.Run("hscan pattern", func(t *testing.T) {
-		cmd := command.MustParse[*hash.HScan]("hscan key 0 match f2*")
+		cmd := redis.MustParse(ParseHScan, "hscan key 0 match f2*")
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
@@ -189,7 +175,7 @@ func TestHScanExec(t *testing.T) {
 	t.Run("hscan count", func(t *testing.T) {
 		{
 			// page 1
-			cmd := command.MustParse[*hash.HScan]("hscan key 0 match * count 2")
+			cmd := redis.MustParse(ParseHScan, "hscan key 0 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -206,7 +192,7 @@ func TestHScanExec(t *testing.T) {
 		}
 		{
 			// page 2
-			cmd := command.MustParse[*hash.HScan]("hscan key 2 match * count 2")
+			cmd := redis.MustParse(ParseHScan, "hscan key 2 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -223,7 +209,7 @@ func TestHScanExec(t *testing.T) {
 		}
 		{
 			// page 3
-			cmd := command.MustParse[*hash.HScan]("hscan key 4 match * count 2")
+			cmd := redis.MustParse(ParseHScan, "hscan key 4 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -238,7 +224,7 @@ func TestHScanExec(t *testing.T) {
 		}
 		{
 			// no more pages
-			cmd := command.MustParse[*hash.HScan]("hscan key 5 match * count 2")
+			cmd := redis.MustParse(ParseHScan, "hscan key 5 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)

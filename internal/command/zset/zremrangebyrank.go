@@ -10,17 +10,17 @@ import (
 // https://redis.io/commands/zremrangebyrank
 type ZRemRangeByRank struct {
 	redis.BaseCmd
-	Key   string
-	Start int
-	Stop  int
+	key   string
+	start int
+	stop  int
 }
 
 func ParseZRemRangeByRank(b redis.BaseCmd) (*ZRemRangeByRank, error) {
 	cmd := &ZRemRangeByRank{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Int(&cmd.Start),
-		parser.Int(&cmd.Stop),
+		parser.String(&cmd.key),
+		parser.Int(&cmd.start),
+		parser.Int(&cmd.stop),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func ParseZRemRangeByRank(b redis.BaseCmd) (*ZRemRangeByRank, error) {
 }
 
 func (cmd *ZRemRangeByRank) Run(w redis.Writer, red redis.Redka) (any, error) {
-	n, err := red.ZSet().DeleteWith(cmd.Key).ByRank(cmd.Start, cmd.Stop).Run()
+	n, err := red.ZSet().DeleteWith(cmd.key).ByRank(cmd.start, cmd.stop).Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

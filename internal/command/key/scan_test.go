@@ -1,10 +1,8 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,88 +10,77 @@ import (
 
 func TestScanParse(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   [][]byte
+		cmd    string
 		cursor int
 		match  string
 		count  int
 		err    error
 	}{
 		{
-			name:   "scan",
-			args:   command.BuildArgs("scan"),
+			cmd:    "scan",
 			cursor: 0,
 			match:  "*",
 			count:  0,
 			err:    redis.ErrInvalidArgNum,
 		},
 		{
-			name:   "scan 15",
-			args:   command.BuildArgs("scan", "15"),
+			cmd:    "scan 15",
 			cursor: 15,
 			match:  "*",
 			count:  0,
 			err:    nil,
 		},
 		{
-			name:   "scan 15 match *",
-			args:   command.BuildArgs("scan", "15", "match", "*"),
+			cmd:    "scan 15 match *",
 			cursor: 15,
 			match:  "*",
 			count:  0,
 			err:    nil,
 		},
 		{
-			name:   "scan 15 match * count 5",
-			args:   command.BuildArgs("scan", "15", "match", "*", "count", "5"),
+			cmd:    "scan 15 match * count 5",
 			cursor: 15,
 			match:  "*",
 			count:  5,
 			err:    nil,
 		},
 		{
-			name:   "scan 15 match * count ok",
-			args:   command.BuildArgs("scan", "15", "match", "*", "count", "ok"),
+			cmd:    "scan 15 match * count ok",
 			cursor: 15,
 			match:  "*",
 			count:  0,
 			err:    redis.ErrInvalidInt,
 		},
 		{
-			name:   "scan 15 count 5 match *",
-			args:   command.BuildArgs("scan", "15", "count", "5", "match", "*"),
+			cmd:    "scan 15 count 5 match *",
 			cursor: 15,
 			match:  "*",
 			count:  5,
 			err:    nil,
 		},
 		{
-			name:   "scan 15 match k2* count 5",
-			args:   command.BuildArgs("scan", "15", "match", "k2*", "count", "5"),
+			cmd:    "scan 15 match k2* count 5",
 			cursor: 15,
 			match:  "k2*",
 			count:  5,
 			err:    nil,
 		},
 		{
-			name:   "scan ten",
-			args:   command.BuildArgs("scan", "ten"),
+			cmd:    "scan ten",
 			cursor: 0,
 			match:  "",
 			count:  0,
 			err:    redis.ErrInvalidInt,
 		},
 		{
-			name:   "scan 15 *",
-			args:   command.BuildArgs("scan", "15", "*"),
+			cmd:    "scan 15 *",
 			cursor: 0,
 			match:  "",
 			count:  0,
 			err:    redis.ErrSyntaxError,
 		},
 		{
-			name:   "scan 15 * 5",
-			args:   command.BuildArgs("scan", "15", "*", "5"),
+			cmd:    "scan 15 * 5",
 			cursor: 0,
 			match:  "",
 			count:  0,
@@ -102,14 +89,13 @@ func TestScanParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseScan, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				scmd := cmd.(*key.Scan)
-				testx.AssertEqual(t, scmd.Cursor, test.cursor)
-				testx.AssertEqual(t, scmd.Match, test.match)
-				testx.AssertEqual(t, scmd.Count, test.count)
+				testx.AssertEqual(t, cmd.cursor, test.cursor)
+				testx.AssertEqual(t, cmd.match, test.match)
+				testx.AssertEqual(t, cmd.count, test.count)
 			}
 		})
 	}
@@ -127,7 +113,7 @@ func TestScanExec(t *testing.T) {
 
 	t.Run("scan all", func(t *testing.T) {
 		{
-			cmd := command.MustParse[*key.Scan]("scan 0")
+			cmd := redis.MustParse(ParseScan, "scan 0")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -141,7 +127,7 @@ func TestScanExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "2,5,5,k11,k12,k21,k22,k31")
 		}
 		{
-			cmd := command.MustParse[*key.Scan]("scan 5")
+			cmd := redis.MustParse(ParseScan, "scan 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -155,7 +141,7 @@ func TestScanExec(t *testing.T) {
 	})
 
 	t.Run("scan pattern", func(t *testing.T) {
-		cmd := command.MustParse[*key.Scan]("scan 0 match k2*")
+		cmd := redis.MustParse(ParseScan, "scan 0 match k2*")
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
@@ -172,7 +158,7 @@ func TestScanExec(t *testing.T) {
 	t.Run("scan count", func(t *testing.T) {
 		{
 			// page 1
-			cmd := command.MustParse[*key.Scan]("scan 0 match * count 2")
+			cmd := redis.MustParse(ParseScan, "scan 0 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -187,7 +173,7 @@ func TestScanExec(t *testing.T) {
 		}
 		{
 			// page 2
-			cmd := command.MustParse[*key.Scan]("scan 2 match * count 2")
+			cmd := redis.MustParse(ParseScan, "scan 2 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -202,7 +188,7 @@ func TestScanExec(t *testing.T) {
 		}
 		{
 			// page 3
-			cmd := command.MustParse[*key.Scan]("scan 4 match * count 2")
+			cmd := redis.MustParse(ParseScan, "scan 4 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -216,7 +202,7 @@ func TestScanExec(t *testing.T) {
 		}
 		{
 			// no more pages
-			cmd := command.MustParse[*key.Scan]("scan 5 match * count 2")
+			cmd := redis.MustParse(ParseScan, "scan 5 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)

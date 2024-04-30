@@ -13,8 +13,8 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/decr
 type Incr struct {
 	redis.BaseCmd
-	Key   string
-	Delta int
+	key   string
+	delta int
 }
 
 func ParseIncr(b redis.BaseCmd, sign int) (*Incr, error) {
@@ -22,13 +22,13 @@ func ParseIncr(b redis.BaseCmd, sign int) (*Incr, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
-	cmd.Delta = sign
+	cmd.key = string(cmd.Args()[0])
+	cmd.delta = sign
 	return cmd, nil
 }
 
 func (cmd *Incr) Run(w redis.Writer, red redis.Redka) (any, error) {
-	val, err := red.Str().Incr(cmd.Key, cmd.Delta)
+	val, err := red.Str().Incr(cmd.key, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

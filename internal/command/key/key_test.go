@@ -1,4 +1,4 @@
-package key_test
+package key
 
 import (
 	"testing"

@@ -1,55 +1,46 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHMSetParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want hash.HMSet
+		cmd  string
+		want HMSet
 		err  error
 	}{
 		{
-			name: "hmset",
-			args: command.BuildArgs("hmset"),
-			want: hash.HMSet{},
+			cmd:  "hmset",
+			want: HMSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hmset person",
-			args: command.BuildArgs("hmset", "person"),
-			want: hash.HMSet{},
+			cmd:  "hmset person",
+			want: HMSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hmset person name",
-			args: command.BuildArgs("hmset", "person", "name"),
-			want: hash.HMSet{},
+			cmd:  "hmset person name",
+			want: HMSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hmset person name alice",
-			args: command.BuildArgs("hmset", "person", "name", "alice"),
-			want: hash.HMSet{Key: "person", Items: map[string]any{"name": []byte("alice")}},
+			cmd:  "hmset person name alice",
+			want: HMSet{key: "person", items: map[string]any{"name": []byte("alice")}},
 			err:  nil,
 		},
 		{
-			name: "hmset person name alice age",
-			args: command.BuildArgs("hmset", "person", "name", "alice", "age"),
-			want: hash.HMSet{},
+			cmd:  "hmset person name alice age",
+			want: HMSet{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "hmset person name alice age 25",
-			args: command.BuildArgs("hmset", "person", "name", "alice", "age", "25"),
-			want: hash.HMSet{Key: "person", Items: map[string]any{
+			cmd: "hmset person name alice age 25",
+			want: HMSet{key: "person", items: map[string]any{
 				"name": []byte("alice"),
 				"age":  []byte("25"),
 			}},
@@ -58,13 +49,12 @@ func TestHMSetParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHMSet, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HMSet)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Items, test.want.Items)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.items, test.want.items)
 			}
 		})
 	}
@@ -75,7 +65,7 @@ func TestHMSetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HMSet]("hmset person name alice")
+		cmd := redis.MustParse(ParseHMSet, "hmset person name alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -90,7 +80,7 @@ func TestHMSetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HMSet]("hmset person name alice age 25")
+		cmd := redis.MustParse(ParseHMSet, "hmset person name alice age 25")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -109,7 +99,7 @@ func TestHMSetExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HMSet]("hmset person name bob age 50")
+		cmd := redis.MustParse(ParseHMSet, "hmset person name bob age 50")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -129,7 +119,7 @@ func TestHMSetExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HMSet]("hmset person name bob age 50")
+		cmd := redis.MustParse(ParseHMSet, "hmset person name bob age 50")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

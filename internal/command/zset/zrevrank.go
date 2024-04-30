@@ -11,17 +11,17 @@ import (
 // https://redis.io/commands/zrevrank
 type ZRevRank struct {
 	redis.BaseCmd
-	Key       string
-	Member    string
-	WithScore bool
+	key       string
+	member    string
+	withScore bool
 }
 
 func ParseZRevRank(b redis.BaseCmd) (*ZRevRank, error) {
 	cmd := &ZRevRank{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.String(&cmd.Member),
-		parser.Flag("withscore", &cmd.WithScore),
+		parser.String(&cmd.key),
+		parser.String(&cmd.member),
+		parser.Flag("withscore", &cmd.withScore),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func ParseZRevRank(b redis.BaseCmd) (*ZRevRank, error) {
 }
 
 func (cmd *ZRevRank) Run(w redis.Writer, red redis.Redka) (any, error) {
-	rank, score, err := red.ZSet().GetRankRev(cmd.Key, cmd.Member)
+	rank, score, err := red.ZSet().GetRankRev(cmd.key, cmd.member)
 	if err == core.ErrNotFound {
 		w.WriteNull()
 		return nil, nil
@@ -39,7 +39,7 @@ func (cmd *ZRevRank) Run(w redis.Writer, red redis.Redka) (any, error) {
 		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
-	if cmd.WithScore {
+	if cmd.withScore {
 		w.WriteArray(2)
 		w.WriteInt(rank)
 		redis.WriteFloat(w, score)

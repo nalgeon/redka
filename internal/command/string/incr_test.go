@@ -1,60 +1,61 @@
-package string_test
+package string
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestIncrParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want str.Incr
+		cmd  string
+		want Incr
 		err  error
 	}{
 		{
-			name: "incr",
-			args: command.BuildArgs("incr"),
-			want: str.Incr{},
+			cmd:  "incr",
+			want: Incr{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "incr age",
-			args: command.BuildArgs("incr", "age"),
-			want: str.Incr{Key: "age", Delta: 1},
+			cmd:  "incr age",
+			want: Incr{key: "age", delta: 1},
 			err:  nil,
 		},
 		{
-			name: "incr age 42",
-			args: command.BuildArgs("incr", "age", "42"),
-			want: str.Incr{},
+			cmd:  "incr age 42",
+			want: Incr{},
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
+	parse := func(b redis.BaseCmd) (*Incr, error) {
+		return ParseIncr(b, 1)
+	}
+
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(parse, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*str.Incr)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Delta, test.want.Delta)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.delta, test.want.delta)
 			}
 		})
 	}
 }
 
 func TestIncrExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	parse := func(b redis.BaseCmd) (*Incr, error) {
+		return ParseIncr(b, 1)
+	}
 
 	t.Run("create", func(t *testing.T) {
-		cmd := command.MustParse[*str.Incr]("incr age")
+		db, red := getDB(t)
+		defer db.Close()
+
+		cmd := redis.MustParse(parse, "incr age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -66,9 +67,11 @@ func TestIncrExec(t *testing.T) {
 	})
 
 	t.Run("incr", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().Set("age", "25")
 
-		cmd := command.MustParse[*str.Incr]("incr age")
+		cmd := redis.MustParse(parse, "incr age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

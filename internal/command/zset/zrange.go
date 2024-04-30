@@ -10,26 +10,26 @@ import (
 // https://redis.io/commands/zrange
 type ZRange struct {
 	redis.BaseCmd
-	Key        string
-	Start      float64
-	Stop       float64
-	ByScore    bool
-	Rev        bool
-	Offset     int
-	Count      int
-	WithScores bool
+	key        string
+	start      float64
+	stop       float64
+	byScore    bool
+	rev        bool
+	offset     int
+	count      int
+	withScores bool
 }
 
 func ParseZRange(b redis.BaseCmd) (*ZRange, error) {
 	cmd := &ZRange{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Float(&cmd.Start),
-		parser.Float(&cmd.Stop),
-		parser.Flag("byscore", &cmd.ByScore),
-		parser.Flag("rev", &cmd.Rev),
-		parser.Named("limit", parser.Int(&cmd.Offset), parser.Int(&cmd.Count)),
-		parser.Flag("withscores", &cmd.WithScores),
+		parser.String(&cmd.key),
+		parser.Float(&cmd.start),
+		parser.Float(&cmd.stop),
+		parser.Flag("byscore", &cmd.byScore),
+		parser.Flag("rev", &cmd.rev),
+		parser.Named("limit", parser.Int(&cmd.offset), parser.Int(&cmd.count)),
+		parser.Flag("withscores", &cmd.withScores),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -38,26 +38,26 @@ func ParseZRange(b redis.BaseCmd) (*ZRange, error) {
 }
 
 func (cmd *ZRange) Run(w redis.Writer, red redis.Redka) (any, error) {
-	rang := red.ZSet().RangeWith(cmd.Key)
+	rang := red.ZSet().RangeWith(cmd.key)
 
 	// filter by score or rank
-	if cmd.ByScore {
-		rang = rang.ByScore(cmd.Start, cmd.Stop)
+	if cmd.byScore {
+		rang = rang.ByScore(cmd.start, cmd.stop)
 	} else {
-		rang = rang.ByRank(int(cmd.Start), int(cmd.Stop))
+		rang = rang.ByRank(int(cmd.start), int(cmd.stop))
 	}
 
 	// sort direction
-	if cmd.Rev {
+	if cmd.rev {
 		rang = rang.Desc()
 	}
 
 	// limit and offset
-	if cmd.Offset > 0 {
-		rang = rang.Offset(cmd.Offset)
+	if cmd.offset > 0 {
+		rang = rang.Offset(cmd.offset)
 	}
-	if cmd.Count > 0 {
-		rang = rang.Count(cmd.Count)
+	if cmd.count > 0 {
+		rang = rang.Count(cmd.count)
 	}
 
 	// run the command
@@ -68,7 +68,7 @@ func (cmd *ZRange) Run(w redis.Writer, red redis.Redka) (any, error) {
 	}
 
 	// write the response with/without scores
-	if cmd.WithScores {
+	if cmd.withScores {
 		w.WriteArray(len(items) * 2)
 		for _, item := range items {
 			w.WriteBulk(item.Elem)

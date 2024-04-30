@@ -11,19 +11,19 @@ import (
 // https://redis.io/commands/zinterstore
 type ZInterStore struct {
 	redis.BaseCmd
-	Dest      string
-	Keys      []string
-	Aggregate string
+	dest      string
+	keys      []string
+	aggregate string
 }
 
 func ParseZInterStore(b redis.BaseCmd) (*ZInterStore, error) {
 	cmd := &ZInterStore{BaseCmd: b}
 	var nKeys int
 	err := parser.New(
-		parser.String(&cmd.Dest),
+		parser.String(&cmd.dest),
 		parser.Int(&nKeys),
-		parser.StringsN(&cmd.Keys, &nKeys),
-		parser.Named("aggregate", parser.Enum(&cmd.Aggregate, sqlx.Sum, sqlx.Min, sqlx.Max)),
+		parser.StringsN(&cmd.keys, &nKeys),
+		parser.Named("aggregate", parser.Enum(&cmd.aggregate, sqlx.Sum, sqlx.Min, sqlx.Max)),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -32,8 +32,8 @@ func ParseZInterStore(b redis.BaseCmd) (*ZInterStore, error) {
 }
 
 func (cmd *ZInterStore) Run(w redis.Writer, red redis.Redka) (any, error) {
-	inter := red.ZSet().InterWith(cmd.Keys...).Dest(cmd.Dest)
-	switch cmd.Aggregate {
+	inter := red.ZSet().InterWith(cmd.keys...).Dest(cmd.dest)
+	switch cmd.aggregate {
 	case sqlx.Min:
 		inter = inter.Min()
 	case sqlx.Max:

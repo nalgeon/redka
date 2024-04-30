@@ -10,13 +10,13 @@ import (
 // https://redis.io/commands/del
 type Del struct {
 	redis.BaseCmd
-	Keys []string
+	keys []string
 }
 
 func ParseDel(b redis.BaseCmd) (*Del, error) {
 	cmd := &Del{BaseCmd: b}
 	err := parser.New(
-		parser.Strings(&cmd.Keys),
+		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
@@ -25,7 +25,7 @@ func ParseDel(b redis.BaseCmd) (*Del, error) {
 }
 
 func (cmd *Del) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.Key().Delete(cmd.Keys...)
+	count, err := red.Key().Delete(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

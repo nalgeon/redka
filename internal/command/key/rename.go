@@ -7,8 +7,8 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/rename
 type Rename struct {
 	redis.BaseCmd
-	Key    string
-	NewKey string
+	key    string
+	newKey string
 }
 
 func ParseRename(b redis.BaseCmd) (*Rename, error) {
@@ -16,13 +16,13 @@ func ParseRename(b redis.BaseCmd) (*Rename, error) {
 	if len(cmd.Args()) != 2 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
-	cmd.NewKey = string(cmd.Args()[1])
+	cmd.key = string(cmd.Args()[0])
+	cmd.newKey = string(cmd.Args()[1])
 	return cmd, nil
 }
 
 func (cmd *Rename) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Key().Rename(cmd.Key, cmd.NewKey)
+	err := red.Key().Rename(cmd.key, cmd.newKey)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

@@ -1,47 +1,42 @@
-package conn_test
+package conn
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/conn"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestEchoParse(t *testing.T) {
 	tests := []struct {
-		name string
+		cmd  string
 		args [][]byte
 		want []string
 		err  error
 	}{
 		{
-			name: "echo",
-			args: command.BuildArgs("echo"),
+			cmd:  "echo",
 			want: []string{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "echo hello",
-			args: command.BuildArgs("echo", "hello"),
+			cmd:  "echo hello",
 			want: []string{"hello"},
 			err:  nil,
 		},
 		{
-			name: "echo one two",
-			args: command.BuildArgs("echo", "one", "two"),
+			cmd:  "echo one two",
 			want: []string{"one", "two"},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseEcho, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*conn.Echo).Parts, test.want)
+				testx.AssertEqual(t, cmd.parts, test.want)
 			}
 		})
 	}
@@ -52,29 +47,27 @@ func TestEchoExec(t *testing.T) {
 	defer db.Close()
 
 	tests := []struct {
-		name string
-		cmd  *conn.Echo
-		res  any
-		out  string
+		cmd string
+		res any
+		out string
 	}{
 		{
-			name: "echo hello",
-			cmd:  command.MustParse[*conn.Echo]("echo hello"),
-			res:  "hello",
-			out:  "hello",
+			cmd: "echo hello",
+			res: "hello",
+			out: "hello",
 		},
 		{
-			name: "echo one two",
-			cmd:  command.MustParse[*conn.Echo]("echo one two"),
-			res:  "one two",
-			out:  "one two",
+			cmd: "echo one two",
+			res: "one two",
+			out: "one two",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.cmd, func(t *testing.T) {
 			conn := redis.NewFakeConn()
-			res, err := test.cmd.Run(conn, red)
+			cmd := redis.MustParse(ParseEcho, test.cmd)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.Out(), test.out)

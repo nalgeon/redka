@@ -10,19 +10,19 @@ import (
 // https://redis.io/commands/zrevrange
 type ZRevRange struct {
 	redis.BaseCmd
-	Key        string
-	Start      int
-	Stop       int
-	WithScores bool
+	key        string
+	start      int
+	stop       int
+	withScores bool
 }
 
 func ParseZRevRange(b redis.BaseCmd) (*ZRevRange, error) {
 	cmd := &ZRevRange{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Int(&cmd.Start),
-		parser.Int(&cmd.Stop),
-		parser.Flag("withscores", &cmd.WithScores),
+		parser.String(&cmd.key),
+		parser.Int(&cmd.start),
+		parser.Int(&cmd.stop),
+		parser.Flag("withscores", &cmd.withScores),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -31,14 +31,14 @@ func ParseZRevRange(b redis.BaseCmd) (*ZRevRange, error) {
 }
 
 func (cmd *ZRevRange) Run(w redis.Writer, red redis.Redka) (any, error) {
-	items, err := red.ZSet().RangeWith(cmd.Key).ByRank(cmd.Start, cmd.Stop).Desc().Run()
+	items, err := red.ZSet().RangeWith(cmd.key).ByRank(cmd.start, cmd.stop).Desc().Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
 
 	// write the response with/without scores
-	if cmd.WithScores {
+	if cmd.withScores {
 		w.WriteArray(len(items) * 2)
 		for _, item := range items {
 			w.WriteBulk(item.Elem)

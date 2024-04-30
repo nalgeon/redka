@@ -7,9 +7,9 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/hsetnx
 type HSetNX struct {
 	redis.BaseCmd
-	Key   string
-	Field string
-	Value []byte
+	key   string
+	field string
+	value []byte
 }
 
 func ParseHSetNX(b redis.BaseCmd) (*HSetNX, error) {
@@ -17,14 +17,14 @@ func ParseHSetNX(b redis.BaseCmd) (*HSetNX, error) {
 	if len(cmd.Args()) != 3 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
-	cmd.Field = string(cmd.Args()[1])
-	cmd.Value = cmd.Args()[2]
+	cmd.key = string(cmd.Args()[0])
+	cmd.field = string(cmd.Args()[1])
+	cmd.value = cmd.Args()[2]
 	return cmd, nil
 }
 
 func (cmd *HSetNX) Run(w redis.Writer, red redis.Redka) (any, error) {
-	ok, err := red.Hash().SetNotExists(cmd.Key, cmd.Field, cmd.Value)
+	ok, err := red.Hash().SetNotExists(cmd.key, cmd.field, cmd.value)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

@@ -10,7 +10,7 @@ import (
 // https://redis.io/commands/persist
 type Persist struct {
 	redis.BaseCmd
-	Key string
+	key string
 }
 
 func ParsePersist(b redis.BaseCmd) (*Persist, error) {
@@ -18,12 +18,12 @@ func ParsePersist(b redis.BaseCmd) (*Persist, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
+	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
 func (cmd *Persist) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Key().Persist(cmd.Key)
+	err := red.Key().Persist(cmd.key)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
 		return nil, err

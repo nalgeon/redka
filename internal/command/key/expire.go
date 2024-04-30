@@ -13,8 +13,8 @@ import (
 // https://redis.io/commands/expire
 type Expire struct {
 	redis.BaseCmd
-	Key string
-	TTL time.Duration
+	key string
+	ttl time.Duration
 }
 
 func ParseExpire(b redis.BaseCmd, multi int) (*Expire, error) {
@@ -22,19 +22,19 @@ func ParseExpire(b redis.BaseCmd, multi int) (*Expire, error) {
 
 	var ttl int
 	err := parser.New(
-		parser.String(&cmd.Key),
+		parser.String(&cmd.key),
 		parser.Int(&ttl),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
 	}
 
-	cmd.TTL = time.Duration(multi*ttl) * time.Millisecond
+	cmd.ttl = time.Duration(multi*ttl) * time.Millisecond
 	return cmd, nil
 }
 
 func (cmd *Expire) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Key().Expire(cmd.Key, cmd.TTL)
+	err := red.Key().Expire(cmd.key, cmd.ttl)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
 		return nil, err

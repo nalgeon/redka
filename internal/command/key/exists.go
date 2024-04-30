@@ -10,13 +10,13 @@ import (
 // https://redis.io/commands/exists
 type Exists struct {
 	redis.BaseCmd
-	Keys []string
+	keys []string
 }
 
 func ParseExists(b redis.BaseCmd) (*Exists, error) {
 	cmd := &Exists{BaseCmd: b}
 	err := parser.New(
-		parser.Strings(&cmd.Keys),
+		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
@@ -25,7 +25,7 @@ func ParseExists(b redis.BaseCmd) (*Exists, error) {
 }
 
 func (cmd *Exists) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.Key().Count(cmd.Keys...)
+	count, err := red.Key().Count(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

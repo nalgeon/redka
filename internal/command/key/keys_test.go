@@ -1,10 +1,8 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,43 +10,38 @@ import (
 
 func TestKeysParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
+		cmd  string
 		want string
 		err  error
 	}{
 		{
-			name: "keys",
-			args: command.BuildArgs("keys"),
+			cmd:  "keys",
 			want: "",
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "keys *",
-			args: command.BuildArgs("keys", "*"),
+			cmd:  "keys *",
 			want: "*",
 			err:  nil,
 		},
 		{
-			name: "keys 2*",
-			args: command.BuildArgs("keys", "k2*"),
+			cmd:  "keys k2*",
 			want: "k2*",
 			err:  nil,
 		},
 		{
-			name: "keys * k2*",
-			args: command.BuildArgs("keys", "*", "k2*"),
+			cmd:  "keys * k2*",
 			want: "",
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseKeys, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Keys).Pattern, test.want)
+				testx.AssertEqual(t, cmd.pattern, test.want)
 			}
 		})
 	}
@@ -65,41 +58,37 @@ func TestKeysExec(t *testing.T) {
 	_ = db.Str().Set("k31", "31")
 
 	tests := []struct {
-		name string
-		cmd  *key.Keys
-		res  []string
-		out  string
+		cmd string
+		res []string
+		out string
 	}{
 		{
-			name: "all keys",
-			cmd:  command.MustParse[*key.Keys]("keys *"),
-			res:  []string{"k11", "k12", "k21", "k22", "k31"},
-			out:  "5,k11,k12,k21,k22,k31",
+			cmd: "keys *",
+			res: []string{"k11", "k12", "k21", "k22", "k31"},
+			out: "5,k11,k12,k21,k22,k31",
 		},
 		{
-			name: "some keys",
-			cmd:  command.MustParse[*key.Keys]("keys k2*"),
-			res:  []string{"k21", "k22"},
-			out:  "2,k21,k22",
+			cmd: "keys k2*",
+			res: []string{"k21", "k22"},
+			out: "2,k21,k22",
 		},
 		{
-			name: "one key",
-			cmd:  command.MustParse[*key.Keys]("keys k12"),
-			res:  []string{"k12"},
-			out:  "1,k12",
+			cmd: "keys k12",
+			res: []string{"k12"},
+			out: "1,k12",
 		},
 		{
-			name: "not found",
-			cmd:  command.MustParse[*key.Keys]("keys name"),
-			res:  []string{},
-			out:  "0",
+			cmd: "keys name",
+			res: []string{},
+			out: "0",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.cmd, func(t *testing.T) {
 			conn := redis.NewFakeConn()
-			keys, err := test.cmd.Run(conn, red)
+			cmd := redis.MustParse(ParseKeys, test.cmd)
+			keys, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			for i, key := range keys.([]core.Key) {
 				testx.AssertEqual(t, key.Key, test.res[i])

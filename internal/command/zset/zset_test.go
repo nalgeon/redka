@@ -1,4 +1,4 @@
-package zset_test
+package zset
 
 import (
 	"testing"

@@ -1,48 +1,42 @@
-package key_test
+package key
 
 import (
 	"testing"
 	"time"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestPersistParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		err  error
+		cmd string
+		key string
+		err error
 	}{
 		{
-			name: "persist",
-			args: command.BuildArgs("persist"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "persist",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "persist name",
-			args: command.BuildArgs("persist", "name"),
-			key:  "name",
-			err:  nil,
+			cmd: "persist name",
+			key: "name",
+			err: nil,
 		},
 		{
-			name: "persist name age",
-			args: command.BuildArgs("persist", "name", "age"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "persist name age",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParsePersist, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Persist).Key, test.key)
+				testx.AssertEqual(t, cmd.key, test.key)
 			}
 		})
 	}
@@ -55,7 +49,7 @@ func TestPersistExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Persist]("persist name")
+		cmd := redis.MustParse(ParsePersist, "persist name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -72,7 +66,7 @@ func TestPersistExec(t *testing.T) {
 
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
-		cmd := command.MustParse[*key.Persist]("persist name")
+		cmd := redis.MustParse(ParsePersist, "persist name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -89,7 +83,7 @@ func TestPersistExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Persist]("persist age")
+		cmd := redis.MustParse(ParsePersist, "persist age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

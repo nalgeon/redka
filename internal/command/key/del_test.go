@@ -1,47 +1,41 @@
-package key_test
+package key
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestDelParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
+		cmd  string
 		want []string
 		err  error
 	}{
 		{
-			name: "del",
-			args: command.BuildArgs("del"),
+			cmd:  "del",
 			want: nil,
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "del name",
-			args: command.BuildArgs("del", "name"),
+			cmd:  "del name",
 			want: []string{"name"},
 			err:  nil,
 		},
 		{
-			name: "del name age",
-			args: command.BuildArgs("del", "name", "age"),
+			cmd:  "del name age",
 			want: []string{"name", "age"},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseDel, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Del).Keys, test.want)
+				testx.AssertEqual(t, cmd.keys, test.want)
 			}
 		})
 	}
@@ -49,33 +43,29 @@ func TestDelParse(t *testing.T) {
 
 func TestDelExec(t *testing.T) {
 	tests := []struct {
-		name string
-		cmd  *key.Del
-		res  any
-		out  string
+		cmd string
+		res any
+		out string
 	}{
 		{
-			name: "del one",
-			cmd:  command.MustParse[*key.Del]("del name"),
-			res:  1,
-			out:  "1",
+			cmd: "del name",
+			res: 1,
+			out: "1",
 		},
 		{
-			name: "del all",
-			cmd:  command.MustParse[*key.Del]("del name age"),
-			res:  2,
-			out:  "2",
+			cmd: "del name age",
+			res: 2,
+			out: "2",
 		},
 		{
-			name: "del some",
-			cmd:  command.MustParse[*key.Del]("del name age street"),
-			res:  2,
-			out:  "2",
+			cmd: "del name age street",
+			res: 2,
+			out: "2",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.cmd, func(t *testing.T) {
 			db, red := getDB(t)
 			defer db.Close()
 
@@ -84,7 +74,8 @@ func TestDelExec(t *testing.T) {
 			_ = db.Str().Set("city", "paris")
 
 			conn := redis.NewFakeConn()
-			res, err := test.cmd.Run(conn, red)
+			cmd := redis.MustParse(ParseDel, test.cmd)
+			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.Out(), test.out)

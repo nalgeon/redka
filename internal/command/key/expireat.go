@@ -13,8 +13,8 @@ import (
 // https://redis.io/commands/expireat
 type ExpireAt struct {
 	redis.BaseCmd
-	Key string
-	At  time.Time
+	key string
+	at  time.Time
 }
 
 func ParseExpireAt(b redis.BaseCmd, multi int) (*ExpireAt, error) {
@@ -22,19 +22,19 @@ func ParseExpireAt(b redis.BaseCmd, multi int) (*ExpireAt, error) {
 
 	var at int
 	err := parser.New(
-		parser.String(&cmd.Key),
+		parser.String(&cmd.key),
 		parser.Int(&at),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
 	}
 
-	cmd.At = time.UnixMilli(int64(multi * at))
+	cmd.at = time.UnixMilli(int64(multi * at))
 	return cmd, nil
 }
 
 func (cmd *ExpireAt) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Key().ExpireAt(cmd.Key, cmd.At)
+	err := red.Key().ExpireAt(cmd.key, cmd.at)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))
 		return nil, err

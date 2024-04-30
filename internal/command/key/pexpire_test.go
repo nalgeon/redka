@@ -1,80 +1,79 @@
-package key_test
+package key
 
 import (
 	"testing"
 	"time"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestPExpireParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		ttl  time.Duration
-		err  error
+		cmd string
+		key string
+		ttl time.Duration
+		err error
 	}{
 		{
-			name: "pexpire",
-			args: command.BuildArgs("pexpire"),
-			key:  "",
-			ttl:  0,
-			err:  redis.ErrInvalidArgNum,
+			cmd: "pexpire",
+			key: "",
+			ttl: 0,
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "pexpire name",
-			args: command.BuildArgs("pexpire", "name"),
-			key:  "",
-			ttl:  0,
-			err:  redis.ErrInvalidArgNum,
+			cmd: "pexpire name",
+			key: "",
+			ttl: 0,
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "pexpire name 5000",
-			args: command.BuildArgs("pexpire", "name", "5000"),
-			key:  "name",
-			ttl:  5000 * time.Millisecond,
-			err:  nil,
+			cmd: "pexpire name 5000",
+			key: "name",
+			ttl: 5000 * time.Millisecond,
+			err: nil,
 		},
 		{
-			name: "pexpire name age",
-			args: command.BuildArgs("pexpire", "name", "age"),
-			key:  "",
-			ttl:  0,
-			err:  redis.ErrInvalidInt,
+			cmd: "pexpire name age",
+			key: "",
+			ttl: 0,
+			err: redis.ErrInvalidInt,
 		},
 		{
-			name: "pexpire name 100 age 100",
-			args: command.BuildArgs("pexpire", "name", "100", "age", "100"),
-			key:  "",
-			ttl:  0,
-			err:  redis.ErrSyntaxError,
+			cmd: "pexpire name 100 age 100",
+			key: "",
+			ttl: 0,
+			err: redis.ErrSyntaxError,
 		},
 	}
 
+	parse := func(b redis.BaseCmd) (*Expire, error) {
+		return ParseExpire(b, 1)
+	}
+
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(parse, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*key.Expire).Key, test.key)
-				testx.AssertEqual(t, cmd.(*key.Expire).TTL, test.ttl)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.ttl, test.ttl)
 			}
 		})
 	}
 }
 
 func TestPExpireExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	parse := func(b redis.BaseCmd) (*Expire, error) {
+		return ParseExpire(b, 1)
+	}
 
 	t.Run("create pexpire", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Expire]("pexpire name 60000")
+		cmd := redis.MustParse(parse, "pexpire name 60000")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -87,9 +86,11 @@ func TestPExpireExec(t *testing.T) {
 	})
 
 	t.Run("update pexpire", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 
-		cmd := command.MustParse[*key.Expire]("pexpire name 30000")
+		cmd := redis.MustParse(parse, "pexpire name 30000")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -102,9 +103,11 @@ func TestPExpireExec(t *testing.T) {
 	})
 
 	t.Run("set to zero", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Expire]("pexpire name 0")
+		cmd := redis.MustParse(parse, "pexpire name 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -116,9 +119,11 @@ func TestPExpireExec(t *testing.T) {
 	})
 
 	t.Run("negative", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Expire]("pexpire name -1000")
+		cmd := redis.MustParse(parse, "pexpire name -1000")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -130,9 +135,11 @@ func TestPExpireExec(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*key.Expire]("pexpire age 1000")
+		cmd := redis.MustParse(parse, "pexpire age 1000")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

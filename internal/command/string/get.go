@@ -10,7 +10,7 @@ import (
 // https://redis.io/commands/get
 type Get struct {
 	redis.BaseCmd
-	Key string
+	key string
 }
 
 func ParseGet(b redis.BaseCmd) (*Get, error) {
@@ -18,12 +18,12 @@ func ParseGet(b redis.BaseCmd) (*Get, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
+	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
 func (cmd *Get) Run(w redis.Writer, red redis.Redka) (any, error) {
-	val, err := red.Str().Get(cmd.Key)
+	val, err := red.Str().Get(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteNull()
 		return val, nil

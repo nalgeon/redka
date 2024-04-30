@@ -11,17 +11,17 @@ import (
 // https://redis.io/commands/hincrby
 type HIncrBy struct {
 	redis.BaseCmd
-	Key   string
-	Field string
-	Delta int
+	key   string
+	field string
+	delta int
 }
 
 func ParseHIncrBy(b redis.BaseCmd) (*HIncrBy, error) {
 	cmd := &HIncrBy{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.String(&cmd.Field),
-		parser.Int(&cmd.Delta),
+		parser.String(&cmd.key),
+		parser.String(&cmd.field),
+		parser.Int(&cmd.delta),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func ParseHIncrBy(b redis.BaseCmd) (*HIncrBy, error) {
 }
 
 func (cmd *HIncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
-	val, err := red.Hash().Incr(cmd.Key, cmd.Field, cmd.Delta)
+	val, err := red.Hash().Incr(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

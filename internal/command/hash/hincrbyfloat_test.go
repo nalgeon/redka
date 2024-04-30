@@ -1,10 +1,8 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,37 +10,32 @@ import (
 
 func TestHIncrByFloatParse(t *testing.T) {
 	tests := []struct {
-		name  string
-		args  [][]byte
+		cmd   string
 		key   string
 		field string
 		delta float64
 		err   error
 	}{
 		{
-			name:  "hincrbyfloat",
-			args:  command.BuildArgs("hincrbyfloat"),
+			cmd:   "hincrbyfloat",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hincrbyfloat person",
-			args:  command.BuildArgs("hincrbyfloat", "person"),
+			cmd:   "hincrbyfloat person",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hincrbyfloat person age",
-			args:  command.BuildArgs("hincrbyfloat", "person", "age"),
+			cmd:   "hincrbyfloat person age",
 			key:   "",
 			field: "",
 			err:   redis.ErrInvalidArgNum,
 		},
 		{
-			name:  "hincrbyfloat person age 10.5",
-			args:  command.BuildArgs("hincrbyfloat", "person", "age", "10.5"),
+			cmd:   "hincrbyfloat person age 10.5",
 			key:   "person",
 			field: "age",
 			delta: 10.5,
@@ -51,14 +44,13 @@ func TestHIncrByFloatParse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHIncrByFloat, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HIncrByFloat)
-				testx.AssertEqual(t, cm.Key, test.key)
-				testx.AssertEqual(t, cm.Field, test.field)
-				testx.AssertEqual(t, cm.Delta, test.delta)
+				testx.AssertEqual(t, cmd.key, test.key)
+				testx.AssertEqual(t, cmd.field, test.field)
+				testx.AssertEqual(t, cmd.delta, test.delta)
 			}
 		})
 	}
@@ -71,7 +63,7 @@ func TestHIncrByFloatExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HIncrByFloat]("hincrbyfloat person age 10.5")
+		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -88,7 +80,7 @@ func TestHIncrByFloatExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HIncrByFloat]("hincrbyfloat person age -10.5")
+		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age -10.5")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -105,7 +97,7 @@ func TestHIncrByFloatExec(t *testing.T) {
 
 		_, _ = db.Hash().Set("person", "name", "alice")
 
-		cmd := command.MustParse[*hash.HIncrByFloat]("hincrbyfloat person age 10.5")
+		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -120,7 +112,7 @@ func TestHIncrByFloatExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HIncrByFloat]("hincrbyfloat person age 10.5")
+		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

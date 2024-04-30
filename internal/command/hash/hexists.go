@@ -7,8 +7,8 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/hexists
 type HExists struct {
 	redis.BaseCmd
-	Key   string
-	Field string
+	key   string
+	field string
 }
 
 func ParseHExists(b redis.BaseCmd) (*HExists, error) {
@@ -16,13 +16,13 @@ func ParseHExists(b redis.BaseCmd) (*HExists, error) {
 	if len(cmd.Args()) != 2 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Key = string(cmd.Args()[0])
-	cmd.Field = string(cmd.Args()[1])
+	cmd.key = string(cmd.Args()[0])
+	cmd.field = string(cmd.Args()[1])
 	return cmd, nil
 }
 
 func (cmd *HExists) Run(w redis.Writer, red redis.Redka) (any, error) {
-	ok, err := red.Hash().Exists(cmd.Key, cmd.Field)
+	ok, err := red.Hash().Exists(cmd.key, cmd.field)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

@@ -11,9 +11,9 @@ import (
 // https://redis.io/commands/zinter
 type ZInter struct {
 	redis.BaseCmd
-	Keys       []string
-	Aggregate  string
-	WithScores bool
+	keys       []string
+	aggregate  string
+	withScores bool
 }
 
 func ParseZInter(b redis.BaseCmd) (*ZInter, error) {
@@ -21,9 +21,9 @@ func ParseZInter(b redis.BaseCmd) (*ZInter, error) {
 	var nKeys int
 	err := parser.New(
 		parser.Int(&nKeys),
-		parser.StringsN(&cmd.Keys, &nKeys),
-		parser.Named("aggregate", parser.Enum(&cmd.Aggregate, sqlx.Sum, sqlx.Min, sqlx.Max)),
-		parser.Flag("withscores", &cmd.WithScores),
+		parser.StringsN(&cmd.keys, &nKeys),
+		parser.Named("aggregate", parser.Enum(&cmd.aggregate, sqlx.Sum, sqlx.Min, sqlx.Max)),
+		parser.Flag("withscores", &cmd.withScores),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -32,8 +32,8 @@ func ParseZInter(b redis.BaseCmd) (*ZInter, error) {
 }
 
 func (cmd *ZInter) Run(w redis.Writer, red redis.Redka) (any, error) {
-	inter := red.ZSet().InterWith(cmd.Keys...)
-	switch cmd.Aggregate {
+	inter := red.ZSet().InterWith(cmd.keys...)
+	switch cmd.aggregate {
 	case sqlx.Min:
 		inter = inter.Min()
 	case sqlx.Max:
@@ -48,7 +48,7 @@ func (cmd *ZInter) Run(w redis.Writer, red redis.Redka) (any, error) {
 		return nil, err
 	}
 
-	if cmd.WithScores {
+	if cmd.withScores {
 		w.WriteArray(len(items) * 2)
 		for _, item := range items {
 			w.WriteBulk(item.Elem)

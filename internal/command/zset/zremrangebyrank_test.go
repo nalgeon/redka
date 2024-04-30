@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,46 +10,41 @@ import (
 
 func TestZRemRangeByRankParse(t *testing.T) {
 	tests := []struct {
-		name string
+		cmd  string
 		args [][]byte
-		want zset.ZRemRangeByRank
+		want ZRemRangeByRank
 		err  error
 	}{
 		{
-			name: "zremrangebyrank",
-			args: command.BuildArgs("zremrangebyrank"),
-			want: zset.ZRemRangeByRank{},
+			cmd:  "zremrangebyrank",
+			want: ZRemRangeByRank{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyrank key",
-			args: command.BuildArgs("zremrangebyrank", "key"),
-			want: zset.ZRemRangeByRank{},
+			cmd:  "zremrangebyrank key",
+			want: ZRemRangeByRank{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyrank key 11",
-			args: command.BuildArgs("zremrangebyrank", "key", "11"),
-			want: zset.ZRemRangeByRank{},
+			cmd:  "zremrangebyrank key 11",
+			want: ZRemRangeByRank{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zremrangebyrank key 11 22",
-			args: command.BuildArgs("zremrangebyrank", "key", "11", "22"),
-			want: zset.ZRemRangeByRank{Key: "key", Start: 11, Stop: 22},
+			cmd:  "zremrangebyrank key 11 22",
+			want: ZRemRangeByRank{key: "key", start: 11, stop: 22},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZRemRangeByRank, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZRemRangeByRank)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Start, test.want.Start)
-				testx.AssertEqual(t, cm.Stop, test.want.Stop)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.start, test.want.start)
+				testx.AssertEqual(t, cmd.stop, test.want.stop)
 			}
 		})
 	}
@@ -66,7 +59,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key 1 2")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key 1 2")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -93,7 +86,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key 0 3")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key 0 3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -111,7 +104,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key 4 5")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key 4 5")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -129,7 +122,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 		_, _ = db.ZSet().Add("key", "thr", 3)
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key -2 -1")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key -2 -1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -143,7 +136,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key 0 3")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key 0 3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -155,7 +148,7 @@ func TestZRemRangeByRankExec(t *testing.T) {
 		defer db.Close()
 		_ = red.Str().Set("key", "str")
 
-		cmd := command.MustParse[*zset.ZRemRangeByRank]("zremrangebyrank key 0 3")
+		cmd := redis.MustParse(ParseZRemRangeByRank, "zremrangebyrank key 0 3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

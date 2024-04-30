@@ -1,48 +1,41 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHKeysParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		err  error
+		cmd string
+		key string
+		err error
 	}{
 		{
-			name: "hkeys",
-			args: command.BuildArgs("hkeys"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hkeys",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hkeys person",
-			args: command.BuildArgs("hkeys", "person"),
-			key:  "person",
-			err:  nil,
+			cmd: "hkeys person",
+			key: "person",
+			err: nil,
 		},
 		{
-			name: "hkeys person name",
-			args: command.BuildArgs("hkeys", "person", "name"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hkeys person name",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHKeys, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HKeys)
-				testx.AssertEqual(t, cm.Key, test.key)
+				testx.AssertEqual(t, cmd.key, test.key)
 			}
 		})
 	}
@@ -56,7 +49,7 @@ func TestHKeysExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HKeys]("hkeys person")
+		cmd := redis.MustParse(ParseHKeys, "hkeys person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -70,7 +63,7 @@ func TestHKeysExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HKeys]("hkeys person")
+		cmd := redis.MustParse(ParseHKeys, "hkeys person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

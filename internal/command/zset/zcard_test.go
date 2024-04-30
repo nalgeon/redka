@@ -1,48 +1,41 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZCardParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZCard
+		cmd  string
+		want ZCard
 		err  error
 	}{
 		{
-			name: "zcard",
-			args: command.BuildArgs("zcard"),
-			want: zset.ZCard{},
+			cmd:  "zcard",
+			want: ZCard{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zcard key",
-			args: command.BuildArgs("zcard", "key"),
-			want: zset.ZCard{Key: "key"},
+			cmd:  "zcard key",
+			want: ZCard{key: "key"},
 			err:  nil,
 		},
 		{
-			name: "zcard key one",
-			args: command.BuildArgs("zcard", "key", "one"),
-			want: zset.ZCard{},
+			cmd:  "zcard key one",
+			want: ZCard{},
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZCard, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZCard)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
+				testx.AssertEqual(t, cmd.key, test.want.key)
 			}
 		})
 	}
@@ -55,7 +48,7 @@ func TestZCardExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Add("key", "two", 22)
 
-		cmd := command.MustParse[*zset.ZCard]("zcard key")
+		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -68,7 +61,7 @@ func TestZCardExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 11)
 		_, _ = db.ZSet().Delete("key", "one")
 
-		cmd := command.MustParse[*zset.ZCard]("zcard key")
+		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -79,7 +72,7 @@ func TestZCardExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZCard]("zcard key")
+		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -91,7 +84,7 @@ func TestZCardExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZCard]("zcard key")
+		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

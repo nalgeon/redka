@@ -1,10 +1,8 @@
-package string_test
+package string
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,45 +10,39 @@ import (
 
 func TestGetSetParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want str.GetSet
+		cmd  string
+		want GetSet
 		err  error
 	}{
 		{
-			name: "getset",
-			args: command.BuildArgs("getset"),
-			want: str.GetSet{},
+			cmd:  "getset",
+			want: GetSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "getset name",
-			args: command.BuildArgs("getset", "name"),
-			want: str.GetSet{},
+			cmd:  "getset name",
+			want: GetSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "getset name alice",
-			args: command.BuildArgs("getset", "name", "alice"),
-			want: str.GetSet{Key: "name", Value: []byte("alice")},
+			cmd:  "getset name alice",
+			want: GetSet{key: "name", value: []byte("alice")},
 			err:  nil,
 		},
 		{
-			name: "getset name alice 60",
-			args: command.BuildArgs("getset", "name", "alice", "60"),
-			want: str.GetSet{},
+			cmd:  "getset name alice 60",
+			want: GetSet{},
 			err:  redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseGetSet, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*str.GetSet)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Value, test.want.Value)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.value, test.want.value)
 			}
 		})
 	}
@@ -61,7 +53,7 @@ func TestGetSetExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*str.GetSet]("getset name alice")
+		cmd := redis.MustParse(ParseGetSet, "getset name alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -78,7 +70,7 @@ func TestGetSetExec(t *testing.T) {
 
 		_ = db.Str().Set("name", "alice")
 
-		cmd := command.MustParse[*str.GetSet]("getset name bob")
+		cmd := redis.MustParse(ParseGetSet, "getset name bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

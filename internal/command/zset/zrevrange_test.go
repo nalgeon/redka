@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,53 +10,46 @@ import (
 
 func TestZRevRangeParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZRevRange
+		cmd  string
+		want ZRevRange
 		err  error
 	}{
 		{
-			name: "zrevrange",
-			args: command.BuildArgs("zrevrange"),
-			want: zset.ZRevRange{},
+			cmd:  "zrevrange",
+			want: ZRevRange{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrevrange key",
-			args: command.BuildArgs("zrevrange", "key"),
-			want: zset.ZRevRange{},
+			cmd:  "zrevrange key",
+			want: ZRevRange{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrevrange key 11",
-			args: command.BuildArgs("zrevrange", "key", "11"),
-			want: zset.ZRevRange{},
+			cmd:  "zrevrange key 11",
+			want: ZRevRange{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zrevrange key 11 22",
-			args: command.BuildArgs("zrevrange", "key", "11", "22"),
-			want: zset.ZRevRange{Key: "key", Start: 11, Stop: 22},
+			cmd:  "zrevrange key 11 22",
+			want: ZRevRange{key: "key", start: 11, stop: 22},
 			err:  nil,
 		},
 		{
-			name: "zrevrange key 11 22 withscores",
-			args: command.BuildArgs("zrevrange", "key", "11", "22", "withscores"),
-			want: zset.ZRevRange{Key: "key", Start: 11, Stop: 22, WithScores: true},
+			cmd:  "zrevrange key 11 22 withscores",
+			want: ZRevRange{key: "key", start: 11, stop: 22, withScores: true},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZRevRange, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZRevRange)
-				testx.AssertEqual(t, cm.Key, test.want.Key)
-				testx.AssertEqual(t, cm.Start, test.want.Start)
-				testx.AssertEqual(t, cm.Stop, test.want.Stop)
-				testx.AssertEqual(t, cm.WithScores, test.want.WithScores)
+				testx.AssertEqual(t, cmd.key, test.want.key)
+				testx.AssertEqual(t, cmd.start, test.want.start)
+				testx.AssertEqual(t, cmd.stop, test.want.stop)
+				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
 			}
 		})
 	}
@@ -74,7 +65,7 @@ func TestZRevRangeExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 
 		{
-			cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 0 1")
+			cmd := redis.MustParse(ParseZRevRange, "zrevrange key 0 1")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
@@ -82,7 +73,7 @@ func TestZRevRangeExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "2,thr,two")
 		}
 		{
-			cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 0 5")
+			cmd := redis.MustParse(ParseZRevRange, "zrevrange key 0 5")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
@@ -90,7 +81,7 @@ func TestZRevRangeExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "4,thr,two,2nd,one")
 		}
 		{
-			cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 3 5")
+			cmd := redis.MustParse(ParseZRevRange, "zrevrange key 3 5")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
@@ -98,7 +89,7 @@ func TestZRevRangeExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "1,one")
 		}
 		{
-			cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 4 5")
+			cmd := redis.MustParse(ParseZRevRange, "zrevrange key 4 5")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
@@ -114,7 +105,7 @@ func TestZRevRangeExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "thr", 3)
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 
-		cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 0 5 withscores")
+		cmd := redis.MustParse(ParseZRevRange, "zrevrange key 0 5 withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -129,7 +120,7 @@ func TestZRevRangeExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "thr", 3)
 		_, _ = db.ZSet().Add("key", "2nd", 2)
 
-		cmd := command.MustParse[*zset.ZRevRange]("zrevrange key -2 -1")
+		cmd := redis.MustParse(ParseZRevRange, "zrevrange key -2 -1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -140,7 +131,7 @@ func TestZRevRangeExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 0 1")
+		cmd := redis.MustParse(ParseZRevRange, "zrevrange key 0 1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -152,7 +143,7 @@ func TestZRevRangeExec(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		cmd := command.MustParse[*zset.ZRevRange]("zrevrange key 0 1")
+		cmd := redis.MustParse(ParseZRevRange, "zrevrange key 0 1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

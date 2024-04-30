@@ -7,7 +7,7 @@ import "github.com/nalgeon/redka/internal/redis"
 // https://redis.io/commands/keys
 type Keys struct {
 	redis.BaseCmd
-	Pattern string
+	pattern string
 }
 
 func ParseKeys(b redis.BaseCmd) (*Keys, error) {
@@ -15,12 +15,12 @@ func ParseKeys(b redis.BaseCmd) (*Keys, error) {
 	if len(cmd.Args()) != 1 {
 		return cmd, redis.ErrInvalidArgNum
 	}
-	cmd.Pattern = string(cmd.Args()[0])
+	cmd.pattern = string(cmd.Args()[0])
 	return cmd, nil
 }
 
 func (cmd *Keys) Run(w redis.Writer, red redis.Redka) (any, error) {
-	keys, err := red.Key().Keys(cmd.Pattern)
+	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

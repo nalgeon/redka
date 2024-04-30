@@ -11,15 +11,15 @@ import (
 // https://redis.io/commands/hdel
 type HDel struct {
 	redis.BaseCmd
-	Key    string
-	Fields []string
+	key    string
+	fields []string
 }
 
 func ParseHDel(b redis.BaseCmd) (*HDel, error) {
 	cmd := &HDel{BaseCmd: b}
 	err := parser.New(
-		parser.String(&cmd.Key),
-		parser.Strings(&cmd.Fields),
+		parser.String(&cmd.key),
+		parser.Strings(&cmd.fields),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func ParseHDel(b redis.BaseCmd) (*HDel, error) {
 }
 
 func (cmd *HDel) Run(w redis.Writer, red redis.Redka) (any, error) {
-	count, err := red.Hash().Delete(cmd.Key, cmd.Fields...)
+	count, err := red.Hash().Delete(cmd.key, cmd.fields...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

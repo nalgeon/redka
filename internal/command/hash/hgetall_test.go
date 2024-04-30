@@ -1,10 +1,8 @@
-package hash_test
+package hash
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,38 +10,33 @@ import (
 
 func TestHGetAllParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		key  string
-		err  error
+		cmd string
+		key string
+		err error
 	}{
 		{
-			name: "hgetall",
-			args: command.BuildArgs("hgetall"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hgetall",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 		{
-			name: "hgetall person",
-			args: command.BuildArgs("hgetall", "person"),
-			key:  "person",
-			err:  nil,
+			cmd: "hgetall person",
+			key: "person",
+			err: nil,
 		},
 		{
-			name: "hgetall person name",
-			args: command.BuildArgs("hgetall", "person", "name"),
-			key:  "",
-			err:  redis.ErrInvalidArgNum,
+			cmd: "hgetall person name",
+			key: "",
+			err: redis.ErrInvalidArgNum,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseHGetAll, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*hash.HGetAll)
-				testx.AssertEqual(t, cm.Key, test.key)
+				testx.AssertEqual(t, cmd.key, test.key)
 			}
 		})
 	}
@@ -57,7 +50,7 @@ func TestHGetAllExec(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, _ = db.Hash().Set("person", "age", 25)
 
-		cmd := command.MustParse[*hash.HGetAll]("hgetall person")
+		cmd := redis.MustParse(ParseHGetAll, "hgetall person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
@@ -73,7 +66,7 @@ func TestHGetAllExec(t *testing.T) {
 		db, red := getDB(t)
 		defer db.Close()
 
-		cmd := command.MustParse[*hash.HGetAll]("hgetall person")
+		cmd := redis.MustParse(ParseHGetAll, "hgetall person")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 

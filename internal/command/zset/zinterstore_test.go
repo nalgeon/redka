@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,76 +10,65 @@ import (
 
 func TestZInterStoreParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZInterStore
+		cmd  string
+		want ZInterStore
 		err  error
 	}{
 		{
-			name: "zinterstore",
-			args: command.BuildArgs("zinterstore"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore",
+			want: ZInterStore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zinterstore dest",
-			args: command.BuildArgs("zinterstore", "dest"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore dest",
+			want: ZInterStore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zinterstore dest 1",
-			args: command.BuildArgs("zinterstore", "dest", "1"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore dest 1",
+			want: ZInterStore{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zinterstore dest 1 key",
-			args: command.BuildArgs("zinterstore", "dest", "1", "key"),
-			want: zset.ZInterStore{Dest: "dest", Keys: []string{"key"}},
+			cmd:  "zinterstore dest 1 key",
+			want: ZInterStore{dest: "dest", keys: []string{"key"}},
 			err:  nil,
 		},
 		{
-			name: "zinterstore dest 2 k1 k2",
-			args: command.BuildArgs("zinterstore", "dest", "2", "k1", "k2"),
-			want: zset.ZInterStore{Dest: "dest", Keys: []string{"k1", "k2"}},
+			cmd:  "zinterstore dest 2 k1 k2",
+			want: ZInterStore{dest: "dest", keys: []string{"k1", "k2"}},
 			err:  nil,
 		},
 		{
-			name: "zinterstore dest 1 k1 k2",
-			args: command.BuildArgs("zinterstore", "dest", "1", "k1", "k2"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore dest 1 k1 k2",
+			want: ZInterStore{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zinterstore dest 2 k1 k2 min",
-			args: command.BuildArgs("zinterstore", "dest", "2", "k1", "k2", "min"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore dest 2 k1 k2 min",
+			want: ZInterStore{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zinterstore dest 2 k1 k2 aggregate min",
-			args: command.BuildArgs("zinterstore", "dest", "2", "k1", "k2", "aggregate", "min"),
-			want: zset.ZInterStore{Dest: "dest", Keys: []string{"k1", "k2"}, Aggregate: "min"},
+			cmd:  "zinterstore dest 2 k1 k2 aggregate min",
+			want: ZInterStore{dest: "dest", keys: []string{"k1", "k2"}, aggregate: "min"},
 			err:  nil,
 		},
 		{
-			name: "zinterstore dest 2 k1 k2 aggregate avg",
-			args: command.BuildArgs("zinterstore", "dest", "2", "k1", "k2", "aggregate", "avg"),
-			want: zset.ZInterStore{},
+			cmd:  "zinterstore dest 2 k1 k2 aggregate avg",
+			want: ZInterStore{},
 			err:  redis.ErrSyntaxError,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZInterStore, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZInterStore)
-				testx.AssertEqual(t, cm.Dest, test.want.Dest)
-				testx.AssertEqual(t, cm.Keys, test.want.Keys)
-				testx.AssertEqual(t, cm.Aggregate, test.want.Aggregate)
+				testx.AssertEqual(t, cmd.dest, test.want.dest)
+				testx.AssertEqual(t, cmd.keys, test.want.keys)
+				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
 			}
 		})
 	}
@@ -108,7 +95,7 @@ func TestZInterStoreExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -139,7 +126,7 @@ func TestZInterStoreExec(t *testing.T) {
 		})
 		_, _ = db.ZSet().Add("dest", "one", 1)
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -171,7 +158,7 @@ func TestZInterStoreExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 3 key1 key2 key3 aggregate min")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3 aggregate min")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -192,7 +179,7 @@ func TestZInterStoreExec(t *testing.T) {
 			"thr": 3,
 		})
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 1 key1")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -209,7 +196,7 @@ func TestZInterStoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key2", "two", 1)
 		_, _ = db.ZSet().Add("key3", "thr", 1)
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -225,7 +212,7 @@ func TestZInterStoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key1", "one", 1)
 		_, _ = db.ZSet().Add("dest", "one", 1)
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 2 key1 key2")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 2 key1 key2")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -241,7 +228,7 @@ func TestZInterStoreExec(t *testing.T) {
 		_ = db.Str().Set("key", "value")
 		_, _ = db.ZSet().Add("dest", "one", 1)
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 1 key")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -257,7 +244,7 @@ func TestZInterStoreExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key", "one", 1)
 		_ = db.Str().Set("dest", "value")
 
-		cmd := command.MustParse[*zset.ZInterStore]("zinterstore dest 1 key")
+		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)

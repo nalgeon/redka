@@ -1,10 +1,8 @@
-package zset_test
+package zset
 
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/command"
-	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/testx"
@@ -12,82 +10,70 @@ import (
 
 func TestZUnionParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args [][]byte
-		want zset.ZUnion
+		cmd  string
+		want ZUnion
 		err  error
 	}{
 		{
-			name: "zunion",
-			args: command.BuildArgs("zunion"),
-			want: zset.ZUnion{},
+			cmd:  "zunion",
+			want: ZUnion{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zunion 1",
-			args: command.BuildArgs("zunion", "1"),
-			want: zset.ZUnion{},
+			cmd:  "zunion 1",
+			want: ZUnion{},
 			err:  redis.ErrInvalidArgNum,
 		},
 		{
-			name: "zunion 1 key",
-			args: command.BuildArgs("zunion", "1", "key"),
-			want: zset.ZUnion{Keys: []string{"key"}},
+			cmd:  "zunion 1 key",
+			want: ZUnion{keys: []string{"key"}},
 			err:  nil,
 		},
 		{
-			name: "zunion 2 k1 k2",
-			args: command.BuildArgs("zunion", "2", "k1", "k2"),
-			want: zset.ZUnion{Keys: []string{"k1", "k2"}},
+			cmd:  "zunion 2 k1 k2",
+			want: ZUnion{keys: []string{"k1", "k2"}},
 			err:  nil,
 		},
 		{
-			name: "zunion 1 k1 k2",
-			args: command.BuildArgs("zunion", "1", "k1", "k2"),
-			want: zset.ZUnion{},
+			cmd:  "zunion 1 k1 k2",
+			want: ZUnion{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zunion 2 k1 k2 min",
-			args: command.BuildArgs("zunion", "2", "k1", "k2", "min"),
-			want: zset.ZUnion{},
+			cmd:  "zunion 2 k1 k2 min",
+			want: ZUnion{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zunion 2 k1 k2 aggregate min",
-			args: command.BuildArgs("zunion", "2", "k1", "k2", "aggregate", "min"),
-			want: zset.ZUnion{Keys: []string{"k1", "k2"}, Aggregate: "min"},
+			cmd:  "zunion 2 k1 k2 aggregate min",
+			want: ZUnion{keys: []string{"k1", "k2"}, aggregate: "min"},
 			err:  nil,
 		},
 		{
-			name: "zunion 2 k1 k2 aggregate avg",
-			args: command.BuildArgs("zunion", "2", "k1", "k2", "aggregate", "avg"),
-			want: zset.ZUnion{},
+			cmd:  "zunion 2 k1 k2 aggregate avg",
+			want: ZUnion{},
 			err:  redis.ErrSyntaxError,
 		},
 		{
-			name: "zunion 2 k1 k2 withscores",
-			args: command.BuildArgs("zunion", "2", "k1", "k2", "withscores"),
-			want: zset.ZUnion{Keys: []string{"k1", "k2"}, WithScores: true},
+			cmd:  "zunion 2 k1 k2 withscores",
+			want: ZUnion{keys: []string{"k1", "k2"}, withScores: true},
 			err:  nil,
 		},
 		{
-			name: "zunion 3 k1 k2 k3 withscores aggregate sum",
-			args: command.BuildArgs("zunion", "3", "k1", "k2", "k3", "withscores", "aggregate", "sum"),
-			want: zset.ZUnion{Keys: []string{"k1", "k2", "k3"}, Aggregate: "sum", WithScores: true},
+			cmd:  "zunion 3 k1 k2 k3 withscores aggregate sum",
+			want: ZUnion{keys: []string{"k1", "k2", "k3"}, aggregate: "sum", withScores: true},
 			err:  nil,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd, err := command.Parse(test.args)
+		t.Run(test.cmd, func(t *testing.T) {
+			cmd, err := redis.Parse(ParseZUnion, test.cmd)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				cm := cmd.(*zset.ZUnion)
-				testx.AssertEqual(t, cm.Keys, test.want.Keys)
-				testx.AssertEqual(t, cm.Aggregate, test.want.Aggregate)
-				testx.AssertEqual(t, cm.WithScores, test.want.WithScores)
+				testx.AssertEqual(t, cmd.keys, test.want.keys)
+				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
+				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
 			}
 		})
 	}
@@ -114,7 +100,7 @@ func TestZUnionExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZUnion, "zunion 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -141,7 +127,7 @@ func TestZUnionExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 3 key1 key2 key3 withscores")
+		cmd := redis.MustParse(ParseZUnion, "zunion 3 key1 key2 key3 withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -168,7 +154,7 @@ func TestZUnionExec(t *testing.T) {
 			"fou": 400,
 		})
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 3 key1 key2 key3 aggregate min withscores")
+		cmd := redis.MustParse(ParseZUnion, "zunion 3 key1 key2 key3 aggregate min withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -184,7 +170,7 @@ func TestZUnionExec(t *testing.T) {
 			"thr": 3,
 		})
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 1 key1")
+		cmd := redis.MustParse(ParseZUnion, "zunion 1 key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -196,7 +182,7 @@ func TestZUnionExec(t *testing.T) {
 		defer db.Close()
 		_, _ = db.ZSet().Add("key1", "one", 1)
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 3 key1 key2 key3")
+		cmd := redis.MustParse(ParseZUnion, "zunion 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
@@ -209,7 +195,7 @@ func TestZUnionExec(t *testing.T) {
 		_, _ = db.ZSet().Add("key1", "one", 1)
 		_ = db.Str().Set("key2", "value")
 
-		cmd := command.MustParse[*zset.ZUnion]("zunion 2 key1 key2")
+		cmd := redis.MustParse(ParseZUnion, "zunion 2 key1 key2")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		testx.AssertNoErr(t, err)
