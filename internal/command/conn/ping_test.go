@@ -1,4 +1,4 @@
-package command
+package conn
 
 import (
 	"testing"
