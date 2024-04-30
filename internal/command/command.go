@@ -50,7 +50,7 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 	case "echo":
 		return conn.ParseEcho(b)
 	case "ping":
-		return conn.parsePing(b)
+		return conn.ParsePing(b)
 
 	// key
 	case "del":
