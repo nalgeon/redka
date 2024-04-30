@@ -59,7 +59,7 @@ func TestPingExec(t *testing.T) {
 	}{
 		{
 			name: "ping",
-			cmd:  command.MustParse[*conn.Ping]("ping"),
+			cmd:  command.MustParse[*conn.Ping]("ping "),
 			res:  "PONG",
 			out:  "PONG",
 		},
