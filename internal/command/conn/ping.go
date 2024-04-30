@@ -23,7 +23,7 @@ func ParsePing(b redis.BaseCmd) (*Ping, error) {
 	cmd := &Ping{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.Parts),
-	).Run(cmd.Args())
+	).Required(1).Run(cmd.Args())
 	if err != nil {
 		return cmd, err
 	}
