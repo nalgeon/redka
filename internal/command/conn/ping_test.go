@@ -1,8 +1,11 @@
-package command
+package conn_test
 
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/command"
+	"github.com/nalgeon/redka/internal/command/conn"
+	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
@@ -15,19 +18,19 @@ func TestPingParse(t *testing.T) {
 	}{
 		{
 			name: "ping",
-			args: buildArgs("ping"),
-			want: []string{"PONG"},
+			args: command.BuildArgs("ping"),
+			want: []string(nil),
 			err:  nil,
 		},
 		{
 			name: "ping hello",
-			args: buildArgs("ping", "hello"),
+			args: command.BuildArgs("ping", "hello"),
 			want: []string{"hello"},
 			err:  nil,
 		},
 		{
 			name: "ping one two",
-			args: buildArgs("ping", "one", "two"),
+			args: command.BuildArgs("ping", "one", "two"),
 			want: []string{"one", "two"},
 			err:  nil,
 		},
@@ -35,10 +38,10 @@ func TestPingParse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cmd, err := Parse(test.args)
+			cmd, err := command.Parse(test.args)
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.(*Echo).parts, test.want)
+				testx.AssertEqual(t, cmd.(*conn.Ping).Parts, test.want)
 			}
 		})
 	}
@@ -50,25 +53,25 @@ func TestPingExec(t *testing.T) {
 
 	tests := []struct {
 		name string
-		cmd  *Echo
+		cmd  *conn.Ping
 		res  any
 		out  string
 	}{
 		{
 			name: "ping",
-			cmd:  mustParse[*Echo]("ping"),
+			cmd:  command.MustParse[*conn.Ping]("ping"),
 			res:  "PONG",
 			out:  "PONG",
 		},
 		{
 			name: "ping hello",
-			cmd:  mustParse[*Echo]("ping hello"),
+			cmd:  command.MustParse[*conn.Ping]("ping hello"),
 			res:  "hello",
 			out:  "hello",
 		},
 		{
 			name: "ping one two",
-			cmd:  mustParse[*Echo]("ping one two"),
+			cmd:  command.MustParse[*conn.Ping]("ping one two"),
 			res:  "one two",
 			out:  "one two",
 		},
@@ -76,11 +79,11 @@ func TestPingExec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			conn := new(fakeConn)
+			conn := redis.NewFakeConn()
 			res, err := test.cmd.Run(conn, red)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.out(), test.out)
+			testx.AssertEqual(t, conn.Out(), test.out)
 		})
 	}
 }
