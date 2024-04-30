@@ -13,18 +13,18 @@ const (
 	sqlDelete = `
 	delete from rlist
 	where key_id = (
-		select id from rkey where key = :key
-		and (etime is null or etime > :now)
-	) and elem = :elem`
+		select id from rkey where key = ?
+		and (etime is null or etime > ?)
+	) and elem = ?`
 
 	sqlDeleteBack = `
 	with ids as (
 		select rlist.rowid
 		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > :now)
-		where key = :key and elem = :elem
+			join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		where key = ? and elem = ?
 		order by pos desc
-		limit :count
+		limit ?
 	)
 	delete from rlist
 	where rowid in (select rowid from ids)`
@@ -33,10 +33,10 @@ const (
 	with ids as (
 		select rlist.rowid
 		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > :now)
-		where key = :key and elem = :elem
+			join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		where key = ? and elem = ?
 		order by pos
-		limit :count
+		limit ?
 	)
 	delete from rlist
 	where rowid in (select rowid from ids)`
@@ -45,21 +45,21 @@ const (
 	with elems as (
 		select elem, row_number() over (order by pos asc) as rownum
 		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > :now)
-		where key = :key
+			join rkey on key_id = rkey.id and (etime is null or etime > ?)
+		where key = ?
 	)
 	select elem
 	from elems
-	where rownum = :idx + 1`
+	where rownum = ? + 1`
 
 	sqlInsertAfter = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	),
 	elprev as (
 		select min(pos) as pos from rlist
-		where key_id = (select id from keyid) and elem = :pivot
+		where key_id = (select id from keyid) and elem = ?
 	),
 	elnext as (
 		select min(pos) as pos from rlist
@@ -74,7 +74,7 @@ const (
 		from elprev, elnext
 	)
 	insert into rlist (key_id, pos, elem)
-	select (select id from keyid), (select pos from newpos), :elem
+	select (select id from keyid), (select pos from newpos), ?
 	from rlist
 	where key_id = (select id from keyid)
 	limit 1
@@ -86,11 +86,11 @@ const (
 	sqlInsertBefore = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	),
 	elnext as (
 		select min(pos) as pos from rlist
-		where key_id = (select id from keyid) and elem = :pivot
+		where key_id = (select id from keyid) and elem = ?
 	),
 	elprev as (
 		select max(pos) as pos from rlist
@@ -105,7 +105,7 @@ const (
 		from elprev, elnext
 	)
 	insert into rlist (key_id, pos, elem)
-	select (select id from keyid), (select pos from newpos), :elem
+	select (select id from keyid), (select pos from newpos), ?
 	from rlist
 	where key_id = (select id from keyid)
 	limit 1
@@ -117,13 +117,13 @@ const (
 	sqlLen = `
 	select count(*)
 	from rlist
-		join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlPopBack = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
@@ -137,7 +137,7 @@ const (
 	sqlPopFront = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
@@ -150,28 +150,28 @@ const (
 
 	sqlPushBack = `
 	insert into rlist (key_id, pos, elem)
-	select :key_id, coalesce(max(pos)+1, 0), :elem
+	select ?, coalesce(max(pos)+1, 0), ?
 	from rlist
-	where key_id = :key_id
+	where key_id = ?
 	returning (
 		select count(*) from rlist
-		where key_id = :key_id
+		where key_id = ?
 	)`
 
 	sqlPushFront = `
 	insert into rlist (key_id, pos, elem)
-	select :key_id, coalesce(min(pos)-1, 0), :elem
+	select ?, coalesce(min(pos)-1, 0), ?
 	from rlist
-	where key_id = :key_id
+	where key_id = ?
 	returning (
 		select count(*) from rlist
-		where key_id = :key_id
+		where key_id = ?
 	)`
 
 	sqlRange = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	),
 	counts as (
 		select count(*) as n_elem from rlist
@@ -179,13 +179,13 @@ const (
 	),
 	bounds as (
 		select
-			case when :start < 0
-				then (select n_elem from counts) + :start
-				else :start
+			case when ? < 0
+				then (select n_elem from counts) + ?
+				else ?
 			end as start,
-			case when :stop < 0
-				then (select n_elem from counts) + :stop
-				else :stop
+			case when ? < 0
+				then (select n_elem from counts) + ?
+				else ?
 			end as stop
 	)
 	select elem
@@ -199,20 +199,20 @@ const (
 	sqlSet = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
     ),
     elems as (
 		select pos, row_number() over (order by pos asc) as rownum
 		from rlist
 		where key_id = (select id from keyid)
     )
-    update rlist set elem = :elem
+    update rlist set elem = ?
     where key_id = (select id from keyid)
-		and pos = (select pos from elems where rownum = :idx + 1)`
+		and pos = (select pos from elems where rownum = ? + 1)`
 
 	sqlSetKey = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 		version = version+1,
 		type = excluded.type,
@@ -222,7 +222,7 @@ const (
 	sqlTrim = `
 	with keyid as (
 		select id from rkey
-		where key = :key and (etime is null or etime > :now)
+		where key = ? and (etime is null or etime > ?)
 	),
 	counts as (
 		select count(*) as n_elem from rlist
@@ -230,13 +230,13 @@ const (
 	),
 	bounds as (
 		select
-			case when :start < 0
-				then (select n_elem from counts) + :start
-				else :start
+			case when ? < 0
+				then (select n_elem from counts) + ?
+				else ?
 			end as start,
-			case when :stop < 0
-				then (select n_elem from counts) + :stop
-				else :stop
+			case when ? < 0
+				then (select n_elem from counts) + ?
+				else ?
 			end as stop
 	),
 	remain as (
@@ -404,7 +404,11 @@ func (tx *Tx) Range(key string, start, stop int) ([]core.Value, error) {
 		return nil, nil
 	}
 
-	args := []any{key, time.Now().UnixMilli(), start, stop}
+	args := []any{
+		key, time.Now().UnixMilli(),
+		start, start, start,
+		stop, stop, stop,
+	}
 	rows, err := tx.tx.Query(sqlRange, args...)
 	if err != nil {
 		return nil, err
@@ -465,7 +469,11 @@ func (tx *Tx) Set(key string, idx int, elem any) error {
 //
 // Does nothing if the key does not exist or is not a list.
 func (tx *Tx) Trim(key string, start, stop int) (int, error) {
-	args := []any{key, time.Now().UnixMilli(), start, stop}
+	args := []any{
+		key, time.Now().UnixMilli(),
+		start, start, start,
+		stop, stop, stop,
+	}
 	out, err := tx.tx.Exec(sqlTrim, args...)
 	if err != nil {
 		return 0, err
@@ -506,7 +514,7 @@ func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
 		return 0, core.ErrNotFound
 	}
 	if err != nil {
-		if err.Error() == "NOT NULL constraint failed: rlist.pos" {
+		if sqlx.ConstraintFailed(err, "NOT NULL", "rlist.pos") {
 			return -1, core.ErrNotFound
 		}
 		return 0, err

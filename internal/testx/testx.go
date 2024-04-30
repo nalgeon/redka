@@ -2,21 +2,11 @@
 package testx
 
 import (
-	"database/sql"
 	"reflect"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-func GetDB(tb testing.TB) *sql.DB {
-	tb.Helper()
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return db
-}
 
 func AssertEqual(tb testing.TB, got, want any) {
 	tb.Helper()

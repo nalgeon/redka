@@ -12,11 +12,11 @@ const (
 	select rowid, elem, score
 	from rzset
 	where key_id = (
-		select id from rkey where key = :key
-		and (etime is null or etime > :now)
+		select id from rkey where key = ?
+		and (etime is null or etime > ?)
 	  )
 	order by score, elem
-	limit :start, :count
+	limit ?, ?
 	)
 	delete from rzset
 	where rowid in (select rowid from ranked)`
@@ -24,10 +24,10 @@ const (
 	sqlDeleteScore = `
 	delete from rzset
 	where key_id = (
-	    select id from rkey where key = :key
-		and (etime is null or etime > :now)
+	    select id from rkey where key = ?
+		and (etime is null or etime > ?)
 	  )
-	  and score between :start and :stop`
+	  and score between ? and ?`
 )
 
 // DeleteCmd removes elements from a set.

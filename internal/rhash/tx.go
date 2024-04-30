@@ -12,71 +12,72 @@ const (
 	sqlCount = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field in (:fields)`
 
 	sqlDelete = `
 	delete from rhash
 	where key_id = (
-	    select id from rkey where key = :key
-	    and (etime is null or etime > :now)
+	    select id from rkey where key = ?
+	    and (etime is null or etime > ?)
 	  ) and field in (:fields)`
 
 	sqlFields = `
 	select field
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlGet = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field = :field`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field = ?`
 
 	sqlGetMany = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and field in (:fields)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and field in (:fields)`
 
 	sqlItems = `
 	select field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlLen = `
 	select count(field)
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlScan = `
 	select rhash.rowid, field, value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and rhash.rowid > :cursor and field glob :pattern
-	limit :count`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and rhash.rowid > ? and field glob ?
+	limit ?`
 
-	sqlSet = `
+	sqlSet1 = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime;
+	  mtime = excluded.mtime`
 
+	sqlSet2 = `
 	insert into rhash (key_id, field, value)
-	values ((select id from rkey where key = :key), :field, :value)
+	values ((select id from rkey where key = ?), ?, ?)
 	on conflict (key_id, field) do update
 	set value = excluded.value;`
 
 	sqlValues = `
 	select value
 	from rhash
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 )
 
 const scanPageSize = 10
@@ -443,19 +444,17 @@ func (tx *Tx) count(key string, fields ...string) (int, error) {
 // set creates or updates the value of a field in a hash.
 func (tx *Tx) set(key string, field string, value any) error {
 	args := []any{
-		// insert into rkey
 		key,                    // key
 		core.TypeHash,          // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
-		// insert into rhash
-		key, field, value,
 	}
-	_, err := tx.tx.Exec(sqlSet, args...)
+	_, err := tx.tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = tx.tx.Exec(sqlSet2, key, field, value)
+	return err
 }
 
 // scanValue scans a hash field value the current row.

@@ -12,40 +12,42 @@ const (
 	sqlGet = `
 	select value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlGetMany = `
 	select key, value
 	from rstring
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)`
 
-	sqlSet = `
+	sqlSet1 = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (:key, :type, :version, :etime, :mtime)
+	values (?, ?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  etime = excluded.etime,
-	  mtime = excluded.mtime;
+	  mtime = excluded.mtime`
 
+	sqlSet2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = :key), :value)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (key_id) do update
-	set value = excluded.value;`
+	set value = excluded.value`
 
-	sqlUpdate = `
+	sqlUpdate1 = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (:key, :type, :version, null, :mtime)
+	values (?, ?, ?, null, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
 	  -- not changing etime
-	  mtime = excluded.mtime;
+	  mtime = excluded.mtime`
 
+	sqlUpdate2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = :key), :value)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (key_id) do update
 	set value = excluded.value`
 )
@@ -203,6 +205,10 @@ func (tx *Tx) SetWith(key string, value any) SetCmd {
 }
 
 func get(tx sqlx.Tx, key string) (core.Value, error) {
+	// args := []any{
+	// 	sql.Named("now", time.Now().UnixMilli()), // now
+	// 	sql.Named("key", key),                    // key
+	// }
 	args := []any{
 		time.Now().UnixMilli(), // now
 		key,                    // key
@@ -227,21 +233,18 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	}
 
 	args := []any{
-		// insert into rkey
 		key,                    // key
 		core.TypeString,        // type
 		core.InitialVersion,    // version
 		etime,                  // etime
 		time.Now().UnixMilli(), // mtime
-		// insert into rstring
-		key,   // key
-		value, // value
 	}
-	_, err := tx.Exec(sqlSet, args...)
+	_, err := tx.Exec(sqlSet1, args...)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = tx.Exec(sqlSet2, key, value)
+	return err
 }
 
 // update updates the value of the existing key without changing its
@@ -249,18 +252,15 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 // the specified value and no expiration time.
 func update(tx sqlx.Tx, key string, value any) error {
 	args := []any{
-		// insert into rkey
 		key,                    // key
 		core.TypeString,        // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
-		// insert into rstring
-		key,   // key
-		value, // value
 	}
-	_, err := tx.Exec(sqlUpdate, args...)
+	_, err := tx.Exec(sqlUpdate1, args...)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = tx.Exec(sqlUpdate2, key, value)
+	return err
 }

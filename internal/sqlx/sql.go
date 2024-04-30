@@ -67,3 +67,10 @@ func Select[T any](db Tx, query string, args []any,
 
 	return vals, err
 }
+
+// ConstraintFailed checks if the error is due to
+// a constraint violation on a column.
+func ConstraintFailed(err error, constraint, column string) bool {
+	msg := constraint + " constraint failed: " + column
+	return strings.Contains(err.Error(), msg)
+}

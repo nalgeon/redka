@@ -12,21 +12,21 @@ const (
 	with ranked as (
 	  select elem, score, (row_number() over w - 1) as rank
 	  from rzset
-	    join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	  where key = :key
+	    join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	  where key = ?
 	  window w as (partition by key_id order by score asc, elem asc)
 	)
 	select elem, score
 	from ranked
-	where rank between :start and :stop
+	where rank between ? and ?
 	order by rank, elem asc`
 
 	sqlRangeScore = `
 	select elem, score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key
-	and score between :start and :stop
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?
+	and score between ? and ?
 	order by score asc, elem asc`
 )
 
@@ -173,13 +173,13 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 
 	// Add offset and count if necessary.
 	if c.offset > 0 && c.count > 0 {
-		query += " limit :offset, :count"
+		query += " limit ?, ?"
 		args = append(args, c.offset, c.count)
 	} else if c.count > 0 {
-		query += " limit :count"
+		query += " limit ?"
 		args = append(args, c.count)
 	} else if c.offset > 0 {
-		query += " limit :offset, -1"
+		query += " limit ?, -1"
 		args = append(args, c.offset)
 	}
 

@@ -14,41 +14,43 @@ const (
 	sqlInter = `
 	select elem, sum(score) as score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)
 	group by elem
-	having count(distinct key_id) = :nkeys
+	having count(distinct key_id) = ?
 	order by sum(score), elem`
 
-	sqlInterStore = `
+	sqlInterStore1 = `
 	delete from rzset
 	where key_id = (
-		select id from rkey where key = :key
-		and (etime is null or etime > :now)
-	  );
+		select id from rkey where key = ?
+		and (etime is null or etime > ?)
+	  )`
 
+	sqlInterStore2 = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime;
+	  mtime = excluded.mtime
+	returning id`
 
+	sqlInterStore3 = `
 	insert into rzset (key_id, elem, score)
-	select
-	  (select id from rkey where key = :key),
-	  elem, sum(score) as score
+	select ?, elem, sum(score) as score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
 	where key in (:keys)
 	group by elem
-	having count(distinct key_id) = :nkeys
+	having count(distinct key_id) = ?
 	order by sum(score), elem;`
 )
 
 // InterCmd intersects multiple sets.
 type InterCmd struct {
-	tx        sqlx.Tx
+	db        *DB
+	tx        *Tx
 	dest      string
 	keys      []string
 	aggregate string
@@ -83,6 +85,39 @@ func (c InterCmd) Max() InterCmd {
 // The score of each element is the aggregate of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (c InterCmd) Run() ([]SetItem, error) {
+	if c.db != nil {
+		return c.run(c.db.RO)
+	}
+	if c.tx != nil {
+		return c.run(c.tx.tx)
+	}
+	return nil, nil
+}
+
+// Store intersects multiple sets and stores the result in a new set.
+// Returns the number of elements in the resulting set.
+// If the destination key already exists, it is fully overwritten
+// (all old elements are removed and the new ones are inserted).
+// If any of the source keys do not exist or are not sets, does nothing,
+// except deleting the destination key if it exists.
+func (c InterCmd) Store() (int, error) {
+	if c.db != nil {
+		var count int
+		err := c.db.Update(func(tx *Tx) error {
+			var err error
+			count, err = c.store(tx.tx)
+			return err
+		})
+		return count, err
+	}
+	if c.tx != nil {
+		return c.store(c.tx.tx)
+	}
+	return 0, nil
+}
+
+// run returns the intersection of multiple sets.
+func (c InterCmd) run(tx sqlx.Tx) ([]SetItem, error) {
 	// Prepare query arguments.
 	query := sqlInter
 	if c.aggregate != sqlx.Sum {
@@ -97,7 +132,7 @@ func (c InterCmd) Run() ([]SetItem, error) {
 
 	// Execute the query.
 	var rows *sql.Rows
-	rows, err := c.tx.Query(query, args...)
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,38 +154,38 @@ func (c InterCmd) Run() ([]SetItem, error) {
 	return items, nil
 }
 
-// Store intersects multiple sets and stores the result in a new set.
-// Returns the number of elements in the resulting set.
-// If the destination key already exists, it is fully overwritten
-// (all old elements are removed and the new ones are inserted).
-// If any of the source keys do not exist or are not sets, does nothing,
-// except deleting the destination key if it exists.
-func (c InterCmd) Store() (int, error) {
-	// Insert the destination key and get its ID.
+// store intersects multiple sets and stores the result in a new set.
+func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	now := time.Now().UnixMilli()
-	args := []any{
-		// delete from rzset
-		c.dest, // key
-		now,    // now
-		// insert into rkey
+
+	// Delete the destination key if it exists.
+	args := []any{c.dest, now}
+	_, err := tx.Exec(sqlInterStore1, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	// Create the destination key.
+	args = []any{
 		c.dest,              // key
 		core.TypeSortedSet,  // type
 		core.InitialVersion, // version
 		now,                 // mtime
-		// insert into rzset
-		c.dest, // key
-		now,    // now
-		// keys
-		// nkeys
 	}
-	query := sqlInterStore
+	var destID int
+	err = tx.QueryRow(sqlInterStore2, args...).Scan(&destID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Intersect the source sets and store the result.
+	query := sqlInterStore3
 	if c.aggregate != sqlx.Sum {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = slices.Concat(args, keyArgs, []any{len(c.keys)})
-
-	res, err := c.tx.Exec(query, args...)
+	args = slices.Concat([]any{destID, now}, keyArgs, []any{len(c.keys)})
+	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}

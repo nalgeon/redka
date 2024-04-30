@@ -10,59 +10,60 @@ import (
 )
 
 const (
-	sqlAdd = `
+	sqlAdd1 = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
-	  mtime = excluded.mtime;
+	  mtime = excluded.mtime`
 
+	sqlAdd2 = `
 	insert into rzset (key_id, elem, score)
-	values ((select id from rkey where key = :key), :elem, :score)
+	values ((select id from rkey where key = ?), ?, ?)
 	on conflict (key_id, elem) do update
-	set score = excluded.score;`
+	set score = excluded.score`
 
 	sqlCount = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and elem in (:elems)`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and elem in (:elems)`
 
 	sqlCountScore = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and score between :min and :max`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and score between ? and ?`
 
 	sqlDelete = `
 	delete from rzset
 	where key_id = (
-		select id from rkey where key = :key
-		and (etime is null or etime > :now)
+		select id from rkey where key = ?
+		and (etime is null or etime > ?)
 	  ) and elem in (:elems)`
 
 	sqlGetRank = `
 	with ranked as (
 	  select elem, score, (row_number() over w - 1) as rank
 	  from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	  where key = :key
+		join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	  where key = ?
 	  window w as (partition by key_id order by score asc, elem asc)
 	)
 	select rank, score
 	from ranked
-	where elem = :elem`
+	where elem = ?`
 
 	sqlGetScore = `
 	select score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and elem = :elem`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and elem = ?`
 
 	sqlIncr1 = `
 	insert into rkey (key, type, version, mtime)
-	values (:key, :type, :version, :mtime)
+	values (?, ?, ?, ?)
 	on conflict (key) do update set
 	  version = version+1,
 	  type = excluded.type,
@@ -70,7 +71,7 @@ const (
 
 	sqlIncr2 = `
 	insert into rzset (key_id, elem, score)
-	values ((select id from rkey where key = :key), :elem, :delta)
+	values ((select id from rkey where key = ?), ?, ?)
 	on conflict (key_id, elem) do update
 	set score = score + excluded.score
 	returning score`
@@ -78,15 +79,15 @@ const (
 	sqlLen = `
 	select count(elem)
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ?`
 
 	sqlScan = `
 	select rzset.rowid, elem, score
 	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > :now)
-	where key = :key and rzset.rowid > :cursor and elem glob :pattern
-	limit :count`
+	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
+	where key = ? and rzset.rowid > ? and elem glob ?
+	limit ?`
 )
 
 const scanPageSize = 10
@@ -259,12 +260,13 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 // The score of each element is the sum of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (tx *Tx) Inter(keys ...string) ([]SetItem, error) {
-	return tx.InterWith(keys...).Run()
+	cmd := InterCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
+	return cmd.Run()
 }
 
 // InterWith intersects multiple sets with additional options.
 func (tx *Tx) InterWith(keys ...string) InterCmd {
-	return InterCmd{tx: tx.tx, keys: keys, aggregate: sqlx.Sum}
+	return InterCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
 }
 
 // Len returns the number of elements in a set.
@@ -345,12 +347,13 @@ func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
 // Ignores the keys that do not exist or are not sets.
 // If no keys exist, returns a nil slice.
 func (tx *Tx) Union(keys ...string) ([]SetItem, error) {
-	return tx.UnionWith(keys...).Run()
+	cmd := UnionCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
+	return cmd.Run()
 }
 
 // UnionWith unions multiple sets with additional options.
 func (tx *Tx) UnionWith(keys ...string) UnionCmd {
-	return UnionCmd{tx: tx.tx, keys: keys, aggregate: sqlx.Sum}
+	return UnionCmd{tx: tx, keys: keys, aggregate: sqlx.Sum}
 }
 
 // add adds or updates the element in a set.
@@ -360,20 +363,17 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 	}
 
 	args := []any{
-		// insert into rkey
 		key,                    // key
 		core.TypeSortedSet,     // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
-		// insert into rzset
-		key, elem, score,
 	}
-
-	_, err := tx.tx.Exec(sqlAdd, args...)
+	_, err := tx.tx.Exec(sqlAdd1, args...)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = tx.tx.Exec(sqlAdd2, key, elem, score)
+	return err
 }
 
 // count returns the number of existing elements in a set.
@@ -384,8 +384,8 @@ func (tx *Tx) count(key string, elems ...any) (int, error) {
 		}
 	}
 
-	query, fieldArgs := sqlx.ExpandIn(sqlCount, ":elems", elems)
-	args := append([]any{time.Now().UnixMilli(), key}, fieldArgs...)
+	query, elemArgs := sqlx.ExpandIn(sqlCount, ":elems", elems)
+	args := append([]any{time.Now().UnixMilli(), key}, elemArgs...)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err

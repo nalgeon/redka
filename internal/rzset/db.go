@@ -127,14 +127,13 @@ func (d *DB) Incr(key string, elem any, delta float64) (float64, error) {
 // The score of each element is the sum of its scores in the given sets.
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (d *DB) Inter(keys ...string) ([]SetItem, error) {
-	tx := NewTx(d.RO)
-	return tx.Inter(keys...)
+	cmd := InterCmd{db: d, keys: keys, aggregate: sqlx.Sum}
+	return cmd.Run()
 }
 
 // InterWith intersects multiple sets with additional options.
 func (d *DB) InterWith(keys ...string) InterCmd {
-	tx := NewTx(d.RW)
-	return tx.InterWith(keys...)
+	return InterCmd{db: d, keys: keys, aggregate: sqlx.Sum}
 }
 
 // Len returns the number of elements in a set.
@@ -187,12 +186,11 @@ func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
 // Ignores the keys that do not exist or are not sets.
 // If no keys exist, returns a nil slice.
 func (d *DB) Union(keys ...string) ([]SetItem, error) {
-	tx := NewTx(d.RO)
-	return tx.Union(keys...)
+	cmd := UnionCmd{db: d, keys: keys, aggregate: sqlx.Sum}
+	return cmd.Run()
 }
 
 // UnionWith unions multiple sets with additional options.
 func (d *DB) UnionWith(keys ...string) UnionCmd {
-	tx := NewTx(d.RW)
-	return tx.UnionWith(keys...)
+	return UnionCmd{db: d, keys: keys, aggregate: sqlx.Sum}
 }
