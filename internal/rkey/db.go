@@ -135,17 +135,25 @@ func (db *DB) RenameNotExists(key, newKey string) (bool, error) {
 // Returns a slice of keys (see [core.Key]) of size count
 // based on the current state of the cursor.
 // Returns an empty slice when there are no more keys.
-// Supports glob-style patterns. Set count = 0 for default page size.
-func (db *DB) Scan(cursor int, pattern string, pageSize int) (ScanResult, error) {
+//
+// Filtering and limiting options:
+//   - pattern (glob-style) to filter keys by name (* = any name).
+//   - ktype to filter keys by type (TypeAny = any type).
+//   - count to limit the number of keys returned (0 = default).
+func (db *DB) Scan(cursor int, pattern string, ktype core.TypeID, count int) (ScanResult, error) {
 	tx := NewTx(db.RO)
-	return tx.Scan(cursor, pattern, pageSize)
+	return tx.Scan(cursor, pattern, ktype, count)
 }
 
 // Scanner returns an iterator for keys matching pattern.
 // The scanner returns keys one by one, fetching them
 // from the database in pageSize batches when necessary.
 // Stops when there are no more items or an error occurs.
-// Supports glob-style patterns. Set pageSize = 0 for default page size.
-func (db *DB) Scanner(pattern string, pageSize int) *Scanner {
-	return newScanner(NewTx(db.RO), pattern, pageSize)
+//
+// Filtering and pagination options:
+//   - pattern (glob-style) to filter keys by name (* = any name).
+//   - ktype to filter keys by type (TypeAny = any type).
+//   - pageSize to limit the number of keys fetched at once (0 = default).
+func (db *DB) Scanner(pattern string, ktype core.TypeID, pageSize int) *Scanner {
+	return newScanner(NewTx(db.RO), pattern, ktype, pageSize)
 }

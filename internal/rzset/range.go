@@ -11,9 +11,8 @@ const (
 	sqlRangeRank = `
 	with ranked as (
 		select elem, score, (row_number() over w - 1) as rank
-		from rzset
-			join rkey on key_id = rkey.id and (etime is null or etime > ?)
-		where key = ?
+		from rzset join rkey on key_id = rkey.id and type = 5
+		where key = ? and (etime is null or etime > ?)
 		window w as (partition by key_id order by score asc, elem asc)
 	)
 	select elem, score
@@ -23,9 +22,8 @@ const (
 
 	sqlRangeScore = `
 	select elem, score
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key = ? and (etime is null or etime > ?)
 	and score between ? and ?
 	order by score asc, elem asc`
 )
@@ -126,8 +124,8 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 
 	// Prepare query arguments.
 	args := []any{
-		time.Now().UnixMilli(),
 		c.key,
+		time.Now().UnixMilli(),
 		c.byRank.start,
 		c.byRank.stop,
 	}
@@ -165,8 +163,8 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 
 	// Prepare query arguments.
 	args := []any{
-		time.Now().UnixMilli(),
 		c.key,
+		time.Now().UnixMilli(),
 		c.byScore.start,
 		c.byScore.stop,
 	}

@@ -13,9 +13,8 @@ import (
 const (
 	sqlInter = `
 	select elem, sum(score) as score
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key in (:keys)
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	having count(distinct key_id) = ?
 	order by sum(score), elem`
@@ -23,25 +22,23 @@ const (
 	sqlInterStore1 = `
 	delete from rzset
 	where key_id = (
-		select id from rkey where key = ?
-		and (etime is null or etime > ?)
+		select id from rkey
+		where key = ? and type = 5 and (etime is null or etime > ?)
 	)`
 
 	sqlInterStore2 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 5, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
 		mtime = excluded.mtime
 	returning id`
 
 	sqlInterStore3 = `
 	insert into rzset (key_id, elem, score)
 	select ?, elem, sum(score) as score
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key in (:keys)
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	having count(distinct key_id) = ?
 	order by sum(score), elem;`
@@ -124,10 +121,10 @@ func (c InterCmd) run(tx sqlx.Tx) ([]SetItem, error) {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args := slices.Concat(
-		[]any{time.Now().UnixMilli()}, // now
-		keyArgs,                       // keys
-		[]any{len(c.keys)},            // nkeys
+	args := append(
+		keyArgs,                // keys
+		time.Now().UnixMilli(), // now
+		len(c.keys),            // nkeys
 	)
 
 	// Execute the query.
@@ -168,7 +165,6 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	// Create the destination key.
 	args = []any{
 		c.dest,              // key
-		core.TypeSortedSet,  // type
 		core.InitialVersion, // version
 		now,                 // mtime
 	}
@@ -184,7 +180,7 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = slices.Concat([]any{destID, now}, keyArgs, []any{len(c.keys)})
+	args = slices.Concat([]any{destID}, keyArgs, []any{now, len(c.keys)})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err

@@ -12,7 +12,7 @@ rkey (
 );
 
 create unique index if not exists
-rkey_key_idx on rkey (key);
+rkey_key_idx on rkey (key, type);
 
 create index if not exists
 rkey_etime_idx on rkey (etime)

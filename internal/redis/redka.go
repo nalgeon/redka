@@ -44,8 +44,8 @@ type RKey interface {
 	Random() (core.Key, error)
 	Rename(key, newKey string) error
 	RenameNotExists(key, newKey string) (bool, error)
-	Scan(cursor int, pattern string, pageSize int) (rkey.ScanResult, error)
-	Scanner(pattern string, pageSize int) *rkey.Scanner
+	Scan(cursor int, pattern string, ktype core.TypeID, count int) (rkey.ScanResult, error)
+	Scanner(pattern string, ktype core.TypeID, pageSize int) *rkey.Scanner
 }
 
 // RList is a list repository.

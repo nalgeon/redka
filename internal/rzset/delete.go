@@ -13,7 +13,7 @@ const (
 		from rzset
 		where key_id = (
 			select id from rkey
-			where key = ? and (etime is null or etime > ?)
+			where key = ? and type = 5 and (etime is null or etime > ?)
 		)
 		order by score, elem
 		limit ?, ?
@@ -25,7 +25,7 @@ const (
 	delete from rzset
 	where key_id = (
 			select id from rkey
-			where key = ? and (etime is null or etime > ?)
+			where key = ? and type = 5 and (etime is null or etime > ?)
 		) and score between ? and ?`
 )
 

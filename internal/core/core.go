@@ -11,6 +11,7 @@ import (
 type TypeID int
 
 const (
+	TypeAny       = TypeID(0)
 	TypeString    = TypeID(1)
 	TypeList      = TypeID(2)
 	TypeSet       = TypeID(3)

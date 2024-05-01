@@ -454,44 +454,63 @@ func TestRenameNotExists(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	t.Run("scan", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
 
-	_ = red.Str().Set("11", "11")
-	_ = red.Str().Set("12", "12")
-	_ = red.Str().Set("21", "21")
-	_ = red.Str().Set("22", "22")
-	_ = red.Str().Set("31", "31")
+		_ = red.Str().Set("11", "11")
+		_ = red.Str().Set("12", "12")
+		_ = red.Str().Set("21", "21")
+		_ = red.Str().Set("22", "22")
+		_ = red.Str().Set("31", "31")
 
-	tests := []struct {
-		name    string
-		cursor  int
-		pattern string
-		count   int
+		tests := []struct {
+			name    string
+			cursor  int
+			pattern string
+			count   int
 
-		wantCursor int
-		wantKeys   []string
-	}{
-		{"all", 0, "*", 10, 5, []string{"11", "12", "21", "22", "31"}},
-		{"some", 0, "2*", 10, 4, []string{"21", "22"}},
-		{"none", 0, "n*", 10, 0, []string{}},
-		{"cursor 1st", 0, "*", 2, 2, []string{"11", "12"}},
-		{"cursor 2nd", 2, "*", 2, 4, []string{"21", "22"}},
-		{"cursor 3rd", 4, "*", 2, 5, []string{"31"}},
-		{"exhausted", 6, "*", 2, 0, []string{}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			out, err := db.Scan(test.cursor, test.pattern, test.count)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, out.Cursor, test.wantCursor)
-			keyNames := make([]string, len(out.Keys))
-			for i, key := range out.Keys {
-				keyNames[i] = key.Key
-			}
-			testx.AssertEqual(t, keyNames, test.wantKeys)
-		})
-	}
+			wantCursor int
+			wantKeys   []string
+		}{
+			{"all", 0, "*", 10, 5, []string{"11", "12", "21", "22", "31"}},
+			{"some", 0, "2*", 10, 4, []string{"21", "22"}},
+			{"none", 0, "n*", 10, 0, []string{}},
+			{"cursor 1st", 0, "*", 2, 2, []string{"11", "12"}},
+			{"cursor 2nd", 2, "*", 2, 4, []string{"21", "22"}},
+			{"cursor 3rd", 4, "*", 2, 5, []string{"31"}},
+			{"exhausted", 6, "*", 2, 0, []string{}},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				out, err := db.Scan(test.cursor, test.pattern, core.TypeAny, test.count)
+				testx.AssertNoErr(t, err)
+				testx.AssertEqual(t, out.Cursor, test.wantCursor)
+				keyNames := make([]string, len(out.Keys))
+				for i, key := range out.Keys {
+					keyNames[i] = key.Key
+				}
+				testx.AssertEqual(t, keyNames, test.wantKeys)
+			})
+		}
+	})
+	t.Run("type filter", func(t *testing.T) {
+		red, db := getDB(t)
+		defer red.Close()
+
+		_ = red.Str().Set("k11", "11")
+		_ = red.Str().Set("k12", "12")
+		_, _ = red.Hash().Set("k21", "field", "value")
+		_, _ = red.ZSet().Add("k22", "elem", 11)
+		_ = red.Str().Set("k31", "31")
+
+		out, err := db.Scan(0, "*", core.TypeString, 10)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Keys), 3)
+		testx.AssertEqual(t, out.Keys[0].Key, "k11")
+		testx.AssertEqual(t, out.Keys[1].Key, "k12")
+		testx.AssertEqual(t, out.Keys[2].Key, "k31")
+	})
 }
 
 func TestScanner(t *testing.T) {
@@ -506,7 +525,7 @@ func TestScanner(t *testing.T) {
 
 	var keys []core.Key
 	err := red.View(func(tx *redka.Tx) error {
-		sc := tx.Key().Scanner("*", 2)
+		sc := tx.Key().Scanner("*", core.TypeAny, 2)
 		for sc.Scan() {
 			keys = append(keys, sc.Key())
 		}

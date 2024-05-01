@@ -11,43 +11,41 @@ import (
 const (
 	sqlGet = `
 	select value
-	from rstring
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rstring join rkey on key_id = rkey.id and type = 1
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlGetMany = `
 	select key, value
 	from rstring
-	join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key in (:keys)`
+	join rkey on key_id = rkey.id and type = 1
+	where key in (:keys) and (etime is null or etime > ?)`
 
 	sqlSet1 = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (?, ?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 1, ?, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
 		etime = excluded.etime,
-		mtime = excluded.mtime`
+		mtime = excluded.mtime
+	returning id`
 
 	sqlSet2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = ?), ?)
+	values (?, ?)
 	on conflict (key_id) do update
 	set value = excluded.value`
 
 	sqlUpdate1 = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (?, ?, ?, null, ?)
-	on conflict (key) do update set
+	values (?, 1, ?, null, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
-		-- not changing etime
-		mtime = excluded.mtime`
+		mtime = excluded.mtime
+	returning id`
 
 	sqlUpdate2 = `
 	insert into rstring (key_id, value)
-	values ((select id from rkey where key = ?), ?)
+	values (?, ?)
 	on conflict (key_id) do update
 	set value = excluded.value`
 )
@@ -76,7 +74,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
-	args := append([]any{now}, keyArgs...)
+	args := append(keyArgs, now)
 
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
@@ -202,14 +200,7 @@ func (tx *Tx) SetWith(key string, value any) SetCmd {
 }
 
 func get(tx sqlx.Tx, key string) (core.Value, error) {
-	// args := []any{
-	// 	sql.Named("now", time.Now().UnixMilli()), // now
-	// 	sql.Named("key", key),                    // key
-	// }
-	args := []any{
-		time.Now().UnixMilli(), // now
-		key,                    // key
-	}
+	args := []any{key, time.Now().UnixMilli()}
 	var val []byte
 	err := tx.QueryRow(sqlGet, args...).Scan(&val)
 	if err == sql.ErrNoRows {
@@ -236,16 +227,16 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 
 	args := []any{
 		key,                    // key
-		core.TypeString,        // type
 		core.InitialVersion,    // version
 		etime,                  // etime
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err = tx.Exec(sqlSet1, args...)
+	var keyID int
+	err = tx.QueryRow(sqlSet1, args...).Scan(&keyID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(sqlSet2, key, valueb)
+	_, err = tx.Exec(sqlSet2, keyID, valueb)
 	return err
 }
 
@@ -259,14 +250,14 @@ func update(tx sqlx.Tx, key string, value any) error {
 	}
 	args := []any{
 		key,                    // key
-		core.TypeString,        // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err = tx.Exec(sqlUpdate1, args...)
+	var keyID int
+	err = tx.QueryRow(sqlUpdate1, args...).Scan(&keyID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(sqlUpdate2, key, valueb)
+	_, err = tx.Exec(sqlUpdate2, keyID, valueb)
 	return err
 }

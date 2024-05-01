@@ -2,6 +2,7 @@ package rkey
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -73,7 +74,9 @@ const (
 
 	sqlScan = `
 	select id, key, type, version, etime, mtime from rkey
-	where id > ? and key glob ? and (etime is null or etime > ?)
+	where
+		id > ? and key glob ? and (type = ? or true)
+		and (etime is null or etime > ?)
 	limit ?`
 )
 
@@ -284,14 +287,23 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 // Returns a slice of keys (see [core.Key]) of size count
 // based on the current state of the cursor.
 // Returns an empty slice when there are no more keys.
-// Supports glob-style patterns. Set count = 0 for default page size.
-func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
+//
+// Filtering and limiting options:
+//   - pattern (glob-style) to filter keys by name (* = any name).
+//   - ktype to filter keys by type (TypeAny = any type).
+//   - count to limit the number of keys returned (0 = default).
+func (tx *Tx) Scan(cursor int, pattern string, ktype core.TypeID, count int) (ScanResult, error) {
 	if count == 0 {
 		count = scanPageSize
+	}
+	query := sqlScan
+	if ktype != core.TypeAny {
+		query = strings.Replace(query, "(type = ? or true)", "(type = ?)", 1)
 	}
 	args := []any{
 		cursor,
 		pattern,
+		int(ktype),
 		time.Now().UnixMilli(),
 		count,
 	}
@@ -301,7 +313,7 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 		return k, err
 	}
 	var keys []core.Key
-	keys, err := sqlx.Select(tx.tx, sqlScan, args, scan)
+	keys, err := sqlx.Select(tx.tx, query, args, scan)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -321,9 +333,13 @@ func (tx *Tx) Scan(cursor int, pattern string, count int) (ScanResult, error) {
 // The scanner returns keys one by one, fetching them
 // from the database in pageSize batches when necessary.
 // Stops when there are no more items or an error occurs.
-// Supports glob-style patterns. Set pageSize = 0 for default page size.
-func (tx *Tx) Scanner(pattern string, pageSize int) *Scanner {
-	return newScanner(tx, pattern, pageSize)
+//
+// Filtering and pagination options:
+//   - pattern (glob-style) to filter keys by name (* = any name).
+//   - ktype to filter keys by type (TypeAny = any type).
+//   - pageSize to limit the number of keys fetched at once (0 = default).
+func (tx *Tx) Scanner(pattern string, ktype core.TypeID, pageSize int) *Scanner {
+	return newScanner(tx, pattern, ktype, pageSize)
 }
 
 // ScanResult represents a result of the Scan call.

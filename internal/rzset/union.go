@@ -2,6 +2,7 @@ package rzset
 
 import (
 	"database/sql"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,34 +13,31 @@ import (
 const (
 	sqlUnion = `
 	select elem, sum(score) as score
-	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key in (:keys)
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	order by sum(score), elem`
 
 	sqlUnionStore1 = `
 	delete from rzset
 	where key_id = (
-		select id from rkey where key = ?
-		and (etime is null or etime > ?)
+		select id from rkey
+		where key = ? and type = 5 and (etime is null or etime > ?)
 	  )`
 
 	sqlUnionStore2 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
-	  version = version+1,
-	  type = excluded.type,
-	  mtime = excluded.mtime
+	values (?, 5, ?, ?)
+	on conflict (key, type) do update set
+		version = version+1,
+		mtime = excluded.mtime
 	returning id`
 
 	sqlUnionStore3 = `
 	insert into rzset (key_id, elem, score)
 	select ?, elem, sum(score) as score
-	from rzset
-	  join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key in (:keys)
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	order by sum(score), elem;`
 )
@@ -124,7 +122,7 @@ func (c UnionCmd) run(tx sqlx.Tx) ([]SetItem, error) {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args := append([]any{now}, keyArgs...)
+	args := append(keyArgs, now)
 
 	// Execute the query.
 	var rows *sql.Rows
@@ -164,7 +162,6 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	// Create the destination key.
 	args = []any{
 		c.dest,              // key
-		core.TypeSortedSet,  // type
 		core.InitialVersion, // version
 		now,                 // mtime
 	}
@@ -180,7 +177,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = append([]any{destID, now}, keyArgs...)
+	args = slices.Concat([]any{destID}, keyArgs, []any{now})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err

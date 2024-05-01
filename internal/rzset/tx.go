@@ -12,43 +12,40 @@ import (
 const (
 	sqlAdd1 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 5, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
-		mtime = excluded.mtime`
+		mtime = excluded.mtime
+	returning id`
 
 	sqlAdd2 = `
 	insert into rzset (key_id, elem, score)
-	values ((select id from rkey where key = ?), ?, ?)
+	values (?, ?, ?)
 	on conflict (key_id, elem) do update
 	set score = excluded.score`
 
 	sqlCount = `
 	select count(elem)
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and elem in (:elems)`
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key = ? and (etime is null or etime > ?) and elem in (:elems)`
 
 	sqlCountScore = `
 	select count(elem)
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and score between ? and ?`
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key = ? and (etime is null or etime > ?) and score between ? and ?`
 
 	sqlDelete = `
 	delete from rzset
 	where key_id = (
-			select id from rkey where key = ?
-			and (etime is null or etime > ?)
+			select id from rkey
+			where key = ? and type = 5 and (etime is null or etime > ?)
 		) and elem in (:elems)`
 
 	sqlGetRank = `
 	with ranked as (
 		select elem, score, (row_number() over w - 1) as rank
-		from rzset
-			join rkey on key_id = rkey.id and (etime is null or etime > ?)
-		where key = ?
+		from rzset join rkey on key_id = rkey.id and type = 5
+		where key = ? and (etime is null or etime > ?)
 		window w as (partition by key_id order by score asc, elem asc)
 	)
 	select rank, score
@@ -57,36 +54,35 @@ const (
 
 	sqlGetScore = `
 	select score
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and elem = ?`
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key = ? and (etime is null or etime > ?) and elem = ?`
 
 	sqlIncr1 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 5, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
-		mtime = excluded.mtime`
+		mtime = excluded.mtime
+	returning id`
 
 	sqlIncr2 = `
 	insert into rzset (key_id, elem, score)
-	values ((select id from rkey where key = ?), ?, ?)
+	values (?, ?, ?)
 	on conflict (key_id, elem) do update
 	set score = score + excluded.score
 	returning score`
 
 	sqlLen = `
 	select count(elem)
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlScan = `
 	select rzset.rowid, elem, score
-	from rzset
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and rzset.rowid > ? and elem glob ?
+	from rzset join rkey on key_id = rkey.id and type = 5
+	where
+		key = ? and (etime is null or etime > ?)
+		and rzset.rowid > ? and elem glob ?
 	limit ?`
 )
 
@@ -148,8 +144,8 @@ func (tx *Tx) AddMany(key string, items map[any]float64) (int, error) {
 // Returns 0 if the key does not exist or is not a set.
 func (tx *Tx) Count(key string, min, max float64) (int, error) {
 	args := []any{
-		time.Now().UnixMilli(),
-		key, min, max,
+		key, time.Now().UnixMilli(),
+		min, max,
 	}
 	var n int
 	err := tx.tx.QueryRow(sqlCountScore, args...).Scan(&n)
@@ -213,7 +209,7 @@ func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 	}
 
 	var score float64
-	args := []any{time.Now().UnixMilli(), key, elemb}
+	args := []any{key, time.Now().UnixMilli(), elemb}
 	row := tx.tx.QueryRow(sqlGetScore, args...)
 	err = row.Scan(&score)
 	if err == sql.ErrNoRows {
@@ -237,17 +233,17 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 
 	args := []any{
 		key,                    // key
-		core.TypeSortedSet,     // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err = tx.tx.Exec(sqlIncr1, args...)
+	var keyID int
+	err = tx.tx.QueryRow(sqlIncr1, args...).Scan(&keyID)
 	if err != nil {
 		return 0, err
 	}
 
 	var score float64
-	args = []any{key, elemb, delta}
+	args = []any{keyID, elemb, delta}
 	err = tx.tx.QueryRow(sqlIncr2, args...).Scan(&score)
 	if err != nil {
 		return 0, err
@@ -274,7 +270,7 @@ func (tx *Tx) InterWith(keys ...string) InterCmd {
 // Returns 0 if the key does not exist or is not a set.
 func (tx *Tx) Len(key string) (int, error) {
 	var n int
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
 	return n, err
 }
@@ -307,7 +303,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 
 	// Select set items matching the pattern.
 	args := []any{
-		time.Now().UnixMilli(), key,
+		key, time.Now().UnixMilli(),
 		cursor, pattern, count,
 	}
 	scan := func(rows *sql.Rows) (SetItem, error) {
@@ -366,15 +362,15 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 
 	args := []any{
 		key,                    // key
-		core.TypeSortedSet,     // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err = tx.tx.Exec(sqlAdd1, args...)
+	var keyID int
+	err = tx.tx.QueryRow(sqlAdd1, args...).Scan(&keyID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlAdd2, key, elemb, score)
+	_, err = tx.tx.Exec(sqlAdd2, keyID, elemb, score)
 	return err
 }
 
@@ -385,7 +381,7 @@ func (tx *Tx) count(key string, elems ...any) (int, error) {
 		return 0, err
 	}
 	query, elemArgs := sqlx.ExpandIn(sqlCount, ":elems", elembs)
-	args := append([]any{time.Now().UnixMilli(), key}, elemArgs...)
+	args := append([]any{key, time.Now().UnixMilli()}, elemArgs...)
 	var count int
 	err = tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err
@@ -398,7 +394,7 @@ func (tx *Tx) getRank(key string, elem any, sortDir string) (rank int, score flo
 		return 0, 0, err
 	}
 
-	args := []any{time.Now().UnixMilli(), key, elemb}
+	args := []any{key, time.Now().UnixMilli(), elemb}
 	query := sqlGetRank
 	if sortDir != sqlx.Asc {
 		query = strings.Replace(query, sqlx.Asc, sortDir, 2)

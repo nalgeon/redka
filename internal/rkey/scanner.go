@@ -8,6 +8,7 @@ type Scanner struct {
 	db       *Tx
 	cursor   int
 	pattern  string
+	ktype    core.TypeID
 	pageSize int
 	index    int
 	cur      core.Key
@@ -15,7 +16,7 @@ type Scanner struct {
 	err      error
 }
 
-func newScanner(db *Tx, pattern string, pageSize int) *Scanner {
+func newScanner(db *Tx, pattern string, ktype core.TypeID, pageSize int) *Scanner {
 	if pageSize == 0 {
 		pageSize = scanPageSize
 	}
@@ -23,6 +24,7 @@ func newScanner(db *Tx, pattern string, pageSize int) *Scanner {
 		db:       db,
 		cursor:   0,
 		pattern:  pattern,
+		ktype:    ktype,
 		pageSize: pageSize,
 		index:    0,
 		keys:     []core.Key{},
@@ -34,7 +36,7 @@ func newScanner(db *Tx, pattern string, pageSize int) *Scanner {
 func (sc *Scanner) Scan() bool {
 	if sc.index >= len(sc.keys) {
 		// Fetch a new page of keys.
-		out, err := sc.db.Scan(sc.cursor, sc.pattern, sc.pageSize)
+		out, err := sc.db.Scan(sc.cursor, sc.pattern, sc.ktype, sc.pageSize)
 		if err != nil {
 			sc.err = err
 			return false

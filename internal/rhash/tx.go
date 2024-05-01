@@ -11,73 +11,67 @@ import (
 const (
 	sqlCount = `
 	select count(field)
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field in (:fields)`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?) and field in (:fields)`
 
 	sqlDelete = `
 	delete from rhash
 	where key_id = (
 			select id from rkey
-			where key = ? and (etime is null or etime > ?)
+			where key = ? and type = 4 and (etime is null or etime > ?)
 		) and field in (:fields)`
 
 	sqlFields = `
 	select field
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlGet = `
 	select value
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field = ?`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?) and field = ?`
 
 	sqlGetMany = `
 	select field, value
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and field in (:fields)`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?) and field in (:fields)`
 
 	sqlItems = `
 	select field, value
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlLen = `
 	select count(field)
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlScan = `
 	select rhash.rowid, field, value
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ? and rhash.rowid > ? and field glob ?
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where
+		key = ? and (etime is null or etime > ?)
+		and rhash.rowid > ? and field glob ?
 	limit ?`
 
 	sqlSet1 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 4, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
-		mtime = excluded.mtime`
+		mtime = excluded.mtime
+	returning id`
 
 	sqlSet2 = `
 	insert into rhash (key_id, field, value)
-	values ((select id from rkey where key = ?), ?, ?)
+	values (?, ?, ?)
 	on conflict (key_id, field) do update
 	set value = excluded.value;`
 
 	sqlValues = `
 	select value
-	from rhash
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rhash join rkey on key_id = rkey.id and type = 4
+	where key = ? and (etime is null or etime > ?)`
 )
 
 const scanPageSize = 10
@@ -121,7 +115,7 @@ func (tx *Tx) Exists(key, field string) (bool, error) {
 func (tx *Tx) Fields(key string) ([]string, error) {
 	// Select hash fields.
 	var rows *sql.Rows
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	rows, err := tx.tx.Query(sqlFields, args...)
 	if err != nil {
 		return nil, err
@@ -150,7 +144,7 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 // If the key does not exist or is not a hash, returns ErrNotFound.
 func (tx *Tx) Get(key, field string) (core.Value, error) {
 	var val []byte
-	args := []any{time.Now().UnixMilli(), key, field}
+	args := []any{key, time.Now().UnixMilli(), field}
 	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return core.Value(nil), core.ErrNotFound
@@ -167,7 +161,7 @@ func (tx *Tx) Get(key, field string) (core.Value, error) {
 func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
 	// Get the values of the requested fields.
 	query, fieldArgs := sqlx.ExpandIn(sqlGetMany, ":fields", fields)
-	args := append([]any{time.Now().UnixMilli(), key}, fieldArgs...)
+	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
 	if err != nil {
@@ -252,7 +246,7 @@ func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 	// Select hash rows.
 	var rows *sql.Rows
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	rows, err := tx.tx.Query(sqlItems, args...)
 	if err != nil {
 		return nil, err
@@ -279,7 +273,7 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 // If the key does not exist or is not a hash, returns 0.
 func (tx *Tx) Len(key string) (int, error) {
 	var n int
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
 	return n, err
 }
@@ -296,7 +290,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 	}
 
 	args := []any{
-		time.Now().UnixMilli(), key,
+		key, time.Now().UnixMilli(),
 		cursor, pattern, count,
 	}
 
@@ -408,7 +402,7 @@ func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 func (tx *Tx) Values(key string) ([]core.Value, error) {
 	// Select hash values.
 	var rows *sql.Rows
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	rows, err := tx.tx.Query(sqlValues, args...)
 	if err != nil {
 		return nil, err
@@ -435,7 +429,7 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 // count returns the number of existing fields in a hash.
 func (tx *Tx) count(key string, fields ...string) (int, error) {
 	query, fieldArgs := sqlx.ExpandIn(sqlCount, ":fields", fields)
-	args := append([]any{time.Now().UnixMilli(), key}, fieldArgs...)
+	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
 	return count, err
@@ -449,15 +443,15 @@ func (tx *Tx) set(key string, field string, value any) error {
 	}
 	args := []any{
 		key,                    // key
-		core.TypeHash,          // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}
-	_, err = tx.tx.Exec(sqlSet1, args...)
+	var keyID int
+	err = tx.tx.QueryRow(sqlSet1, args...).Scan(&keyID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlSet2, key, field, valueb)
+	_, err = tx.tx.Exec(sqlSet2, keyID, field, valueb)
 	return err
 }
 

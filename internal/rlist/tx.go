@@ -14,15 +14,14 @@ const (
 	delete from rlist
 	where key_id = (
 			select id from rkey
-			where key = ? and (etime is null or etime > ?)
+			where key = ? and type = 2 and (etime is null or etime > ?)
 		) and elem = ?`
 
 	sqlDeleteBack = `
 	with ids as (
 		select rlist.rowid
-		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > ?)
-		where key = ? and elem = ?
+		from rlist join rkey on key_id = rkey.id and type = 2
+		where key = ? and (etime is null or etime > ?) and elem = ?
 		order by pos desc
 		limit ?
 	)
@@ -32,9 +31,8 @@ const (
 	sqlDeleteFront = `
 	with ids as (
 		select rlist.rowid
-		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > ?)
-		where key = ? and elem = ?
+		from rlist join rkey on key_id = rkey.id and type = 2
+		where key = ? and (etime is null or etime > ?) and elem = ?
 		order by pos
 		limit ?
 	)
@@ -44,9 +42,8 @@ const (
 	sqlGet = `
 	with elems as (
 		select elem, row_number() over (order by pos asc) as rownum
-		from rlist
-			join rkey on key_id = rkey.id and (etime is null or etime > ?)
-		where key = ?
+		from rlist join rkey on key_id = rkey.id and type = 2
+		where key = ? and (etime is null or etime > ?)
 	)
 	select elem
 	from elems
@@ -55,7 +52,7 @@ const (
 	sqlInsertAfter = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	elprev as (
 		select min(pos) as pos from rlist
@@ -86,7 +83,7 @@ const (
 	sqlInsertBefore = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	elnext as (
 		select min(pos) as pos from rlist
@@ -116,14 +113,13 @@ const (
 
 	sqlLen = `
 	select count(*)
-	from rlist
-		join rkey on key_id = rkey.id and (etime is null or etime > ?)
-	where key = ?`
+	from rlist join rkey on key_id = rkey.id and type = 2
+	where key = ? and (etime is null or etime > ?)`
 
 	sqlPopBack = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
@@ -137,7 +133,7 @@ const (
 	sqlPopFront = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
@@ -171,7 +167,7 @@ const (
 	sqlRange = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
 		select count(*) as n_elem from rlist
@@ -199,7 +195,7 @@ const (
 	sqlSet = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
     ),
     elems as (
 		select pos, row_number() over (order by pos asc) as rownum
@@ -212,17 +208,16 @@ const (
 
 	sqlSetKey = `
 	insert into rkey (key, type, version, mtime)
-	values (?, ?, ?, ?)
-	on conflict (key) do update set
+	values (?, 2, ?, ?)
+	on conflict (key, type) do update set
 		version = version+1,
-		type = excluded.type,
 		mtime = excluded.mtime
 	returning id`
 
 	sqlTrim = `
 	with keyid as (
 		select id from rkey
-		where key = ? and (etime is null or etime > ?)
+		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
 		select count(*) as n_elem from rlist
@@ -315,7 +310,7 @@ func (tx *Tx) Get(key string, idx int) (core.Value, error) {
 	}
 
 	var val []byte
-	args := []any{time.Now().UnixMilli(), key, idx}
+	args := []any{key, time.Now().UnixMilli(), idx}
 	err := tx.tx.QueryRow(query, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return nil, core.ErrNotFound
@@ -346,7 +341,7 @@ func (tx *Tx) InsertBefore(key string, pivot, elem any) (int, error) {
 // If the key does not exist or is not a list, returns 0.
 func (tx *Tx) Len(key string) (int, error) {
 	var count int
-	args := []any{time.Now().UnixMilli(), key}
+	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&count)
 	if err != nil {
 		return 0, err
@@ -498,7 +493,7 @@ func (tx *Tx) delete(key string, elem any, count int, query string) (int, error)
 		return 0, err
 	}
 
-	args := []any{time.Now().UnixMilli(), key, elemb, count}
+	args := []any{key, time.Now().UnixMilli(), elemb, count}
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
@@ -560,7 +555,6 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	// Set the key if it does not exist.
 	args := []any{
 		key,                    // key
-		core.TypeList,          // type
 		core.InitialVersion,    // version
 		time.Now().UnixMilli(), // mtime
 	}

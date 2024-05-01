@@ -13,6 +13,7 @@ func TestScanParse(t *testing.T) {
 		cmd    string
 		cursor int
 		match  string
+		ktype  string
 		count  int
 		err    error
 	}{
@@ -66,6 +67,22 @@ func TestScanParse(t *testing.T) {
 			err:    nil,
 		},
 		{
+			cmd:    "scan 15 match k2* type string",
+			cursor: 15,
+			match:  "k2*",
+			ktype:  "string",
+			count:  0,
+			err:    nil,
+		},
+		{
+			cmd:    "scan 15 match k2* count 5 type string",
+			cursor: 15,
+			match:  "k2*",
+			ktype:  "string",
+			count:  5,
+			err:    nil,
+		},
+		{
 			cmd:    "scan ten",
 			cursor: 0,
 			match:  "",
@@ -95,6 +112,7 @@ func TestScanParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.cursor, test.cursor)
 				testx.AssertEqual(t, cmd.match, test.match)
+				testx.AssertEqual(t, cmd.ktype, test.ktype)
 				testx.AssertEqual(t, cmd.count, test.count)
 			}
 		})
@@ -102,16 +120,16 @@ func TestScanParse(t *testing.T) {
 }
 
 func TestScanExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
-
-	_ = db.Str().Set("k11", "11")
-	_ = db.Str().Set("k12", "12")
-	_ = db.Str().Set("k21", "21")
-	_ = db.Str().Set("k22", "22")
-	_ = db.Str().Set("k31", "31")
-
 	t.Run("scan all", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
+
+		_ = db.Str().Set("k11", "11")
+		_ = db.Str().Set("k12", "12")
+		_ = db.Str().Set("k21", "21")
+		_ = db.Str().Set("k22", "22")
+		_ = db.Str().Set("k31", "31")
+
 		{
 			cmd := redis.MustParse(ParseScan, "scan 0")
 			conn := redis.NewFakeConn()
@@ -139,8 +157,16 @@ func TestScanExec(t *testing.T) {
 			testx.AssertEqual(t, conn.Out(), "2,0,0")
 		}
 	})
-
 	t.Run("scan pattern", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
+
+		_ = db.Str().Set("k11", "11")
+		_ = db.Str().Set("k12", "12")
+		_ = db.Str().Set("k21", "21")
+		_ = db.Str().Set("k22", "22")
+		_ = db.Str().Set("k31", "31")
+
 		cmd := redis.MustParse(ParseScan, "scan 0 match k2*")
 		conn := redis.NewFakeConn()
 
@@ -154,8 +180,37 @@ func TestScanExec(t *testing.T) {
 		testx.AssertEqual(t, sres.Keys[1].Key, "k22")
 		testx.AssertEqual(t, conn.Out(), "2,4,2,k21,k22")
 	})
+	t.Run("scan type", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
 
+		_ = db.Str().Set("t1", "str")
+		_, _ = db.List().PushBack("t2", "elem")
+		_, _ = db.Hash().Set("t4", "field", "value")
+		_, _ = db.ZSet().Add("t5", "elem", 11)
+
+		cmd := redis.MustParse(ParseScan, "scan 0 match t* type hash")
+		conn := redis.NewFakeConn()
+
+		res, err := cmd.Run(conn, red)
+		testx.AssertNoErr(t, err)
+
+		sres := res.(rkey.ScanResult)
+		testx.AssertEqual(t, sres.Cursor, 3)
+		testx.AssertEqual(t, len(sres.Keys), 1)
+		testx.AssertEqual(t, sres.Keys[0].Key, "t4")
+		testx.AssertEqual(t, conn.Out(), "2,3,1,t4")
+	})
 	t.Run("scan count", func(t *testing.T) {
+		db, red := getDB(t)
+		defer db.Close()
+
+		_ = db.Str().Set("k11", "11")
+		_ = db.Str().Set("k12", "12")
+		_ = db.Str().Set("k21", "21")
+		_ = db.Str().Set("k22", "22")
+		_ = db.Str().Set("k31", "31")
+
 		{
 			// page 1
 			cmd := redis.MustParse(ParseScan, "scan 0 match * count 2")
