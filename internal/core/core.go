@@ -11,12 +11,12 @@ import (
 type TypeID int
 
 const (
-	TypeAny       = TypeID(0)
-	TypeString    = TypeID(1)
-	TypeList      = TypeID(2)
-	TypeSet       = TypeID(3)
-	TypeHash      = TypeID(4)
-	TypeSortedSet = TypeID(5)
+	TypeAny    = TypeID(0)
+	TypeString = TypeID(1)
+	TypeList   = TypeID(2)
+	TypeSet    = TypeID(3)
+	TypeHash   = TypeID(4)
+	TypeZSet   = TypeID(5)
 )
 
 // InitialVersion is the initial version of the key.
@@ -60,7 +60,7 @@ func (k Key) TypeName() string {
 		return "set"
 	case TypeHash:
 		return "hash"
-	case TypeSortedSet:
+	case TypeZSet:
 		return "zset"
 	}
 	return "unknown"

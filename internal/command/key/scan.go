@@ -74,7 +74,7 @@ func toTypeID(ktype string) core.TypeID {
 	case TypeString:
 		return core.TypeString
 	case TypeZSet:
-		return core.TypeSortedSet
+		return core.TypeZSet
 	default:
 		return core.TypeAny
 	}
