@@ -271,8 +271,8 @@ func (tx *Tx) Key() *rkey.Tx {
 }
 
 // List returns the list transaction.
-func (tx *Tx) List() *rkey.Tx {
-	return tx.keyTx
+func (tx *Tx) List() *rlist.Tx {
+	return tx.listTx
 }
 
 // Str returns the string transaction.

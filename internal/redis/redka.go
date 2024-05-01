@@ -48,6 +48,25 @@ type RKey interface {
 	Scanner(pattern string, pageSize int) *rkey.Scanner
 }
 
+// RList is a list repository.
+type RList interface {
+	Delete(key string, elem any) (int, error)
+	DeleteBack(key string, elem any, count int) (int, error)
+	DeleteFront(key string, elem any, count int) (int, error)
+	Get(key string, idx int) (core.Value, error)
+	InsertAfter(key string, pivot, elem any) (int, error)
+	InsertBefore(key string, pivot, elem any) (int, error)
+	Len(key string) (int, error)
+	PopBack(key string) (core.Value, error)
+	PopBackPushFront(src, dest string) (core.Value, error)
+	PopFront(key string) (core.Value, error)
+	PushBack(key string, elem any) (int, error)
+	PushFront(key string, elem any) (int, error)
+	Range(key string, start, stop int) ([]core.Value, error)
+	Set(key string, idx int, elem any) error
+	Trim(key string, start, stop int) (int, error)
+}
+
 // RStr is a string repository.
 type RStr interface {
 	Get(key string) (core.Value, error)
@@ -87,6 +106,7 @@ type RZSet interface {
 type Redka struct {
 	hash RHash
 	key  RKey
+	list RList
 	str  RStr
 	zset RZSet
 }
@@ -96,6 +116,7 @@ func RedkaDB(db *redka.DB) Redka {
 	return Redka{
 		hash: db.Hash(),
 		key:  db.Key(),
+		list: db.List(),
 		str:  db.Str(),
 		zset: db.ZSet(),
 	}
@@ -106,6 +127,7 @@ func RedkaTx(tx *redka.Tx) Redka {
 	return Redka{
 		hash: tx.Hash(),
 		key:  tx.Key(),
+		list: tx.List(),
 		str:  tx.Str(),
 		zset: tx.ZSet(),
 	}
@@ -119,6 +141,10 @@ func (r Redka) Hash() RHash {
 // Key returns the key repository.
 func (r Redka) Key() RKey {
 	return r.key
+}
+
+func (r Redka) List() RList {
+	return r.list
 }
 
 // Str returns the string repository.

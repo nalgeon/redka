@@ -21,6 +21,7 @@ var (
 	ErrNestedMulti       = errors.New("ERR MULTI calls can not be nested")
 	ErrNotFound          = errors.New("ERR no such key")
 	ErrNotInMulti        = errors.New("ERR EXEC without MULTI")
+	ErrOutOfRange        = errors.New("ERR index out of range")
 	ErrSyntaxError       = errors.New("ERR syntax error")
 	ErrUnknownCmd        = errors.New("ERR unknown command")
 	ErrUnknownSubcmd     = errors.New("ERR unknown subcommand")

@@ -8,6 +8,7 @@ import (
 	"github.com/nalgeon/redka/internal/command/conn"
 	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/command/key"
+	"github.com/nalgeon/redka/internal/command/list"
 	"github.com/nalgeon/redka/internal/command/server"
 	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/command/zset"
@@ -58,6 +59,32 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return key.ParseRenameNX(b)
 	case "scan":
 		return key.ParseScan(b)
+
+	// list
+	case "lindex":
+		return list.ParseLIndex(b)
+	case "linsert":
+		return list.ParseLInsert(b)
+	case "llen":
+		return list.ParseLLen(b)
+	case "lpop":
+		return list.ParseLPop(b)
+	case "lpush":
+		return list.ParseLPush(b)
+	case "lrange":
+		return list.ParseLRange(b)
+	case "lrem":
+		return list.ParseLRem(b)
+	case "lset":
+		return list.ParseLSet(b)
+	case "ltrim":
+		return list.ParseLTrim(b)
+	case "rpop":
+		return list.ParseRPop(b)
+	case "rpoplpush":
+		return list.ParseRPopLPush(b)
+	case "rpush":
+		return list.ParseRPush(b)
 
 	// string
 	case "decr":
