@@ -19,9 +19,6 @@ const (
 	TypeZSet   = TypeID(5)
 )
 
-// InitialVersion is the initial version of the key.
-const InitialVersion = 1
-
 // Common errors returned by data structure methods.
 var (
 	ErrNotFound   = errors.New("key or elem not found")

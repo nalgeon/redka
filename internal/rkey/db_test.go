@@ -234,7 +234,7 @@ func TestGet(t *testing.T) {
 		testx.AssertEqual(t, key.ID, 1)
 		testx.AssertEqual(t, key.Key, "name")
 		testx.AssertEqual(t, key.Type, core.TypeString)
-		testx.AssertEqual(t, key.Version, core.InitialVersion)
+		testx.AssertEqual(t, key.Version, 1)
 		testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		testx.AssertEqual(t, key.MTime >= now, true)
 	})

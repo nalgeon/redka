@@ -12,7 +12,7 @@ import (
 const (
 	sqlAdd1 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, 5, ?, ?)
+	values (?, 5, 1, ?)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -59,7 +59,7 @@ const (
 
 	sqlIncr1 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, 5, ?, ?)
+	values (?, 5, 1, ?)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -231,11 +231,7 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 		return 0, err
 	}
 
-	args := []any{
-		key,                    // key
-		core.InitialVersion,    // version
-		time.Now().UnixMilli(), // mtime
-	}
+	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
 	err = tx.tx.QueryRow(sqlIncr1, args...).Scan(&keyID)
 	if err != nil {
@@ -360,11 +356,7 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 		return err
 	}
 
-	args := []any{
-		key,                    // key
-		core.InitialVersion,    // version
-		time.Now().UnixMilli(), // mtime
-	}
+	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
 	err = tx.tx.QueryRow(sqlAdd1, args...).Scan(&keyID)
 	if err != nil {

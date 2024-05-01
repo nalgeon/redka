@@ -208,7 +208,7 @@ const (
 
 	sqlSetKey = `
 	insert into rkey (key, type, version, mtime)
-	values (?, 2, ?, ?)
+	values (?, 2, 1, ?)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -553,11 +553,7 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	}
 
 	// Set the key if it does not exist.
-	args := []any{
-		key,                    // key
-		core.InitialVersion,    // version
-		time.Now().UnixMilli(), // mtime
-	}
+	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
 	err = tx.tx.QueryRow(sqlSetKey, args...).Scan(&keyID)
 	if err != nil {

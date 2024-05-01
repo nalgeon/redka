@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
@@ -27,7 +26,7 @@ const (
 
 	sqlUnionStore2 = `
 	insert into rkey (key, type, version, mtime)
-	values (?, 5, ?, ?)
+	values (?, 5, 1, ?)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -160,11 +159,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	}
 
 	// Create the destination key.
-	args = []any{
-		c.dest,              // key
-		core.InitialVersion, // version
-		now,                 // mtime
-	}
+	args = []any{c.dest, now}
 	var destID int
 	err = tx.QueryRow(sqlUnionStore2, args...).Scan(&destID)
 	if err != nil {
