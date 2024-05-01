@@ -23,7 +23,7 @@ const InitialVersion = 1
 
 // Common errors returned by data structure methods.
 var (
-	ErrNotFound   = errors.New("key not found")
+	ErrNotFound   = errors.New("key or elem not found")
 	ErrValueType  = errors.New("invalid value type")
 	ErrNotAllowed = errors.New("operation not allowed")
 )
