@@ -14,21 +14,24 @@ func TestDelete(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.Delete("key", "elem")
+		n, err := list.Delete("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.Delete("key", "elem")
+		n, err := list.Delete("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -40,15 +43,15 @@ func TestDelete(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "fou")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 6)
-
-		count, err := list.Delete("key", "two")
+		n, err := list.Delete("key", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 3)
+		testx.AssertEqual(t, n, 3)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 9)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "one")
@@ -63,33 +66,39 @@ func TestDelete(t *testing.T) {
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.Delete("key", "elem")
+		n, err := list.Delete("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.Delete("key", "none")
+		n, err := list.Delete("key", "none")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.Delete("key", "elem")
+		n, err := list.Delete("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -101,21 +110,24 @@ func TestDeleteBack(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.DeleteBack("key", "elem", 1)
+		n, err := list.DeleteBack("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteBack("key", "elem", 1)
+		n, err := list.DeleteBack("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -127,15 +139,15 @@ func TestDeleteBack(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "fou")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 6)
-
-		count, err := list.DeleteBack("key", "two", 2)
+		n, err := list.DeleteBack("key", "two", 2)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 4)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 8)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 4)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "one")
@@ -155,12 +167,15 @@ func TestDeleteBack(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "fou")
 
-		count, err := list.DeleteBack("key", "two", 10)
+		n, err := list.DeleteBack("key", "two", 10)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 7)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 	})
 	t.Run("delete duplicate", func(t *testing.T) {
 		db, list := getDB(t)
@@ -168,33 +183,39 @@ func TestDeleteBack(t *testing.T) {
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteBack("key", "elem", 1)
+		n, err := list.DeleteBack("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteBack("key", "none", 1)
+		n, err := list.DeleteBack("key", "none", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.DeleteBack("key", "elem", 1)
+		n, err := list.DeleteBack("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -206,21 +227,24 @@ func TestDeleteFront(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.DeleteFront("key", "elem", 1)
+		n, err := list.DeleteFront("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteFront("key", "elem", 1)
+		n, err := list.DeleteFront("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -232,15 +256,15 @@ func TestDeleteFront(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "fou")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 6)
-
-		count, err := list.DeleteFront("key", "two", 2)
+		n, err := list.DeleteFront("key", "two", 2)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 4)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 8)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 4)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "one")
@@ -260,12 +284,15 @@ func TestDeleteFront(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "fou")
 
-		count, err := list.DeleteFront("key", "two", 10)
+		n, err := list.DeleteFront("key", "two", 10)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 7)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 	})
 	t.Run("delete duplicate", func(t *testing.T) {
 		db, list := getDB(t)
@@ -273,33 +300,39 @@ func TestDeleteFront(t *testing.T) {
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteFront("key", "elem", 1)
+		n, err := list.DeleteFront("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.DeleteFront("key", "none", 1)
+		n, err := list.DeleteFront("key", "none", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.DeleteFront("key", "elem", 1)
+		n, err := list.DeleteFront("key", "elem", 1)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -379,18 +412,24 @@ func TestInsertAfter(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.InsertAfter("key", "mark", "elem")
+		n, err := list.InsertAfter("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("insert after first", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "mark")
 
-		count, err := list.InsertAfter("key", "mark", "elem")
+		n, err := list.InsertAfter("key", "mark", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		elem, _ := list.Get("key", 1)
 		testx.AssertEqual(t, elem.String(), "elem")
@@ -401,9 +440,15 @@ func TestInsertAfter(t *testing.T) {
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "thr")
 
-		count, err := list.InsertAfter("key", "one", "two")
+		n, err := list.InsertAfter("key", "one", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 3)
+		testx.AssertEqual(t, n, 3)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 
 		elem, _ := list.Get("key", 1)
 		testx.AssertEqual(t, elem.String(), "two")
@@ -414,21 +459,24 @@ func TestInsertAfter(t *testing.T) {
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
-		count, err := list.InsertAfter("key", "thr", "two")
+		n, err := list.InsertAfter("key", "thr", "two")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, -1)
+		testx.AssertEqual(t, n, -1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.InsertAfter("key", "mark", "elem")
+		n, err := list.InsertAfter("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -440,18 +488,24 @@ func TestInsertBefore(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.InsertBefore("key", "mark", "elem")
+		n, err := list.InsertBefore("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("insert before first", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "mark")
 
-		count, err := list.InsertBefore("key", "mark", "elem")
+		n, err := list.InsertBefore("key", "mark", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		elem, _ := list.Get("key", 0)
 		testx.AssertEqual(t, elem.String(), "elem")
@@ -462,9 +516,15 @@ func TestInsertBefore(t *testing.T) {
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "thr")
 
-		count, err := list.InsertBefore("key", "thr", "two")
+		n, err := list.InsertBefore("key", "thr", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 3)
+		testx.AssertEqual(t, n, 3)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 
 		elem, _ := list.Get("key", 1)
 		testx.AssertEqual(t, elem.String(), "two")
@@ -475,21 +535,24 @@ func TestInsertBefore(t *testing.T) {
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
-		count, err := list.InsertBefore("key", "thr", "two")
+		n, err := list.InsertBefore("key", "thr", "two")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, -1)
+		testx.AssertEqual(t, n, -1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.InsertBefore("key", "mark", "elem")
+		n, err := list.InsertBefore("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -501,18 +564,18 @@ func TestLen(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.Len("key")
+		n, err := list.Len("key")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("single elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		count, err := list.Len("key")
+		n, err := list.Len("key")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 	})
 	t.Run("multiple elems", func(t *testing.T) {
 		db, list := getDB(t)
@@ -522,18 +585,18 @@ func TestLen(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
 
-		count, err := list.Len("key")
+		n, err := list.Len("key")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 4)
+		testx.AssertEqual(t, n, 4)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.Len("key")
+		n, err := list.Len("key")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 }
 
@@ -542,67 +605,79 @@ func TestPushBack(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushBack("key", "elem")
+		n, err := list.PushBack("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("add elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 
-		count, err := list.PushBack("key", "two")
+		n, err := list.PushBack("key", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("add multiple", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushBack("key", "one")
+		n, err := list.PushBack("key", "one")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
-		count, err = list.PushBack("key", "two")
+		testx.AssertEqual(t, n, 1)
+		n, err = list.PushBack("key", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
-		count, err = list.PushBack("key", "thr")
+		testx.AssertEqual(t, n, 2)
+		n, err = list.PushBack("key", "thr")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 3)
+		testx.AssertEqual(t, n, 3)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 	})
 	t.Run("add duplicate", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushBack("key", "elem")
+		n, err := list.PushBack("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
-		count, err = list.PushBack("key", "elem")
+		testx.AssertEqual(t, n, 1)
+		n, err = list.PushBack("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.PushBack("key", 42)
+		n, err := list.PushBack("key", 42)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -614,67 +689,79 @@ func TestPushFront(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushFront("key", "elem")
+		n, err := list.PushFront("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("add elem", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_, _ = list.PushFront("key", "one")
 
-		count, err := list.PushFront("key", "two")
+		n, err := list.PushFront("key", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("add multiple", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushFront("key", "one")
+		n, err := list.PushFront("key", "one")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
-		count, err = list.PushFront("key", "two")
+		testx.AssertEqual(t, n, 1)
+		n, err = list.PushFront("key", "two")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
-		count, err = list.PushFront("key", "thr")
+		testx.AssertEqual(t, n, 2)
+		n, err = list.PushFront("key", "thr")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 3)
+		testx.AssertEqual(t, n, 3)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 3)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 	})
 	t.Run("add duplicate", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		count, err := list.PushFront("key", "elem")
+		n, err := list.PushFront("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
-		count, err = list.PushFront("key", "elem")
+		testx.AssertEqual(t, n, 1)
+		n, err = list.PushFront("key", "elem")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertEqual(t, n, 2)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		count, err := list.PushFront("key", 42)
+		n, err := list.PushFront("key", 42)
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 1)
+		testx.AssertEqual(t, n, 1)
 
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -699,8 +786,11 @@ func TestPopBack(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "one")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -709,26 +799,23 @@ func TestPopBack(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 3)
-
 		elem, err := list.PopBack("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "thr")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
 
 		elem, err = list.PopBack("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "two")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
 
 		elem, err = list.PopBack("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "one")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("pop duplicate", func(t *testing.T) {
 		db, list := getDB(t)
@@ -745,8 +832,11 @@ func TestPopBack(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "elem")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 5)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
@@ -777,11 +867,11 @@ func TestPopBackPushFront(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "elem")
 
-		count, _ := list.Len("src")
-		testx.AssertEqual(t, count, 0)
+		srclen, _ := list.Len("src")
+		testx.AssertEqual(t, srclen, 0)
 
-		count, _ = list.Len("dest")
-		testx.AssertEqual(t, count, 1)
+		dstlen, _ := list.Len("dest")
+		testx.AssertEqual(t, dstlen, 1)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -789,9 +879,6 @@ func TestPopBackPushFront(t *testing.T) {
 		_, _ = list.PushBack("src", "one")
 		_, _ = list.PushBack("src", "two")
 		_, _ = list.PushBack("src", "thr")
-
-		count, _ := list.Len("src")
-		testx.AssertEqual(t, count, 3)
 
 		elem, err := list.PopBackPushFront("src", "dest")
 		testx.AssertNoErr(t, err)
@@ -811,10 +898,10 @@ func TestPopBackPushFront(t *testing.T) {
 		elem, _ = list.Get("dest", 0)
 		testx.AssertEqual(t, elem.String(), "one")
 
-		count, _ = list.Len("src")
-		testx.AssertEqual(t, count, 0)
-		count, _ = list.Len("dest")
-		testx.AssertEqual(t, count, 3)
+		srclen, _ := list.Len("src")
+		testx.AssertEqual(t, srclen, 0)
+		dstlen, _ := list.Len("dest")
+		testx.AssertEqual(t, dstlen, 3)
 	})
 	t.Run("push to self", func(t *testing.T) {
 		db, list := getDB(t)
@@ -831,8 +918,11 @@ func TestPopBackPushFront(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "two")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 3)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 7)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 
 		elems, _ := list.Range("key", 0, 2)
 		testx.AssertEqual(t, elems[0].String(), "two")
@@ -868,8 +958,11 @@ func TestPopFront(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "one")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
 		db, list := getDB(t)
@@ -878,26 +971,23 @@ func TestPopFront(t *testing.T) {
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 3)
-
 		elem, err := list.PopFront("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "one")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 2)
 
 		elem, err = list.PopFront("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "two")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 1)
 
 		elem, err = list.PopFront("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "thr")
-		count, _ = list.Len("key")
-		testx.AssertEqual(t, count, 0)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("pop duplicate", func(t *testing.T) {
 		db, list := getDB(t)
@@ -914,8 +1004,11 @@ func TestPopFront(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, elem.String(), "elem")
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 5)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1070,6 +1163,12 @@ func TestSet(t *testing.T) {
 		err := list.Set("key", 0, "two")
 		testx.AssertNoErr(t, err)
 
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
+
 		elem, _ := list.Get("key", 0)
 		testx.AssertEqual(t, elem.String(), "two")
 	})
@@ -1083,6 +1182,12 @@ func TestSet(t *testing.T) {
 
 		err := list.Set("key", 1, "new")
 		testx.AssertNoErr(t, err)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 5)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 4)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "one")
@@ -1101,6 +1206,12 @@ func TestSet(t *testing.T) {
 		err := list.Set("key", 1, "new")
 		testx.AssertErr(t, err, core.ErrNotFound)
 
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
+
 		elem, _ := list.Get("key", 0)
 		testx.AssertEqual(t, elem.String(), "elem")
 	})
@@ -1113,6 +1224,12 @@ func TestSet(t *testing.T) {
 
 		err := list.Set("key", -2, "new")
 		testx.AssertNoErr(t, err)
+
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 3)
 
 		elem, _ := list.Get("key", -2)
 		testx.AssertEqual(t, elem.String(), "new")
@@ -1147,8 +1264,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 0)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 1)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 1)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 1)
 	})
 	t.Run("keep multiple elems", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1162,8 +1282,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 2)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "two")
@@ -1182,8 +1305,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 0)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 4)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 4)
 	})
 	t.Run("start >= len", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1196,8 +1322,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 3)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("start > stop > 0", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1210,8 +1339,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 3)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("0 > start > stop", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1224,8 +1356,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 3)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 0)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 6)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 0)
 	})
 	t.Run("stop > len", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1238,8 +1373,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 1)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "two")
@@ -1257,8 +1395,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 1)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "two")
@@ -1276,8 +1417,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 1)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "two")
@@ -1295,8 +1439,11 @@ func TestTrim(t *testing.T) {
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 1)
 
-		count, _ := list.Len("key")
-		testx.AssertEqual(t, count, 2)
+		key, _ := db.Key().Get("key")
+		testx.AssertEqual(t, key.Version, 4)
+
+		llen, _ := list.Len("key")
+		testx.AssertEqual(t, llen, 2)
 
 		el0, _ := list.Get("key", 0)
 		testx.AssertEqual(t, el0.String(), "two")

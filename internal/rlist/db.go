@@ -27,8 +27,13 @@ func New(rw *sql.DB, ro *sql.DB) *DB {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (d *DB) Delete(key string, elem any) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.Delete(key, elem)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.Delete(key, elem)
+		return err
+	})
+	return n, err
 }
 
 // DeleteBack deletes the first count occurrences of an element
@@ -36,8 +41,13 @@ func (d *DB) Delete(key string, elem any) (int, error) {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (d *DB) DeleteBack(key string, elem any, count int) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.DeleteBack(key, elem, count)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.DeleteBack(key, elem, count)
+		return err
+	})
+	return n, err
 }
 
 // DeleteFront deletes the first count occurrences of an element
@@ -45,8 +55,13 @@ func (d *DB) DeleteBack(key string, elem any, count int) (int, error) {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (d *DB) DeleteFront(key string, elem any, count int) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.DeleteFront(key, elem, count)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.DeleteFront(key, elem, count)
+		return err
+	})
+	return n, err
 }
 
 // Get returns an element from a list by index (0-based).
@@ -63,18 +78,28 @@ func (d *DB) Get(key string, idx int) (core.Value, error) {
 // Returns the length of the list after the operation.
 // If the pivot does not exist, returns (-1, ErrNotFound).
 // If the key does not exist or is not a list, returns (0, ErrNotFound).
-func (d *DB) InsertAfter(key string, mark, elem any) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.InsertAfter(key, mark, elem)
+func (d *DB) InsertAfter(key string, pivot, elem any) (int, error) {
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.InsertAfter(key, pivot, elem)
+		return err
+	})
+	return n, err
 }
 
 // InsertBefore inserts an element before another element (pivot).
 // Returns the length of the list after the operation.
 // If the pivot does not exist, returns (-1, ErrNotFound).
 // If the key does not exist or is not a list, returns (0, ErrNotFound).
-func (d *DB) InsertBefore(key string, mark, elem any) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.InsertBefore(key, mark, elem)
+func (d *DB) InsertBefore(key string, pivot, elem any) (int, error) {
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.InsertBefore(key, pivot, elem)
+		return err
+	})
+	return n, err
 }
 
 // Len returns the number of elements in a list.
@@ -87,8 +112,13 @@ func (d *DB) Len(key string) (int, error) {
 // PopBack removes and returns the last element of a list.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (d *DB) PopBack(key string) (core.Value, error) {
-	tx := NewTx(d.RW)
-	return tx.PopBack(key)
+	var elem core.Value
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		elem, err = tx.PopBack(key)
+		return err
+	})
+	return elem, err
 }
 
 // PopBackPushFront removes the last element of a list
@@ -107,34 +137,39 @@ func (d *DB) PopBackPushFront(src, dest string) (core.Value, error) {
 // PopFront removes and returns the first element of a list.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (d *DB) PopFront(key string) (core.Value, error) {
-	tx := NewTx(d.RW)
-	return tx.PopFront(key)
+	var elem core.Value
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		elem, err = tx.PopFront(key)
+		return err
+	})
+	return elem, err
 }
 
 // PushBack appends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
 func (d *DB) PushBack(key string, elem any) (int, error) {
-	var count int
+	var n int
 	err := d.Update(func(tx *Tx) error {
 		var err error
-		count, err = tx.PushBack(key, elem)
+		n, err = tx.PushBack(key, elem)
 		return err
 	})
-	return count, err
+	return n, err
 }
 
 // PushFront prepends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
 func (d *DB) PushFront(key string, elem any) (int, error) {
-	var count int
+	var n int
 	err := d.Update(func(tx *Tx) error {
 		var err error
-		count, err = tx.PushFront(key, elem)
+		n, err = tx.PushFront(key, elem)
 		return err
 	})
-	return count, err
+	return n, err
 }
 
 // Range returns a range of elements from a list.
@@ -153,8 +188,10 @@ func (d *DB) Range(key string, start, stop int) ([]core.Value, error) {
 // If the index is out of bounds, returns ErrNotFound.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (d *DB) Set(key string, idx int, elem any) error {
-	tx := NewTx(d.RW)
-	return tx.Set(key, idx, elem)
+	err := d.Update(func(tx *Tx) error {
+		return tx.Set(key, idx, elem)
+	})
+	return err
 }
 
 // Trim removes elements from both ends of a list so that
@@ -167,6 +204,11 @@ func (d *DB) Set(key string, idx int, elem any) error {
 //
 // Does nothing if the key does not exist or is not a list.
 func (d *DB) Trim(key string, start, stop int) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.Trim(key, start, stop)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.Trim(key, start, stop)
+		return err
+	})
+	return n, err
 }

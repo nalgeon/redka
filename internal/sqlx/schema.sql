@@ -1,6 +1,14 @@
 pragma user_version = 1;
 
--- keys
+-- ┌───────────────┐
+-- │ Keys          │
+-- └───────────────┘
+-- Types:
+-- 1 - string
+-- 2 - list
+-- 3 - set
+-- 4 - hash
+-- 5 - zset (sorted set)
 create table if not exists
 rkey (
     id       integer primary key,
@@ -8,7 +16,8 @@ rkey (
     type     integer not null,
     version  integer not null,
     etime    integer,
-    mtime    integer not null
+    mtime    integer not null,
+    len      integer
 );
 
 create unique index if not exists
@@ -18,7 +27,9 @@ create index if not exists
 rkey_etime_idx on rkey (etime)
 where etime is not null;
 
--- strings
+-- ┌───────────────┐
+-- │ Strings       │
+-- └───────────────┘
 create table if not exists
 rstring (
     key_id integer not null,
@@ -41,7 +52,9 @@ from rkey join rstring on rkey.id = rstring.key_id
 where rkey.type = 1
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
 
--- lists
+-- ┌───────────────┐
+-- │ Lists         │
+-- └───────────────┘
 create table if not exists
 rlist (
     key_id integer not null,
@@ -55,6 +68,29 @@ rlist (
 create unique index if not exists
 rlist_pk_idx on rlist (key_id, pos);
 
+create trigger if not exists
+rlist_on_update
+before update on rlist
+for each row
+begin
+    update rkey set
+        version = version + 1,
+        mtime = unixepoch('subsec') * 1000
+    where id = old.key_id;
+end;
+
+create trigger if not exists
+rlist_on_delete
+before delete on rlist
+for each row
+begin
+    update rkey set
+        version = version + 1,
+        mtime = unixepoch('subsec') * 1000,
+        len = len - 1
+    where id = old.key_id;
+end;
+
 create view if not exists
 vlist as
 select
@@ -67,7 +103,9 @@ where rkey.type = 2
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'))
 window w as (partition by key_id order by pos);
 
--- hashes
+-- ┌───────────────┐
+-- │ Hashes        │
+-- └───────────────┘
 create table if not exists
 rhash (
     key_id integer not null,
@@ -91,7 +129,9 @@ from rkey join rhash on rkey.id = rhash.key_id
 where rkey.type = 4
     and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
 
--- sorted sets
+-- ┌───────────────┐
+-- │ Sorted sets   │
+-- └───────────────┘
 create table if not exists
 rzset (
     key_id integer not null,

@@ -49,18 +49,22 @@ const (
 	from elems
 	where rownum = ? + 1`
 
+	sqlInsert = `
+	update rkey set
+		version = version + 1,
+		mtime = ?,
+		len = len + 1
+	where key = ? and type = 2 and (etime is null or etime > ?)
+	returning id, len`
+
 	sqlInsertAfter = `
-	with keyid as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	),
-	elprev as (
+	with elprev as (
 		select min(pos) as pos from rlist
-		where key_id = (select id from keyid) and elem = ?
+		where key_id = ? and elem = ?
 	),
 	elnext as (
 		select min(pos) as pos from rlist
-		where key_id = (select id from keyid) and pos > (select pos from elprev)
+		where key_id = ? and pos > (select pos from elprev)
 	),
 	newpos as (
 		select
@@ -71,27 +75,19 @@ const (
 		from elprev, elnext
 	)
 	insert into rlist (key_id, pos, elem)
-	select (select id from keyid), (select pos from newpos), ?
+	select ?, (select pos from newpos), ?
 	from rlist
-	where key_id = (select id from keyid)
-	limit 1
-	returning (
-		select count(*) from rlist
-		where key_id = (select id from keyid)
-	)`
+	where key_id = ?
+	limit 1`
 
 	sqlInsertBefore = `
-	with keyid as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	),
-	elnext as (
+	with elnext as (
 		select min(pos) as pos from rlist
-		where key_id = (select id from keyid) and elem = ?
+		where key_id = ? and elem = ?
 	),
 	elprev as (
 		select max(pos) as pos from rlist
-		where key_id = (select id from keyid) and pos < (select pos from elnext)
+		where key_id = ? and pos < (select pos from elnext)
 	),
 	newpos as (
 		select
@@ -102,19 +98,14 @@ const (
 		from elprev, elnext
 	)
 	insert into rlist (key_id, pos, elem)
-	select (select id from keyid), (select pos from newpos), ?
+	select ?, (select pos from newpos), ?
 	from rlist
-	where key_id = (select id from keyid)
-	limit 1
-	returning (
-		select count(*) from rlist
-		where key_id = (select id from keyid)
-	)`
+	where key_id = ?
+	limit 1`
 
 	sqlLen = `
-	select count(*)
-	from rlist join rkey on key_id = rkey.id and type = 2
-	where key = ? and (etime is null or etime > ?)`
+	select len from rkey
+	where key = ? and type = 2 and (etime is null or etime > ?)`
 
 	sqlPopBack = `
 	with keyid as (
@@ -144,25 +135,27 @@ const (
 		)
 	returning elem`
 
+	sqlPush = `
+	insert into
+	rkey   (key, type, version, mtime, len)
+	values (  ?,    2,       1,     ?,   1)
+	on conflict (key, type) do update set
+		version = version + 1,
+		mtime = excluded.mtime,
+		len = len + 1
+	returning id, len`
+
 	sqlPushBack = `
 	insert into rlist (key_id, pos, elem)
 	select ?, coalesce(max(pos)+1, 0), ?
 	from rlist
-	where key_id = ?
-	returning (
-		select count(*) from rlist
-		where key_id = ?
-	)`
+	where key_id = ?`
 
 	sqlPushFront = `
 	insert into rlist (key_id, pos, elem)
 	select ?, coalesce(min(pos)-1, 0), ?
 	from rlist
-	where key_id = ?
-	returning (
-		select count(*) from rlist
-		where key_id = ?
-	)`
+	where key_id = ?`
 
 	sqlRange = `
 	with keyid as (
@@ -170,17 +163,17 @@ const (
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
-		select count(*) as n_elem from rlist
-		where key_id = (select id from keyid)
+		select len from rkey
+		where id = (select id from keyid)
 	),
 	bounds as (
 		select
 			case when ? < 0
-				then (select n_elem from counts) + ?
+				then (select len from counts) + ?
 				else ?
 			end as start,
 			case when ? < 0
-				then (select n_elem from counts) + ?
+				then (select len from counts) + ?
 				else ?
 			end as stop
 	)
@@ -206,31 +199,23 @@ const (
     where key_id = (select id from keyid)
 		and pos = (select pos from elems where rownum = ? + 1)`
 
-	sqlSetKey = `
-	insert into rkey (key, type, version, mtime)
-	values (?, 2, 1, ?)
-	on conflict (key, type) do update set
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
-
 	sqlTrim = `
 	with keyid as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
-		select count(*) as n_elem from rlist
-		where key_id = (select id from keyid)
+		select len from rkey
+		where id = (select id from keyid)
 	),
 	bounds as (
 		select
 			case when ? < 0
-				then (select n_elem from counts) + ?
+				then (select len from counts) + ?
 				else ?
 			end as start,
 			case when ? < 0
-				then (select n_elem from counts) + ?
+				then (select len from counts) + ?
 				else ?
 			end as stop
 	),
@@ -343,6 +328,9 @@ func (tx *Tx) Len(key string) (int, error) {
 	var count int
 	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&count)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -507,6 +495,7 @@ func (tx *Tx) delete(key string, elem any, count int, query string) (int, error)
 
 // insert inserts an element before or after a pivot in a list.
 func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
+	now := time.Now().UnixMilli()
 	pivotb, err := core.ToBytes(pivot)
 	if err != nil {
 		return 0, err
@@ -516,19 +505,28 @@ func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
 		return 0, err
 	}
 
-	args := []any{key, time.Now().UnixMilli(), pivotb, elemb}
-	var count int
-	err = tx.tx.QueryRow(query, args...).Scan(&count)
+	// Update the key.
+	var keyID, n int
+	args := []any{now, key, now}
+	err = tx.tx.QueryRow(sqlInsert, args...).Scan(&keyID, &n)
 	if err == sql.ErrNoRows {
 		return 0, core.ErrNotFound
 	}
+	if err != nil {
+		return 0, err
+	}
+
+	// Insert the element.
+	args = []any{keyID, pivotb, keyID, keyID, elemb, keyID}
+	_, err = tx.tx.Exec(query, args...)
 	if err != nil {
 		if sqlx.ConstraintFailed(err, "NOT NULL", "rlist.pos") {
 			return -1, core.ErrNotFound
 		}
 		return 0, err
 	}
-	return count, nil
+
+	return n, nil
 }
 
 // pop removes and returns an element from the front or back of a list.
@@ -552,20 +550,20 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 		return 0, err
 	}
 
-	// Set the key if it does not exist.
+	// Create or update the key.
 	args := []any{key, time.Now().UnixMilli()}
-	var keyID int
-	err = tx.tx.QueryRow(sqlSetKey, args...).Scan(&keyID)
+	var keyID, n int
+	err = tx.tx.QueryRow(sqlPush, args...).Scan(&keyID, &n)
 	if err != nil {
 		return 0, err
 	}
 
 	// Insert the element.
-	var count int
-	args = []any{keyID, elemb, keyID, keyID}
-	err = tx.tx.QueryRow(query, args...).Scan(&count)
+	args = []any{keyID, elemb, keyID}
+	_, err = tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
-	return count, nil
+
+	return n, nil
 }
