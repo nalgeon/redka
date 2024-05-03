@@ -13,89 +13,107 @@ import (
 
 func TestDelete(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("person", "age", 25)
-		_, _ = db.Set("person", "city", "paris")
+		_, _ = hash.Set("person", "name", "alice")
+		_, _ = hash.Set("person", "age", 25)
+		_, _ = hash.Set("person", "city", "paris")
 
-		delCount, err := db.Delete("person", "name", "city")
+		n, err := hash.Delete("person", "name", "city")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, delCount, 2)
+		testx.AssertEqual(t, n, 2)
 
-		exist, _ := db.Exists("person", "name")
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 4)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
+
+		exist, _ := hash.Exists("person", "name")
 		testx.AssertEqual(t, exist, false)
-		exist, _ = db.Exists("person", "age")
+		exist, _ = hash.Exists("person", "age")
 		testx.AssertEqual(t, exist, true)
-		exist, _ = db.Exists("person", "city")
+		exist, _ = hash.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("all", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("person", "age", 25)
-		_, _ = db.Set("person", "city", "paris")
+		_, _ = hash.Set("person", "name", "alice")
+		_, _ = hash.Set("person", "age", 25)
+		_, _ = hash.Set("person", "city", "paris")
 
-		delCount, err := db.Delete("person", "name", "age", "city")
+		n, err := hash.Delete("person", "name", "age", "city")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, delCount, 3)
+		testx.AssertEqual(t, n, 3)
 
-		exist, _ := db.Exists("person", "name")
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 4)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 0)
+
+		exist, _ := hash.Exists("person", "name")
 		testx.AssertEqual(t, exist, false)
-		exist, _ = db.Exists("person", "age")
+		exist, _ = hash.Exists("person", "age")
 		testx.AssertEqual(t, exist, false)
-		exist, _ = db.Exists("person", "city")
+		exist, _ = hash.Exists("person", "city")
 		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("none", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("person", "age", 25)
-		_, _ = db.Set("person", "city", "paris")
+		_, _ = hash.Set("person", "name", "alice")
+		_, _ = hash.Set("person", "age", 25)
+		_, _ = hash.Set("person", "city", "paris")
 
-		delCount, err := db.Delete("person", "country", "street")
+		n, err := hash.Delete("person", "country", "street")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, delCount, 0)
+		testx.AssertEqual(t, n, 0)
 
-		name, _ := db.Get("person", "name")
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 3)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 3)
+
+		name, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, name.String(), "alice")
-		age, _ := db.Get("person", "age")
+		age, _ := hash.Get("person", "age")
 		testx.AssertEqual(t, age.String(), "25")
-		city, _ := db.Get("person", "city")
+		city, _ := hash.Get("person", "city")
 		testx.AssertEqual(t, city.String(), "paris")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		delCount, err := db.Delete("person")
+		n, err := hash.Delete("person")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, delCount, 0)
+		testx.AssertEqual(t, n, 0)
 
-		exist, _ := red.Key().Exists("person")
+		exist, _ := db.Key().Exists("person")
 		testx.AssertEqual(t, exist, false)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "alice")
-		count, err := db.Delete("person", "name")
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "alice")
+		n, err := hash.Delete("person", "name")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		testx.AssertEqual(t, n, 0)
 	})
 }
 
 func TestExists(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("person", "name", "alice")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name  string
@@ -110,7 +128,7 @@ func TestExists(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := db.Exists(test.key, test.field)
+			exists, err := hash.Exists(test.key, test.field)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, exists, test.want)
 		})
@@ -118,13 +136,13 @@ func TestExists(t *testing.T) {
 }
 
 func TestFields(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_, _ = db.Set("person", "age", 25)
-	_, _ = db.Set("pet", "name", "doggo")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("person", "name", "alice")
+	_, _ = hash.Set("person", "age", 25)
+	_, _ = hash.Set("pet", "name", "doggo")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name   string
@@ -138,7 +156,7 @@ func TestFields(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fields, err := db.Fields(test.key)
+			fields, err := hash.Fields(test.key)
 			testx.AssertNoErr(t, err)
 			slices.Sort(fields)
 			slices.Sort(test.fields)
@@ -149,45 +167,45 @@ func TestFields(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	t.Run("field found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_, _ = db.Set("person", "name", "alice")
-		val, err := db.Get("person", "name")
+		db, hash := getDB(t)
+		defer db.Close()
+		_, _ = hash.Set("person", "name", "alice")
+		val, err := hash.Get("person", "name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, core.Value("alice"))
 	})
 	t.Run("field not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_, _ = db.Set("person", "name", "alice")
-		val, err := db.Get("person", "age")
+		db, hash := getDB(t)
+		defer db.Close()
+		_, _ = hash.Set("person", "name", "alice")
+		val, err := hash.Get("person", "age")
 		testx.AssertErr(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, val, core.Value(nil))
 	})
 	t.Run("key not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		val, err := db.Get("person", "name")
+		db, hash := getDB(t)
+		defer db.Close()
+		val, err := hash.Get("person", "name")
 		testx.AssertErr(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, val, core.Value(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "name")
-		val, err := db.Get("person", "name")
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "name")
+		val, err := hash.Get("person", "name")
 		testx.AssertErr(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, val, core.Value(nil))
 	})
 }
 
 func TestGetMany(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_, _ = db.Set("person", "age", 25)
-	_ = red.Str().Set("str", "name")
+	_, _ = hash.Set("person", "name", "alice")
+	_, _ = hash.Set("person", "age", 25)
+	_ = db.Str().Set("str", "name")
 
 	tests := []struct {
 		name   string
@@ -213,7 +231,7 @@ func TestGetMany(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			vals, err := db.GetMany(test.key, test.fields...)
+			vals, err := hash.GetMany(test.key, test.fields...)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, vals, test.want)
 		})
@@ -222,53 +240,71 @@ func TestGetMany(t *testing.T) {
 
 func TestIncr(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		val, err := db.Incr("person", "age", 25)
+		val, err := hash.Incr("person", "age", 25)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 1)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
 	})
 	t.Run("create field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		val, err := db.Incr("person", "age", 25)
+		_, _ = hash.Set("person", "name", "alice")
+		val, err := hash.Incr("person", "age", 25)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
 	})
 	t.Run("update field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "age", 25)
-		val, err := db.Incr("person", "age", 10)
+		_, _ = hash.Set("person", "age", 25)
+		val, err := hash.Incr("person", "age", 10)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 35)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
 	})
 	t.Run("decrement", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "age", 25)
-		val, err := db.Incr("person", "age", -10)
+		_, _ = hash.Set("person", "age", 25)
+		val, err := hash.Incr("person", "age", -10)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 15)
 	})
 	t.Run("non-integer value", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		_, err := db.Incr("person", "name", 10)
+		_, _ = hash.Set("person", "name", "alice")
+		_, err := hash.Incr("person", "name", 10)
 		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "alice")
-		val, err := db.Incr("person", "age", 25)
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "alice")
+		val, err := hash.Incr("person", "age", 25)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25)
 	})
@@ -276,66 +312,84 @@ func TestIncr(t *testing.T) {
 
 func TestIncrFloat(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		val, err := db.IncrFloat("person", "age", 25.5)
+		val, err := hash.IncrFloat("person", "age", 25.5)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25.5)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 1)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
 	})
 	t.Run("create field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		val, err := db.IncrFloat("person", "age", 25.5)
+		_, _ = hash.Set("person", "name", "alice")
+		val, err := hash.IncrFloat("person", "age", 25.5)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25.5)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
 	})
 	t.Run("update field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "age", 25.5)
-		val, err := db.IncrFloat("person", "age", 10.5)
+		_, _ = hash.Set("person", "age", 25.5)
+		val, err := hash.IncrFloat("person", "age", 10.5)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 36.0)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
 	})
 	t.Run("decrement", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "age", 25.5)
-		val, err := db.IncrFloat("person", "age", -10.5)
+		_, _ = hash.Set("person", "age", 25.5)
+		val, err := hash.IncrFloat("person", "age", -10.5)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 15.0)
 	})
 	t.Run("non-float value", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		_, err := db.IncrFloat("person", "name", 10.5)
+		_, _ = hash.Set("person", "name", "alice")
+		_, err := hash.IncrFloat("person", "name", 10.5)
 		testx.AssertErr(t, err, core.ErrValueType)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "alice")
-		val, err := db.IncrFloat("person", "age", 25.0)
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "alice")
+		val, err := hash.IncrFloat("person", "age", 25.0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val, 25.0)
 	})
 }
 
 func TestItems(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_, _ = db.Set("person", "age", 25)
-	_, _ = db.Set("pet", "name", "doggo")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("person", "name", "alice")
+	_, _ = hash.Set("person", "age", 25)
+	_, _ = hash.Set("pet", "name", "doggo")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name  string
@@ -353,7 +407,7 @@ func TestItems(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			items, err := db.Items(test.key)
+			items, err := hash.Items(test.key)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, items, test.items)
 		})
@@ -361,13 +415,13 @@ func TestItems(t *testing.T) {
 }
 
 func TestLen(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_, _ = db.Set("person", "age", 25)
-	_, _ = db.Set("pet", "name", "doggo")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("person", "name", "alice")
+	_, _ = hash.Set("person", "age", 25)
+	_, _ = hash.Set("pet", "name", "doggo")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name string
@@ -381,7 +435,7 @@ func TestLen(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			count, err := db.Len(test.key)
+			count, err := hash.Len(test.key)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, count, test.want)
 		})
@@ -389,15 +443,15 @@ func TestLen(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("key", "f11", "11")
-	_, _ = db.Set("key", "f12", "12")
-	_, _ = db.Set("key", "f21", "21")
-	_, _ = db.Set("key", "f22", "22")
-	_, _ = db.Set("key", "f31", "31")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("key", "f11", "11")
+	_, _ = hash.Set("key", "f12", "12")
+	_, _ = hash.Set("key", "f21", "21")
+	_, _ = hash.Set("key", "f22", "22")
+	_, _ = hash.Set("key", "f31", "31")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name    string
@@ -446,7 +500,7 @@ func TestScan(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			out, err := db.Scan("key", test.cursor, test.pattern, test.count)
+			out, err := hash.Scan("key", test.cursor, test.pattern, test.count)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, out.Cursor, test.wantCursor)
 			for i, item := range out.Items {
@@ -457,22 +511,22 @@ func TestScan(t *testing.T) {
 	}
 
 	t.Run("ignore other keys", func(t *testing.T) {
-		_, _ = db.Set("person", "name", "alice")
-		_, _ = db.Set("pet", "name", "doggo")
+		_, _ = hash.Set("person", "name", "alice")
+		_, _ = hash.Set("pet", "name", "doggo")
 
-		out, err := db.Scan("person", 0, "*", 0)
+		out, err := hash.Scan("person", 0, "*", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Items), 1)
 		testx.AssertEqual(t, out.Items[0].Field, "name")
 		testx.AssertEqual(t, out.Items[0].Value.String(), "alice")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		out, err := db.Scan("not", 0, "*", 0)
+		out, err := hash.Scan("not", 0, "*", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Items), 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		out, err := db.Scan("str", 0, "*", 0)
+		out, err := hash.Scan("str", 0, "*", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Items), 0)
 	})
@@ -480,17 +534,17 @@ func TestScan(t *testing.T) {
 
 func TestScanner(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("key", "f11", "11")
-		_, _ = db.Set("key", "f12", "12")
-		_, _ = db.Set("key", "f21", "21")
-		_, _ = db.Set("key", "f22", "22")
-		_, _ = db.Set("key", "f31", "31")
+		_, _ = hash.Set("key", "f11", "11")
+		_, _ = hash.Set("key", "f12", "12")
+		_, _ = hash.Set("key", "f21", "21")
+		_, _ = hash.Set("key", "f22", "22")
+		_, _ = hash.Set("key", "f31", "31")
 
 		var items []rhash.HashItem
-		err := red.View(func(tx *redka.Tx) error {
+		err := db.View(func(tx *redka.Tx) error {
 			sc := tx.Hash().Scanner("key", "*", 2)
 			for sc.Scan() {
 				items = append(items, sc.Item())
@@ -510,10 +564,10 @@ func TestScanner(t *testing.T) {
 		testx.AssertEqual(t, vals, []string{"11", "12", "21", "22", "31"})
 	})
 	t.Run("key not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		sc := db.Scanner("not", "*", 2)
+		sc := hash.Scanner("not", "*", 2)
 		var items []rhash.HashItem
 		for sc.Scan() {
 			items = append(items, sc.Item())
@@ -523,11 +577,11 @@ func TestScanner(t *testing.T) {
 		testx.AssertEqual(t, items, []rhash.HashItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("key", "str")
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("key", "str")
 
-		sc := db.Scanner("key", "*", 2)
+		sc := hash.Scanner("key", "*", 2)
 		var items []rhash.HashItem
 		for sc.Scan() {
 			items = append(items, sc.Item())
@@ -540,182 +594,245 @@ func TestScanner(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		created, err := db.Set("person", "name", "alice")
+		created, err := hash.Set("person", "name", "alice")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, created, true)
-		val, _ := db.Get("person", "name")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 1)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
+
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("create field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		created, err := db.Set("person", "age", 25)
+		_, _ = hash.Set("person", "name", "alice")
+		created, err := hash.Set("person", "age", 25)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, created, true)
-		val, _ := db.Get("person", "age")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
+
+		val, _ := hash.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "25")
 	})
 	t.Run("update field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		created, err := db.Set("person", "name", "bob")
+		_, _ = hash.Set("person", "name", "alice")
+		created, err := hash.Set("person", "name", "bob")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, created, false)
-		val, _ := db.Get("person", "name")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
+
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "bob")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "alice")
-		ok, err := db.Set("person", "name", "alice")
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "alice")
+		ok, err := hash.Set("person", "name", "alice")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
 
-		val, _ := db.Get("person", "name")
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 
-		sval, _ := red.Str().Get("person")
+		sval, _ := db.Str().Get("person")
 		testx.AssertEqual(t, sval.String(), "alice")
 	})
 }
 
 func TestSetMany(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
 		fvals := map[string]any{
 			"name": "alice",
 			"age":  25,
 		}
-		count, err := db.SetMany("person", fvals)
+		count, err := hash.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
+
 		var val core.Value
-		val, _ = db.Get("person", "name")
+		val, _ = hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
-		val, _ = db.Get("person", "age")
+		val, _ = hash.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "25")
 	})
 	t.Run("create fields", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
+		_, _ = hash.Set("person", "name", "alice")
 		fvals := map[string]any{
 			"age":  25,
 			"city": "paris",
 		}
-		count, err := db.SetMany("person", fvals)
+		count, err := hash.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 3)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 3)
+
 		var val core.Value
-		val, _ = db.Get("person", "age")
+		val, _ = hash.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "25")
-		val, _ = db.Get("person", "city")
+		val, _ = hash.Get("person", "city")
 		testx.AssertEqual(t, val.String(), "paris")
 	})
 	t.Run("update fields", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
+		_, _ = hash.Set("person", "name", "alice")
 		fvals := map[string]any{
 			"name": "bob",
 			"age":  50,
 		}
-		count, err := db.SetMany("person", fvals)
+		count, err := hash.SetMany("person", fvals)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 1)
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 3)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
+
 		var val core.Value
-		val, _ = db.Get("person", "name")
+		val, _ = hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "bob")
-		val, _ = db.Get("person", "age")
+		val, _ = hash.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "50")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
-		_ = red.Str().Set("person", "alice")
+		db, hash := getDB(t)
+		defer db.Close()
+		_ = db.Str().Set("person", "alice")
 
-		count, err := db.SetMany("person", map[string]any{
+		count, err := hash.SetMany("person", map[string]any{
 			"name": "alice", "age": 25,
 		})
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
 
-		name, _ := db.Get("person", "name")
+		name, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, name.String(), "alice")
-		age, _ := db.Get("person", "age")
+		age, _ := hash.Get("person", "age")
 		testx.AssertEqual(t, age.String(), "25")
 
-		sval, _ := red.Str().Get("person")
+		sval, _ := db.Str().Get("person")
 		testx.AssertEqual(t, sval.String(), "alice")
 	})
 }
 
 func TestSetNotExists(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		ok, err := db.SetNotExists("person", "name", "alice")
+		ok, err := hash.SetNotExists("person", "name", "alice")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
-		val, _ := db.Get("person", "name")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 1)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
+
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("create field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		ok, err := db.SetNotExists("person", "age", 25)
+		_, _ = hash.Set("person", "name", "alice")
+		ok, err := hash.SetNotExists("person", "age", 25)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
-		val, _ := db.Get("person", "age")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 2)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 2)
+
+		val, _ := hash.Get("person", "age")
 		testx.AssertEqual(t, val.String(), "25")
 	})
 	t.Run("update field", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_, _ = db.Set("person", "name", "alice")
-		ok, err := db.SetNotExists("person", "name", "bob")
+		_, _ = hash.Set("person", "name", "alice")
+		ok, err := hash.SetNotExists("person", "name", "bob")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
-		val, _ := db.Get("person", "name")
+
+		key, _ := db.Key().Get("person")
+		testx.AssertEqual(t, key.Version, 1)
+
+		hlen, _ := hash.Len("person")
+		testx.AssertEqual(t, hlen, 1)
+
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, hash := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("person", "alice")
-		ok, err := db.SetNotExists("person", "name", "alice")
+		_ = db.Str().Set("person", "alice")
+		ok, err := hash.SetNotExists("person", "name", "alice")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
-		val, _ := db.Get("person", "name")
+		val, _ := hash.Get("person", "name")
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 }
 
 func TestValues(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, hash := getDB(t)
+	defer db.Close()
 
-	_, _ = db.Set("person", "name", "alice")
-	_, _ = db.Set("person", "age", 25)
-	_, _ = db.Set("pet", "name", "doggo")
-	_ = red.Str().Set("str", "str")
+	_, _ = hash.Set("person", "name", "alice")
+	_, _ = hash.Set("person", "age", 25)
+	_, _ = hash.Set("pet", "name", "doggo")
+	_ = db.Str().Set("str", "str")
 
 	tests := []struct {
 		name string
@@ -733,7 +850,7 @@ func TestValues(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			values, err := db.Values(test.key)
+			values, err := hash.Values(test.key)
 			testx.AssertNoErr(t, err)
 			sort.Slice(values, func(i, j int) bool {
 				return values[i].String() < values[j].String()

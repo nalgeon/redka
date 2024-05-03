@@ -14,12 +14,19 @@ const (
 	from rhash join rkey on key_id = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?) and field in (:fields)`
 
-	sqlDelete = `
+	sqlDelete1 = `
 	delete from rhash
 	where key_id = (
 			select id from rkey
 			where key = ? and type = 4 and (etime is null or etime > ?)
 		) and field in (:fields)`
+
+	sqlDelete2 = `
+	update rkey set
+		version = version + 1,
+		mtime = ?,
+		len = len - ?
+	where key = ? and type = 4 and (etime is null or etime > ?)`
 
 	sqlFields = `
 	select field
@@ -42,9 +49,8 @@ const (
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlLen = `
-	select count(field)
-	from rhash join rkey on key_id = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`
+	select len from rkey
+	where key = ? and type = 4 and (etime is null or etime > ?)`
 
 	sqlScan = `
 	select rhash.rowid, field, value
@@ -55,8 +61,9 @@ const (
 	limit ?`
 
 	sqlSet1 = `
-	insert into rkey (key, type, version, mtime)
-	values (?, 4, 1, ?)
+	insert into
+	rkey   (key, type, version, mtime, len)
+	values (  ?,    4,       1,     ?,   0)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -91,16 +98,28 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Returns the number of fields deleted.
 // Ignores non-existing fields.
 // Does nothing if the key does not exist or is not a hash.
-// Does not delete the key if the hash becomes empty.
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
-	query, fieldArgs := sqlx.ExpandIn(sqlDelete, ":fields", fields)
-	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
+	// Delete hash fields.
+	now := time.Now().UnixMilli()
+	query, fieldArgs := sqlx.ExpandIn(sqlDelete1, ":fields", fields)
+	args := append([]any{key, now}, fieldArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
-	count, _ := res.RowsAffected()
-	return int(count), nil
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return 0, nil
+	}
+
+	// Update the key.
+	args = []any{now, n, key, now}
+	_, err = tx.tx.Exec(sqlDelete2, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(n), nil
 }
 
 // Exists checks if a field exists in a hash.
@@ -275,6 +294,9 @@ func (tx *Tx) Len(key string) (int, error) {
 	var n int
 	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
 	return n, err
 }
 

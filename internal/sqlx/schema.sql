@@ -119,6 +119,20 @@ rhash (
 create unique index if not exists
 rhash_pk_idx on rhash (key_id, field);
 
+create trigger if not exists
+rhash_on_insert
+before insert on rhash
+for each row
+when (
+        select count(*) from rhash
+        where key_id = new.key_id and field = new.field
+    ) = 0
+begin
+    update rkey
+    set len = len + 1
+    where id = new.key_id;
+end;
+
 create view if not exists
 vhash as
 select

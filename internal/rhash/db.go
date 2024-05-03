@@ -28,10 +28,14 @@ func New(rw *sql.DB, ro *sql.DB) *DB {
 // Returns the number of fields deleted.
 // Ignores non-existing fields.
 // Does nothing if the key does not exist or is not a hash.
-// Does not delete the key if the hash becomes empty.
 func (d *DB) Delete(key string, fields ...string) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.Delete(key, fields...)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.Delete(key, fields...)
+		return err
+	})
+	return n, err
 }
 
 // Exists checks if a field exists in a hash.
@@ -146,13 +150,13 @@ func (d *DB) Set(key, field string, value any) (bool, error) {
 // Returns the number of fields created (as opposed to updated).
 // If the key does not exist, creates it.
 func (d *DB) SetMany(key string, items map[string]any) (int, error) {
-	var count int
+	var n int
 	err := d.Update(func(tx *Tx) error {
 		var err error
-		count, err = tx.SetMany(key, items)
+		n, err = tx.SetMany(key, items)
 		return err
 	})
-	return count, err
+	return n, err
 }
 
 // SetNotExists creates the value of a field in a hash if it does not exist.
