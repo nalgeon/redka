@@ -18,7 +18,7 @@ rkey (
     etime    integer,
     mtime    integer not null,
     len      integer
-);
+) strict;
 
 create unique index if not exists
 rkey_key_idx on rkey (key);
@@ -37,7 +37,7 @@ rstring (
 
     foreign key (key_id) references rkey (id)
     on delete cascade
-);
+) strict;
 
 create unique index if not exists
 rstring_pk_idx on rstring (key_id);
@@ -63,7 +63,7 @@ rlist (
 
     foreign key (key_id) references rkey (id)
     on delete cascade
-);
+) strict;
 
 create unique index if not exists
 rlist_pk_idx on rlist (key_id, pos);
@@ -114,7 +114,7 @@ rhash (
 
     foreign key (key_id) references rkey (id)
     on delete cascade
-);
+) strict;
 
 create unique index if not exists
 rhash_pk_idx on rhash (key_id, field);
@@ -154,7 +154,7 @@ rzset (
 
     foreign key (key_id) references rkey (id)
     on delete cascade
-);
+) strict;
 
 create unique index if not exists
 rzset_pk_idx on rzset (key_id, elem);
