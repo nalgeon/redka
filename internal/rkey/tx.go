@@ -36,7 +36,9 @@ const (
 	)`
 
 	sqlExpire = `
-	update rkey set etime = ?
+	update rkey set
+		version = version + 1,
+		etime = ?
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlGet = `
@@ -49,7 +51,9 @@ const (
 	where key glob ? and (etime is null or etime > ?)`
 
 	sqlPersist = `
-	update rkey set etime = null
+	update rkey set
+		version = version + 1,
+		etime = null
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlRandom = `

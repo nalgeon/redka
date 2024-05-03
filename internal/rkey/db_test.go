@@ -11,11 +11,11 @@ import (
 )
 
 func TestCount(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, kkey := getDB(t)
+	defer db.Close()
 
-	_ = red.Str().Set("name", "alice")
-	_ = red.Str().Set("age", 25)
+	_ = db.Str().Set("name", "alice")
+	_ = db.Str().Set("age", 25)
 
 	tests := []struct {
 		name string
@@ -28,7 +28,7 @@ func TestCount(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			count, err := db.Count(test.keys...)
+			count, err := kkey.Count(test.keys...)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, count, test.want)
 		})
@@ -37,108 +37,108 @@ func TestCount(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		count, err := db.Delete("name", "age")
+		count, err := kkey.Delete("name", "age")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
 
-		exists, _ := db.Exists("name")
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, false)
 
-		exists, _ = db.Exists("age")
+		exists, _ = kkey.Exists("age")
 		testx.AssertEqual(t, exists, false)
 	})
 	t.Run("some", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		count, err := db.Delete("name")
+		count, err := kkey.Delete("name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 1)
 
-		exists, _ := db.Exists("name")
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, false)
 
-		exists, _ = db.Exists("age")
+		exists, _ = kkey.Exists("age")
 		testx.AssertEqual(t, exists, true)
 	})
 	t.Run("none", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		count, err := db.Delete("key")
+		count, err := kkey.Delete("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 0)
 
-		exists, _ := db.Exists("name")
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, true)
 
-		exists, _ = db.Exists("age")
+		exists, _ = kkey.Exists("age")
 		testx.AssertEqual(t, exists, true)
 	})
 }
 
 func TestDeleteAll(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, kkey := getDB(t)
+	defer db.Close()
 
-	_ = red.Str().Set("name", "alice")
-	_ = red.Str().Set("age", 25)
+	_ = db.Str().Set("name", "alice")
+	_ = db.Str().Set("age", 25)
 
-	err := db.DeleteAll()
+	err := kkey.DeleteAll()
 	testx.AssertNoErr(t, err)
 
-	count, _ := db.Count("name", "age")
+	count, _ := kkey.Count("name", "age")
 	testx.AssertEqual(t, count, 0)
 }
 
 func TestDeleteExpired(t *testing.T) {
 	t.Run("delete all", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().SetExpires("name", "alice", 1*time.Millisecond)
-		_ = red.Str().SetExpires("age", 25, 1*time.Millisecond)
+		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
+		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
 
 		time.Sleep(2 * time.Millisecond)
-		count, err := db.DeleteExpired(0)
+		count, err := kkey.DeleteExpired(0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 2)
 
-		count, _ = db.Count("name", "age")
+		count, _ = kkey.Count("name", "age")
 		testx.AssertEqual(t, count, 0)
 	})
 	t.Run("delete n", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().SetExpires("name", "alice", 1*time.Millisecond)
-		_ = red.Str().SetExpires("age", 25, 1*time.Millisecond)
+		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
+		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
 
 		time.Sleep(2 * time.Millisecond)
-		count, err := db.DeleteExpired(1)
+		count, err := kkey.DeleteExpired(1)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, count, 1)
 	})
 }
 
 func TestExists(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, kkey := getDB(t)
+	defer db.Close()
 
-	_ = red.Str().Set("name", "alice")
-	_ = red.Str().Set("age", 25)
+	_ = db.Str().Set("name", "alice")
+	_ = db.Str().Set("age", 25)
 
 	tests := []struct {
 		name string
@@ -150,7 +150,7 @@ func TestExists(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			count, err := db.Exists(test.key)
+			count, err := kkey.Exists(test.key)
 			testx.AssertNoErr(t, err)
 			testx.AssertEqual(t, count, test.want)
 		})
@@ -159,18 +159,19 @@ func TestExists(t *testing.T) {
 
 func TestExpire(t *testing.T) {
 	t.Run("expire", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
 		now := time.Now()
 		ttl := 10 * time.Second
-		err := db.Expire("name", ttl)
+		err := kkey.Expire("name", ttl)
 		testx.AssertNoErr(t, err)
 
-		key, _ := db.Get("name")
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 2)
 		if key.ETime == nil {
 			t.Error("want expired time, got nil")
 		}
@@ -181,28 +182,29 @@ func TestExpire(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		err := db.Expire("name", 10*time.Second)
+		err := kkey.Expire("name", 10*time.Second)
 		testx.AssertEqual(t, err, core.ErrNotFound)
 	})
 }
 
 func TestExpireAt(t *testing.T) {
 	t.Run("expire", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
 		now := time.Now()
 		at := now.Add(10 * time.Second)
-		err := db.ExpireAt("name", at)
+		err := kkey.ExpireAt("name", at)
 		testx.AssertNoErr(t, err)
 
-		key, _ := db.Get("name")
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 2)
 		if key.ETime == nil {
 			t.Error("want expired time, got nil")
 		}
@@ -213,23 +215,23 @@ func TestExpireAt(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		err := db.ExpireAt("name", time.Now().Add(10*time.Second))
+		err := kkey.ExpireAt("name", time.Now().Add(10*time.Second))
 		testx.AssertEqual(t, err, core.ErrNotFound)
 	})
 }
 
 func TestGet(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
 		now := time.Now().UnixMilli()
-		_ = red.Str().Set("name", "alice")
+		_ = db.Str().Set("name", "alice")
 
-		key, err := db.Get("name")
+		key, err := kkey.Get("name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, key.ID, 1)
 		testx.AssertEqual(t, key.Key, "name")
@@ -239,21 +241,21 @@ func TestGet(t *testing.T) {
 		testx.AssertEqual(t, key.MTime >= now, true)
 	})
 	t.Run("not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		key, err := db.Get("name")
+		key, err := kkey.Get("name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, key, core.Key{})
 	})
 }
 
 func TestKeys(t *testing.T) {
-	red, db := getDB(t)
-	defer red.Close()
+	db, kkey := getDB(t)
+	defer db.Close()
 
-	_ = red.Str().Set("name", "alice")
-	_ = red.Str().Set("age", 25)
+	_ = db.Str().Set("name", "alice")
+	_ = db.Str().Set("age", 25)
 
 	tests := []struct {
 		name    string
@@ -266,7 +268,7 @@ func TestKeys(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			keys, err := db.Keys(test.pattern)
+			keys, err := kkey.Keys(test.pattern)
 			testx.AssertNoErr(t, err)
 			for i, key := range keys {
 				name := key.Key
@@ -278,51 +280,52 @@ func TestKeys(t *testing.T) {
 
 func TestPersist(t *testing.T) {
 	t.Run("persist", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		err := db.Expire("name", 10*time.Second)
+		err := kkey.Expire("name", 10*time.Second)
 		testx.AssertNoErr(t, err)
 
-		err = db.Persist("name")
+		err = kkey.Persist("name")
 		testx.AssertNoErr(t, err)
 
-		key, _ := db.Get("name")
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 3)
 		if key.ETime != nil {
 			t.Error("want nil, got expired time")
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		err := db.Persist("name")
+		err := kkey.Persist("name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
 	})
 }
 
 func TestRandom(t *testing.T) {
 	t.Run("random", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		key, err := db.Random()
+		key, err := kkey.Random()
 		testx.AssertNoErr(t, err)
 		if key.Key != "name" && key.Key != "age" {
 			t.Errorf("want name or age, got %s", key.Key)
 		}
 	})
 	t.Run("empty", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		key, err := db.Random()
+		key, err := kkey.Random()
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, key, core.Key{})
 	})
@@ -330,139 +333,163 @@ func TestRandom(t *testing.T) {
 
 func TestRename(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		err := db.Rename("name", "key")
+		err := kkey.Rename("name", "key")
 		testx.AssertNoErr(t, err)
 
-		exists, _ := db.Exists("name")
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, false)
 
-		val, _ := red.Str().Get("key")
+		key, _ := kkey.Get("key")
+		testx.AssertEqual(t, key.Version, 2)
+
+		val, _ := db.Str().Get("key")
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("rename", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		err := db.Rename("name", "age")
+		err := kkey.Rename("name", "age")
 		testx.AssertNoErr(t, err)
 
-		exists, _ := db.Exists("name")
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, false)
 
-		val, err := red.Str().Get("age")
+		key, _ := kkey.Get("age")
+		testx.AssertEqual(t, key.Version, 2)
+
+		val, err := db.Str().Get("age")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("same", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
 
-		err := db.Rename("name", "name")
+		err := kkey.Rename("name", "name")
 		testx.AssertNoErr(t, err)
 
-		val, err := red.Str().Get("name")
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 1)
+
+		val, err := db.Str().Get("name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, val.String(), "alice")
 	})
 	t.Run("not found", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		err := db.Rename("key1", "name")
+		_ = db.Str().Set("name", "alice")
+		err := kkey.Rename("key1", "name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
 
-		exists, _ := db.Exists("name")
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 1)
+
+		exists, _ := kkey.Exists("name")
 		testx.AssertEqual(t, exists, true)
 
-		exists, _ = db.Exists("key1")
+		exists, _ = kkey.Exists("key1")
 		testx.AssertEqual(t, exists, false)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("str", "str")
-		_, _ = red.Hash().Set("hash", "field", "value")
+		_ = db.Str().Set("str", "str")
+		_, _ = db.Hash().Set("hash", "field", "value")
 
-		err := db.Rename("str", "hash")
+		err := kkey.Rename("str", "hash")
 		testx.AssertNoErr(t, err)
 
-		exists, _ := db.Exists("str")
+		exists, _ := kkey.Exists("str")
 		testx.AssertEqual(t, exists, false)
 
-		exists, _ = db.Exists("hash")
+		exists, _ = kkey.Exists("hash")
 		testx.AssertEqual(t, exists, true)
 	})
 }
 
 func TestRenameNotExists(t *testing.T) {
 	t.Run("rename", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		ok, err := db.RenameNotExists("name", "title")
+		_ = db.Str().Set("name", "alice")
+		ok, err := kkey.RenameNotExists("name", "title")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, true)
-		title, _ := red.Str().Get("title")
+
+		key, _ := kkey.Get("title")
+		testx.AssertEqual(t, key.Version, 2)
+
+		title, _ := db.Str().Get("title")
 		testx.AssertEqual(t, title.String(), "alice")
 	})
 	t.Run("same name", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		ok, err := db.RenameNotExists("name", "name")
+		_ = db.Str().Set("name", "alice")
+		ok, err := kkey.RenameNotExists("name", "name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
-		name, _ := red.Str().Get("name")
+
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 1)
+
+		name, _ := db.Str().Get("name")
 		testx.AssertEqual(t, name.String(), "alice")
 	})
 	t.Run("old does not exist", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		ok, err := db.RenameNotExists("key1", "key2")
+		ok, err := kkey.RenameNotExists("key1", "key2")
 		testx.AssertEqual(t, err, core.ErrNotFound)
 		testx.AssertEqual(t, ok, false)
 	})
 	t.Run("new exists", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("name", "alice")
-		_ = red.Str().Set("age", 25)
-		ok, err := db.RenameNotExists("name", "age")
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
+		ok, err := kkey.RenameNotExists("name", "age")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, ok, false)
-		age, _ := red.Str().Get("age")
+
+		key, _ := kkey.Get("age")
+		testx.AssertEqual(t, key.Version, 1)
+
+		age, _ := db.Str().Get("age")
 		testx.AssertEqual(t, age, core.Value("25"))
 	})
 }
 
 func TestScan(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("11", "11")
-		_ = red.Str().Set("12", "12")
-		_ = red.Str().Set("21", "21")
-		_ = red.Str().Set("22", "22")
-		_ = red.Str().Set("31", "31")
+		_ = db.Str().Set("11", "11")
+		_ = db.Str().Set("12", "12")
+		_ = db.Str().Set("21", "21")
+		_ = db.Str().Set("22", "22")
+		_ = db.Str().Set("31", "31")
 
 		tests := []struct {
 			name    string
@@ -483,7 +510,7 @@ func TestScan(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				out, err := db.Scan(test.cursor, test.pattern, core.TypeAny, test.count)
+				out, err := kkey.Scan(test.cursor, test.pattern, core.TypeAny, test.count)
 				testx.AssertNoErr(t, err)
 				testx.AssertEqual(t, out.Cursor, test.wantCursor)
 				keyNames := make([]string, len(out.Keys))
@@ -495,16 +522,16 @@ func TestScan(t *testing.T) {
 		}
 	})
 	t.Run("type filter", func(t *testing.T) {
-		red, db := getDB(t)
-		defer red.Close()
+		db, kkey := getDB(t)
+		defer db.Close()
 
-		_ = red.Str().Set("k11", "11")
-		_ = red.Str().Set("k12", "12")
-		_, _ = red.Hash().Set("k21", "field", "value")
-		_, _ = red.ZSet().Add("k22", "elem", 11)
-		_ = red.Str().Set("k31", "31")
+		_ = db.Str().Set("k11", "11")
+		_ = db.Str().Set("k12", "12")
+		_, _ = db.Hash().Set("k21", "field", "value")
+		_, _ = db.ZSet().Add("k22", "elem", 11)
+		_ = db.Str().Set("k31", "31")
 
-		out, err := db.Scan(0, "*", core.TypeString, 10)
+		out, err := kkey.Scan(0, "*", core.TypeString, 10)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Keys), 3)
 		testx.AssertEqual(t, out.Keys[0].Key, "k11")
@@ -514,17 +541,17 @@ func TestScan(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	red, _ := getDB(t)
-	defer red.Close()
+	db, _ := getDB(t)
+	defer db.Close()
 
-	_ = red.Str().Set("11", "11")
-	_ = red.Str().Set("12", "12")
-	_ = red.Str().Set("21", "21")
-	_ = red.Str().Set("22", "22")
-	_ = red.Str().Set("31", "31")
+	_ = db.Str().Set("11", "11")
+	_ = db.Str().Set("12", "12")
+	_ = db.Str().Set("21", "21")
+	_ = db.Str().Set("22", "22")
+	_ = db.Str().Set("31", "31")
 
 	var keys []core.Key
-	err := red.View(func(tx *redka.Tx) error {
+	err := db.View(func(tx *redka.Tx) error {
 		sc := tx.Key().Scanner("*", core.TypeAny, 2)
 		for sc.Scan() {
 			keys = append(keys, sc.Key())
@@ -541,9 +568,9 @@ func TestScanner(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rkey.DB) {
 	tb.Helper()
-	red, err := redka.Open(":memory:", nil)
+	db, err := redka.Open(":memory:", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return red, red.Key()
+	return db, db.Key()
 }
