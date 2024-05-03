@@ -247,11 +247,8 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
-
-		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 1)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, res, nil)
+		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (zinterstore)")
 	})
 }

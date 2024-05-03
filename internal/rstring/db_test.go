@@ -161,13 +161,13 @@ func TestGetSet(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		out, err := str.SetWith("person", "alice").Run()
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 		testx.AssertEqual(t, out.Prev, core.Value(nil))
-		testx.AssertEqual(t, out.Created, true)
+		testx.AssertEqual(t, out.Created, false)
 		testx.AssertEqual(t, out.Updated, false)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -235,11 +235,11 @@ func TestIncr(t *testing.T) {
 		_, _ = db.Hash().Set("person", "age", 25)
 
 		val, err := str.Incr("person", 10)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 10)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0)
 
-		age, _ := str.Get("person")
-		testx.AssertEqual(t, age.MustInt(), 10)
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -307,11 +307,11 @@ func TestIncrFloat(t *testing.T) {
 		_, _ = db.Hash().Set("person", "age", 25.5)
 
 		val, err := str.IncrFloat("person", 10.5)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 10.5)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0.0)
 
-		person, _ := str.Get("person")
-		testx.AssertEqual(t, person.MustFloat(), 10.5)
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -408,10 +408,10 @@ func TestSet(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		err := str.Set("person", "alice")
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		hval, _ := db.Hash().Get("person", "name")
 		testx.AssertEqual(t, hval, core.Value("alice"))
@@ -516,10 +516,10 @@ func TestSetExpires(t *testing.T) {
 		defer db.Close()
 		_, _ = db.Hash().Set("person", "name", "alice")
 		err := str.SetExpires("person", "alice", time.Second)
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -559,10 +559,10 @@ func TestSetWithTTL(t *testing.T) {
 		defer db.Close()
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, err := str.SetWith("person", "alice").TTL(time.Second).Run()
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -617,10 +617,10 @@ func TestSetWithAt(t *testing.T) {
 
 		at := time.Now().Add(60 * time.Second)
 		_, err := str.SetWith("person", "alice").At(at).Run()
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -662,13 +662,10 @@ func TestSetWithKeepTTL(t *testing.T) {
 		defer db.Close()
 		_, _ = db.Hash().Set("person", "name", "alice")
 		_, err := str.SetWith("person", "alice").KeepTTL().Run()
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
-
-		key, _ := db.Key().Get("person")
-		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -734,12 +731,12 @@ func TestSetMany(t *testing.T) {
 			"name":   "alice",
 			"person": "alice",
 		})
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
-		name, _ := str.Get("name")
-		testx.AssertEqual(t, name, core.Value("alice"))
-		person, _ := str.Get("person")
-		testx.AssertEqual(t, person, core.Value("alice"))
+		_, err = str.Get("name")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = str.Get("person")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		hval, _ := db.Hash().Get("person", "name")
 		testx.AssertEqual(t, hval, core.Value("alice"))
@@ -800,12 +797,12 @@ func TestSetNotExists(t *testing.T) {
 		_, _ = db.Hash().Set("person", "name", "alice")
 
 		out, err := str.SetWith("person", "alice").IfNotExists().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, out.Created, true)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, out.Created, false)
 		testx.AssertEqual(t, out.Updated, false)
 
-		val, _ := str.Get("person")
-		testx.AssertEqual(t, val, core.Value("alice"))
+		_, err = str.Get("name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 

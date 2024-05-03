@@ -18,7 +18,7 @@ const (
 	having count(distinct key_id) = ?
 	order by sum(score), elem`
 
-	sqlInterStore1 = sqlDeleteKey
+	sqlInterStore1 = sqlDeleteAll
 
 	sqlInterStore2 = sqlAdd1
 
@@ -83,6 +83,7 @@ func (c InterCmd) Run() ([]SetItem, error) {
 // Returns the number of elements in the resulting set.
 // If the destination key already exists, it is fully overwritten
 // (all old elements are removed and the new ones are inserted).
+// If the destination key already exists and is not a set, returns ErrKeyType.
 // If any of the source keys do not exist or are not sets, does nothing,
 // except deleting the destination key if it exists.
 func (c InterCmd) Store() (int, error) {
@@ -144,7 +145,7 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	now := time.Now().UnixMilli()
 
 	// Delete the destination key if it exists.
-	args := []any{c.dest, now}
+	args := []any{c.dest, now, c.dest, now}
 	_, err := tx.Exec(sqlInterStore1, args...)
 	if err != nil {
 		return 0, err
@@ -155,7 +156,7 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	var destID int
 	err = tx.QueryRow(sqlInterStore2, args...).Scan(&destID)
 	if err != nil {
-		return 0, err
+		return 0, sqlx.TypedError(err)
 	}
 
 	// Intersect the source sets and store the result.

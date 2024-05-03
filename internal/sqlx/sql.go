@@ -5,6 +5,8 @@ package sqlx
 import (
 	"database/sql"
 	"strings"
+
+	"github.com/nalgeon/redka/internal/core"
 )
 
 // Sorting direction.
@@ -66,6 +68,14 @@ func Select[T any](db Tx, query string, args []any,
 	}
 
 	return vals, err
+}
+
+// Returns typed errors for some specific cases.
+func TypedError(err error) error {
+	if ConstraintFailed(err, "NOT NULL", "rkey.type") {
+		return core.ErrKeyType
+	}
+	return err
 }
 
 // ConstraintFailed checks if the error is due to

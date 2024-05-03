@@ -77,6 +77,9 @@ func (c SetCmd) KeepTTL() SetCmd {
 // Existence checks:
 //   - If called with IfExists(), sets the value only if the key exists.
 //   - If called with IfNotExists(), sets the value only if the key does not exist.
+//
+// If the key exists but is not a string, returns ErrKeyType (unless called
+// with IfExists(), in which case does nothing).
 func (c SetCmd) Run() (out SetOut, err error) {
 	if c.db != nil {
 		var out SetOut

@@ -28,6 +28,7 @@ const driverName = "sqlite3"
 
 // Common errors returned by data structure methods.
 var (
+	ErrKeyType   = core.ErrKeyType   // key type mismatch
 	ErrNotFound  = core.ErrNotFound  // key or element not found
 	ErrValueType = core.ErrValueType // invalid value type
 )

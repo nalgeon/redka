@@ -73,11 +73,11 @@ func TestAdd(t *testing.T) {
 		_ = db.Str().Set("key", "string")
 
 		created, err := zset.Add("key", "one", 1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, created, false)
 
-		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
+		_, err = zset.GetScore("key", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "string")
@@ -156,15 +156,15 @@ func TestAddMany(t *testing.T) {
 			"thr": 3,
 		}
 		n, err := zset.AddMany("key", items)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 3)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, n, 0)
 
-		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
-		two, _ := zset.GetScore("key", "two")
-		testx.AssertEqual(t, two, 2.0)
-		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		_, err = zset.GetScore("key", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = zset.GetScore("key", "two")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = zset.GetScore("key", "thr")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "str")
@@ -537,9 +537,13 @@ func TestIncr(t *testing.T) {
 		db, zset := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("key", "one")
+
 		val, err := zset.Incr("key", "one", 25.0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 25.0)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0.0)
+
+		_, err = zset.GetScore("key", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -836,11 +840,11 @@ func TestInterStore(t *testing.T) {
 		_ = db.Str().Set("dest", 10)
 
 		n, err := zset.InterWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, n, 0)
 
-		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		_, err = zset.GetScore("dest", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("dest")
 		testx.AssertEqual(t, sval.String(), "10")
@@ -1567,11 +1571,11 @@ func TestUnionStore(t *testing.T) {
 		_ = db.Str().Set("dest", 10)
 
 		n, err := zset.UnionWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, n, 0)
 
-		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		_, err = zset.GetScore("dest", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("dest")
 		testx.AssertEqual(t, sval.String(), "10")

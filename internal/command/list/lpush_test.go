@@ -3,6 +3,7 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -111,13 +112,8 @@ func TestLPushExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLPush, "lpush key elem")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
-
-		elem, _ := db.List().Get("key", 0)
-		testx.AssertEqual(t, elem.String(), "elem")
-		str, _ := db.Str().Get("key")
-		testx.AssertEqual(t, str.String(), "str")
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, res, nil)
+		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (lpush)")
 	})
 }

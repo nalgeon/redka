@@ -73,6 +73,7 @@ func (d *DB) GetMany(key string, fields ...string) (map[string]core.Value, error
 // If the field does not exist, sets it to 0 before the increment.
 // If the field value is not an integer, returns ErrValueType.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) Incr(key, field string, delta int) (int, error) {
 	var val int
 	err := d.Update(func(tx *Tx) error {
@@ -88,6 +89,7 @@ func (d *DB) Incr(key, field string, delta int) (int, error) {
 // If the field does not exist, sets it to 0 before the increment.
 // If the field value is not a float, returns ErrValueType.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) IncrFloat(key, field string, delta float64) (float64, error) {
 	var val float64
 	err := d.Update(func(tx *Tx) error {
@@ -136,6 +138,7 @@ func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
 // Set creates or updates the value of a field in a hash.
 // Returns true if the field was created, false if it was updated.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) Set(key, field string, value any) (bool, error) {
 	var created bool
 	err := d.Update(func(tx *Tx) error {
@@ -149,6 +152,7 @@ func (d *DB) Set(key, field string, value any) (bool, error) {
 // SetMany creates or updates the values of multiple fields in a hash.
 // Returns the number of fields created (as opposed to updated).
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) SetMany(key string, items map[string]any) (int, error) {
 	var n int
 	err := d.Update(func(tx *Tx) error {
@@ -162,6 +166,7 @@ func (d *DB) SetMany(key string, items map[string]any) (int, error) {
 // SetNotExists creates the value of a field in a hash if it does not exist.
 // Returns true if the field was created, false if it already exists.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) SetNotExists(key, field string, value any) (bool, error) {
 	var created bool
 	err := d.Update(func(tx *Tx) error {

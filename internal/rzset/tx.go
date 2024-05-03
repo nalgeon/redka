@@ -14,7 +14,8 @@ const (
 	insert into
 	rkey   (key, type, version, mtime, len)
 	values (  ?,    5,       1,     ?,   0)
-	on conflict (key, type) do update set
+	on conflict (key) do update set
+		type = case when type = excluded.type then type else null end,
 		version = version+1,
 		mtime = excluded.mtime
 	returning id`
@@ -49,9 +50,18 @@ const (
 		len = len - ?
 	where key = ? and type = 5 and (etime is null or etime > ?)`
 
-	sqlDeleteKey = `
-	delete from rkey
-	where key = ? and type = 5 and (etime is null or etime > ?)`
+	sqlDeleteAll = `
+	delete from rzset
+	where key_id = (
+		select id from rkey
+		where key = ? and type = 5 and (etime is null or etime > ?)
+	);
+
+	update rkey set
+		version = 0,
+		mtime = 0,
+		len = 0
+	where key = ? and type = 5 and (etime is null or etime > ?);`
 
 	sqlGetRank = `
 	with ranked as (
@@ -107,6 +117,7 @@ func NewTx(tx sqlx.Tx) *Tx {
 // Add adds or updates an element in a set.
 // Returns true if the element was created, false if it was updated.
 // If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) Add(key string, elem any, score float64) (bool, error) {
 	existCount, err := tx.count(key, elem)
 	if err != nil {
@@ -122,6 +133,7 @@ func (tx *Tx) Add(key string, elem any, score float64) (bool, error) {
 // AddMany adds or updates multiple elements in a set.
 // Returns the number of elements created (as opposed to updated).
 // If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) AddMany(key string, items map[any]float64) (int, error) {
 	// Count the number of existing elements.
 	elems := make([]any, 0, len(items))
@@ -240,6 +252,7 @@ func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 // Returns the score after the increment.
 // If the element does not exist, adds it and sets the score to 0.0
 // before the increment. If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 	elemb, err := core.ToBytes(elem)
 	if err != nil {
@@ -250,7 +263,7 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 	var keyID int
 	err = tx.tx.QueryRow(sqlIncr1, args...).Scan(&keyID)
 	if err != nil {
-		return 0, err
+		return 0, sqlx.TypedError(err)
 	}
 
 	var score float64
@@ -378,7 +391,7 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 	var keyID int
 	err = tx.tx.QueryRow(sqlAdd1, args...).Scan(&keyID)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 	_, err = tx.tx.Exec(sqlAdd2, keyID, elemb, score)
 	return err

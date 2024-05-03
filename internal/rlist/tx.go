@@ -139,7 +139,8 @@ const (
 	insert into
 	rkey   (key, type, version, mtime, len)
 	values (  ?,    2,       1,     ?,   1)
-	on conflict (key, type) do update set
+	on conflict (key) do update set
+		type = case when type = excluded.type then type else null end,
 		version = version + 1,
 		mtime = excluded.mtime,
 		len = len + 1
@@ -370,6 +371,7 @@ func (tx *Tx) PopFront(key string) (core.Value, error) {
 // PushBack appends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
+// If the key exists but is not a list, returns ErrKeyType.
 func (tx *Tx) PushBack(key string, elem any) (int, error) {
 	return tx.push(key, elem, sqlPushBack)
 }
@@ -377,6 +379,7 @@ func (tx *Tx) PushBack(key string, elem any) (int, error) {
 // PushFront prepends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
+// If the key exists but is not a list, returns ErrKeyType.
 func (tx *Tx) PushFront(key string, elem any) (int, error) {
 	return tx.push(key, elem, sqlPushFront)
 }
@@ -555,7 +558,7 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	var keyID, n int
 	err = tx.tx.QueryRow(sqlPush, args...).Scan(&keyID, &n)
 	if err != nil {
-		return 0, err
+		return 0, sqlx.TypedError(err)
 	}
 
 	// Insert the element.

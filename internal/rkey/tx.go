@@ -238,6 +238,16 @@ func (tx *Tx) Rename(key, newKey string) error {
 		return nil
 	}
 
+	// Make sure the new key does not exist or has the same type.
+	newK, err := tx.Get(newKey)
+	if err != nil && err != core.ErrNotFound {
+		return err
+	}
+	if err == nil && oldK.Type != newK.Type {
+		// Cannot overwrite a key with a different type.
+		return core.ErrKeyType
+	}
+
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
 	args := []any{

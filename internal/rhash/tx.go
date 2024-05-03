@@ -64,7 +64,8 @@ const (
 	insert into
 	rkey   (key, type, version, mtime, len)
 	values (  ?,    4,       1,     ?,   0)
-	on conflict (key, type) do update set
+	on conflict (key) do update set
+		type = case when type = excluded.type then type else null end,
 		version = version+1,
 		mtime = excluded.mtime
 	returning id`
@@ -209,6 +210,7 @@ func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, erro
 // If the field does not exist, sets it to 0 before the increment.
 // If the field value is not an integer, returns ErrValueType.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (tx *Tx) Incr(key, field string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key, field)
@@ -237,6 +239,7 @@ func (tx *Tx) Incr(key, field string, delta int) (int, error) {
 // If the field does not exist, sets it to 0 before the increment.
 // If the field value is not a float, returns ErrValueType.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (tx *Tx) IncrFloat(key, field string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key, field)
@@ -352,6 +355,7 @@ func (tx *Tx) Scanner(key, pattern string, pageSize int) *Scanner {
 // Set creates or updates the value of a field in a hash.
 // Returns true if the field was created, false if it was updated.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
@@ -370,6 +374,7 @@ func (tx *Tx) Set(key string, field string, value any) (bool, error) {
 // SetMany creates or updates the values of multiple fields in a hash.
 // Returns the number of fields created (as opposed to updated).
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 	for _, val := range items {
 		if !core.IsValueType(val) {
@@ -401,6 +406,7 @@ func (tx *Tx) SetMany(key string, items map[string]any) (int, error) {
 // SetNotExists creates the value of a field in a hash if it does not exist.
 // Returns true if the field was created, false if it already exists.
 // If the key does not exist, creates it.
+// If the key exists but is not a hash, returns ErrKeyType.
 func (tx *Tx) SetNotExists(key, field string, value any) (bool, error) {
 	if !core.IsValueType(value) {
 		return false, core.ErrValueType
@@ -467,7 +473,7 @@ func (tx *Tx) set(key string, field string, value any) error {
 	var keyID int
 	err = tx.tx.QueryRow(sqlSet1, args...).Scan(&keyID)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 	_, err = tx.tx.Exec(sqlSet2, keyID, field, valueb)
 	return err

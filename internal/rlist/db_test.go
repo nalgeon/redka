@@ -673,11 +673,11 @@ func TestPushBack(t *testing.T) {
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.PushBack("key", 42)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, n, 0)
 
-		llen, _ := list.Len("key")
-		testx.AssertEqual(t, llen, 1)
+		_, err = list.Get("key", 0)
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")
@@ -757,11 +757,11 @@ func TestPushFront(t *testing.T) {
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.PushFront("key", 42)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, n, 0)
 
-		llen, _ := list.Len("key")
-		testx.AssertEqual(t, llen, 1)
+		_, err = list.Get("key", 0)
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
 		testx.AssertEqual(t, sval.String(), "value")

@@ -413,10 +413,10 @@ func TestRename(t *testing.T) {
 		_, _ = db.Hash().Set("hash", "field", "value")
 
 		err := kkey.Rename("str", "hash")
-		testx.AssertNoErr(t, err)
+		testx.AssertErr(t, err, core.ErrKeyType)
 
 		exists, _ := kkey.Exists("str")
-		testx.AssertEqual(t, exists, false)
+		testx.AssertEqual(t, exists, true)
 
 		exists, _ = kkey.Exists("hash")
 		testx.AssertEqual(t, exists, true)

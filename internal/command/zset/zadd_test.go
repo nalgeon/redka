@@ -3,6 +3,7 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -137,8 +138,8 @@ func TestZAddExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, res, nil)
+		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (zadd)")
 	})
 }

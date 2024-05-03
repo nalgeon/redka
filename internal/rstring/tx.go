@@ -23,7 +23,8 @@ const (
 	sqlSet1 = `
 	insert into rkey (key, type, version, etime, mtime)
 	values (?, 1, 1, ?, ?)
-	on conflict (key, type) do update set
+	on conflict (key) do update set
+		type = case when type = excluded.type then type else null end,
 		version = version+1,
 		etime = excluded.etime,
 		mtime = excluded.mtime
@@ -38,7 +39,8 @@ const (
 	sqlUpdate1 = `
 	insert into rkey (key, type, version, etime, mtime)
 	values (?, 1, 1, null, ?)
-	on conflict (key, type) do update set
+	on conflict (key) do update set
+		type = case when type = excluded.type then type else null end,
 		version = version+1,
 		mtime = excluded.mtime
 	returning id`
@@ -105,6 +107,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an integer, returns ErrValueType.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Incr(key string, delta int) (int, error) {
 	// get the current value
 	val, err := tx.Get(key)
@@ -132,6 +135,7 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 // Returns the value after the increment.
 // If the key does not exist, sets it to 0 before the increment.
 // If the key value is not an float, returns ErrValueType.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 	// get the current value
 	val, err := tx.Get(key)
@@ -157,12 +161,14 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 
 // Set sets the key value that will not expire.
 // Overwrites the value if the key already exists.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Set(key string, value any) error {
 	return tx.SetExpires(key, value, 0)
 }
 
 // SetExpires sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
+// If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	var at time.Time
 	if ttl > 0 {
@@ -176,6 +182,7 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 // Overwrites values for keys that already exist and
 // creates new keys/values for keys that do not exist.
 // Removes the TTL for existing keys.
+// If any of the keys exists but is not a string, returns ErrKeyType.
 func (tx *Tx) SetMany(items map[string]any) error {
 	for _, val := range items {
 		if !core.IsValueType(val) {
@@ -233,7 +240,7 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	var keyID int
 	err = tx.QueryRow(sqlSet1, args...).Scan(&keyID)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 	_, err = tx.Exec(sqlSet2, keyID, valueb)
 	return err
@@ -251,7 +258,7 @@ func update(tx sqlx.Tx, key string, value any) error {
 	var keyID int
 	err = tx.QueryRow(sqlUpdate1, args...).Scan(&keyID)
 	if err != nil {
-		return err
+		return sqlx.TypedError(err)
 	}
 	_, err = tx.Exec(sqlUpdate2, keyID, valueb)
 	return err

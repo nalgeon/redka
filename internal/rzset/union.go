@@ -17,7 +17,7 @@ const (
 	group by elem
 	order by sum(score), elem`
 
-	sqlUnionStore1 = sqlDeleteKey
+	sqlUnionStore1 = sqlDeleteAll
 
 	sqlUnionStore2 = sqlAdd1
 
@@ -82,6 +82,7 @@ func (c UnionCmd) Run() ([]SetItem, error) {
 // Returns the number of elements in the resulting set.
 // If the destination key already exists, it is fully overwritten
 // (all old elements are removed and the new ones are inserted).
+// If the destination key already exists and is not a set, returns ErrKeyType.
 // Ignores the source keys that do not exist or are not sets.
 // If all of the source keys do not exist or are not sets, does nothing,
 // except deleting the destination key if it exists.
@@ -141,7 +142,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	now := time.Now().UnixMilli()
 
 	// Delete the destination key if it exists.
-	args := []any{c.dest, now}
+	args := []any{c.dest, now, c.dest, now}
 	_, err := tx.Exec(sqlUnionStore1, args...)
 	if err != nil {
 		return 0, err
@@ -152,7 +153,7 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	var destID int
 	err = tx.QueryRow(sqlUnionStore2, args...).Scan(&destID)
 	if err != nil {
-		return 0, err
+		return 0, sqlx.TypedError(err)
 	}
 
 	// Union the source sets and store the result.

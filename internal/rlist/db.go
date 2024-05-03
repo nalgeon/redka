@@ -149,6 +149,7 @@ func (d *DB) PopFront(key string) (core.Value, error) {
 // PushBack appends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
+// If the key exists but is not a list, returns ErrKeyType.
 func (d *DB) PushBack(key string, elem any) (int, error) {
 	var n int
 	err := d.Update(func(tx *Tx) error {
@@ -162,6 +163,7 @@ func (d *DB) PushBack(key string, elem any) (int, error) {
 // PushFront prepends an element to a list.
 // Returns the length of the list after the operation.
 // If the key does not exist, creates it.
+// If the key exists but is not a list, returns ErrKeyType.
 func (d *DB) PushFront(key string, elem any) (int, error) {
 	var n int
 	err := d.Update(func(tx *Tx) error {

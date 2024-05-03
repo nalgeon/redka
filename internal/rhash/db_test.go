@@ -304,9 +304,13 @@ func TestIncr(t *testing.T) {
 		db, hash := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("person", "alice")
+
 		val, err := hash.Incr("person", "age", 25)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 25)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0)
+
+		_, err = hash.Get("person", "age")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -377,8 +381,12 @@ func TestIncrFloat(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("person", "alice")
 		val, err := hash.IncrFloat("person", "age", 25.0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 25.0)
+
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, val, 0.0)
+
+		_, err = hash.Get("person", "age")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 
@@ -650,12 +658,13 @@ func TestSet(t *testing.T) {
 		db, hash := getDB(t)
 		defer db.Close()
 		_ = db.Str().Set("person", "alice")
-		ok, err := hash.Set("person", "name", "alice")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, true)
 
-		val, _ := hash.Get("person", "name")
-		testx.AssertEqual(t, val.String(), "alice")
+		ok, err := hash.Set("person", "name", "alice")
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, ok, false)
+
+		_, err = hash.Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("person")
 		testx.AssertEqual(t, sval.String(), "alice")
@@ -745,13 +754,13 @@ func TestSetMany(t *testing.T) {
 		count, err := hash.SetMany("person", map[string]any{
 			"name": "alice", "age": 25,
 		})
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, count, 0)
 
-		name, _ := hash.Get("person", "name")
-		testx.AssertEqual(t, name.String(), "alice")
-		age, _ := hash.Get("person", "age")
-		testx.AssertEqual(t, age.String(), "25")
+		_, err = hash.Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = hash.Get("person", "age")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("person")
 		testx.AssertEqual(t, sval.String(), "alice")
@@ -815,13 +824,14 @@ func TestSetNotExists(t *testing.T) {
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, hash := getDB(t)
 		defer db.Close()
-
 		_ = db.Str().Set("person", "alice")
+
 		ok, err := hash.SetNotExists("person", "name", "alice")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, ok, true)
-		val, _ := hash.Get("person", "name")
-		testx.AssertEqual(t, val.String(), "alice")
+		testx.AssertErr(t, err, core.ErrKeyType)
+		testx.AssertEqual(t, ok, false)
+
+		_, err = hash.Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }
 

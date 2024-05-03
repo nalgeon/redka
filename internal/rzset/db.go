@@ -32,6 +32,7 @@ func New(rw *sql.DB, ro *sql.DB) *DB {
 // Add adds or updates an element in a set.
 // Returns true if the element was created, false if it was updated.
 // If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (d *DB) Add(key string, elem any, score float64) (bool, error) {
 	var created bool
 	err := d.Update(func(tx *Tx) error {
@@ -46,6 +47,7 @@ func (d *DB) Add(key string, elem any, score float64) (bool, error) {
 // AddMany adds or updates multiple elements in a set.
 // Returns the number of elements created (as opposed to updated).
 // If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (d *DB) AddMany(key string, items map[any]float64) (int, error) {
 	var count int
 	err := d.Update(func(tx *Tx) error {
@@ -115,6 +117,7 @@ func (d *DB) GetScore(key string, elem any) (float64, error) {
 // Returns the score after the increment.
 // If the element does not exist, adds it and sets the score to 0.0
 // before the increment. If the key does not exist, creates it.
+// If the key exists but is not a set, returns ErrKeyType.
 func (d *DB) Incr(key string, elem any, delta float64) (float64, error) {
 	var score float64
 	err := d.Update(func(tx *Tx) error {
