@@ -11,9 +11,9 @@ const (
 	sqlRangeRank = `
 	with ranked as (
 		select elem, score, (row_number() over w - 1) as rank
-		from rzset join rkey on key_id = rkey.id and type = 5
+		from rzset join rkey on kid = rkey.id and type = 5
 		where key = ? and (etime is null or etime > ?)
-		window w as (partition by key_id order by score asc, elem asc)
+		window w as (partition by kid order by score asc, elem asc)
 	)
 	select elem, score
 	from ranked
@@ -22,7 +22,7 @@ const (
 
 	sqlRangeScore = `
 	select elem, score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?)
 	and score between ? and ?
 	order by score asc, elem asc`

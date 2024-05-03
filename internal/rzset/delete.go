@@ -11,7 +11,7 @@ const (
 	with ranked as (
 		select rowid, elem, score
 		from rzset
-		where key_id = (
+		where kid = (
 			select id from rkey
 			where key = ? and type = 5 and (etime is null or etime > ?)
 		)
@@ -23,7 +23,7 @@ const (
 
 	sqlDeleteScore = `
 	delete from rzset
-	where key_id = (
+	where kid = (
 			select id from rkey
 			where key = ? and type = 5 and (etime is null or etime > ?)
 		) and score between ? and ?`

@@ -11,12 +11,12 @@ import (
 const (
 	sqlCount = `
 	select count(field)
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?) and field in (:fields)`
 
 	sqlDelete1 = `
 	delete from rhash
-	where key_id = (
+	where kid = (
 			select id from rkey
 			where key = ? and type = 4 and (etime is null or etime > ?)
 		) and field in (:fields)`
@@ -30,22 +30,22 @@ const (
 
 	sqlFields = `
 	select field
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlGet = `
 	select value
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?) and field = ?`
 
 	sqlGetMany = `
 	select field, value
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?) and field in (:fields)`
 
 	sqlItems = `
 	select field, value
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlLen = `
@@ -54,7 +54,7 @@ const (
 
 	sqlScan = `
 	select rhash.rowid, field, value
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where
 		key = ? and (etime is null or etime > ?)
 		and rhash.rowid > ? and field glob ?
@@ -71,14 +71,14 @@ const (
 	returning id`
 
 	sqlSet2 = `
-	insert into rhash (key_id, field, value)
+	insert into rhash (kid, field, value)
 	values (?, ?, ?)
-	on conflict (key_id, field) do update
+	on conflict (kid, field) do update
 	set value = excluded.value;`
 
 	sqlValues = `
 	select value
-	from rhash join rkey on key_id = rkey.id and type = 4
+	from rhash join rkey on kid = rkey.id and type = 4
 	where key = ? and (etime is null or etime > ?)`
 )
 

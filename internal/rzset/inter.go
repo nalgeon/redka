@@ -12,10 +12,10 @@ import (
 const (
 	sqlInter = `
 	select elem, sum(score) as score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
-	having count(distinct key_id) = ?
+	having count(distinct kid) = ?
 	order by sum(score), elem`
 
 	sqlInterStore1 = sqlDeleteAll
@@ -23,12 +23,12 @@ const (
 	sqlInterStore2 = sqlAdd1
 
 	sqlInterStore3 = `
-	insert into rzset (key_id, elem, score)
+	insert into rzset (kid, elem, score)
 	select ?, elem, sum(score) as score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
-	having count(distinct key_id) = ?
+	having count(distinct kid) = ?
 	order by sum(score), elem;`
 )
 

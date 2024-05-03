@@ -21,24 +21,24 @@ const (
 	returning id`
 
 	sqlAdd2 = `
-	insert into rzset (key_id, elem, score)
+	insert into rzset (kid, elem, score)
 	values (?, ?, ?)
-	on conflict (key_id, elem) do update
+	on conflict (kid, elem) do update
 	set score = excluded.score`
 
 	sqlCount = `
 	select count(elem)
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?) and elem in (:elems)`
 
 	sqlCountScore = `
 	select count(elem)
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?) and score between ? and ?`
 
 	sqlDelete1 = `
 	delete from rzset
-	where key_id = (
+	where kid = (
 			select id from rkey
 			where key = ? and type = 5 and (etime is null or etime > ?)
 		) and elem in (:elems)`
@@ -52,7 +52,7 @@ const (
 
 	sqlDeleteAll = `
 	delete from rzset
-	where key_id = (
+	where kid = (
 		select id from rkey
 		where key = ? and type = 5 and (etime is null or etime > ?)
 	);
@@ -66,9 +66,9 @@ const (
 	sqlGetRank = `
 	with ranked as (
 		select elem, score, (row_number() over w - 1) as rank
-		from rzset join rkey on key_id = rkey.id and type = 5
+		from rzset join rkey on kid = rkey.id and type = 5
 		where key = ? and (etime is null or etime > ?)
-		window w as (partition by key_id order by score asc, elem asc)
+		window w as (partition by kid order by score asc, elem asc)
 	)
 	select rank, score
 	from ranked
@@ -76,15 +76,15 @@ const (
 
 	sqlGetScore = `
 	select score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?) and elem = ?`
 
 	sqlIncr1 = sqlAdd1
 
 	sqlIncr2 = `
-	insert into rzset (key_id, elem, score)
+	insert into rzset (kid, elem, score)
 	values (?, ?, ?)
-	on conflict (key_id, elem) do update
+	on conflict (kid, elem) do update
 	set score = score + excluded.score
 	returning score`
 
@@ -94,7 +94,7 @@ const (
 
 	sqlScan = `
 	select rzset.rowid, elem, score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where
 		key = ? and (etime is null or etime > ?)
 		and rzset.rowid > ? and elem glob ?

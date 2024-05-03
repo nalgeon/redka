@@ -12,7 +12,7 @@ import (
 const (
 	sqlDelete = `
 	delete from rlist
-	where key_id = (
+	where kid = (
 			select id from rkey
 			where key = ? and type = 2 and (etime is null or etime > ?)
 		) and elem = ?`
@@ -20,7 +20,7 @@ const (
 	sqlDeleteBack = `
 	with ids as (
 		select rlist.rowid
-		from rlist join rkey on key_id = rkey.id and type = 2
+		from rlist join rkey on kid = rkey.id and type = 2
 		where key = ? and (etime is null or etime > ?) and elem = ?
 		order by pos desc
 		limit ?
@@ -31,7 +31,7 @@ const (
 	sqlDeleteFront = `
 	with ids as (
 		select rlist.rowid
-		from rlist join rkey on key_id = rkey.id and type = 2
+		from rlist join rkey on kid = rkey.id and type = 2
 		where key = ? and (etime is null or etime > ?) and elem = ?
 		order by pos
 		limit ?
@@ -42,7 +42,7 @@ const (
 	sqlGet = `
 	with elems as (
 		select elem, row_number() over (order by pos asc) as rownum
-		from rlist join rkey on key_id = rkey.id and type = 2
+		from rlist join rkey on kid = rkey.id and type = 2
 		where key = ? and (etime is null or etime > ?)
 	)
 	select elem
@@ -60,11 +60,11 @@ const (
 	sqlInsertAfter = `
 	with elprev as (
 		select min(pos) as pos from rlist
-		where key_id = ? and elem = ?
+		where kid = ? and elem = ?
 	),
 	elnext as (
 		select min(pos) as pos from rlist
-		where key_id = ? and pos > (select pos from elprev)
+		where kid = ? and pos > (select pos from elprev)
 	),
 	newpos as (
 		select
@@ -74,20 +74,20 @@ const (
 			end as pos
 		from elprev, elnext
 	)
-	insert into rlist (key_id, pos, elem)
+	insert into rlist (kid, pos, elem)
 	select ?, (select pos from newpos), ?
 	from rlist
-	where key_id = ?
+	where kid = ?
 	limit 1`
 
 	sqlInsertBefore = `
 	with elnext as (
 		select min(pos) as pos from rlist
-		where key_id = ? and elem = ?
+		where kid = ? and elem = ?
 	),
 	elprev as (
 		select max(pos) as pos from rlist
-		where key_id = ? and pos < (select pos from elnext)
+		where kid = ? and pos < (select pos from elnext)
 	),
 	newpos as (
 		select
@@ -97,10 +97,10 @@ const (
 			end as pos
 		from elprev, elnext
 	)
-	insert into rlist (key_id, pos, elem)
+	insert into rlist (kid, pos, elem)
 	select ?, (select pos from newpos), ?
 	from rlist
-	where key_id = ?
+	where kid = ?
 	limit 1`
 
 	sqlLen = `
@@ -108,30 +108,30 @@ const (
 	where key = ? and type = 2 and (etime is null or etime > ?)`
 
 	sqlPopBack = `
-	with keyid as (
+	with curkey as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
-		key_id = (select id from keyid)
+		kid = (select id from curkey)
 		and pos = (
 			select max(pos) from rlist
-			where key_id = (select id from keyid)
+			where kid = (select id from curkey)
 		)
 	returning elem`
 
 	sqlPopFront = `
-	with keyid as (
+	with curkey as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	)
 	delete from rlist
 	where
-		key_id = (select id from keyid)
+		kid = (select id from curkey)
 		and pos = (
 			select min(pos) from rlist
-			where key_id = (select id from keyid)
+			where kid = (select id from curkey)
 		)
 	returning elem`
 
@@ -147,25 +147,25 @@ const (
 	returning id, len`
 
 	sqlPushBack = `
-	insert into rlist (key_id, pos, elem)
+	insert into rlist (kid, pos, elem)
 	select ?, coalesce(max(pos)+1, 0), ?
 	from rlist
-	where key_id = ?`
+	where kid = ?`
 
 	sqlPushFront = `
-	insert into rlist (key_id, pos, elem)
+	insert into rlist (kid, pos, elem)
 	select ?, coalesce(min(pos)-1, 0), ?
 	from rlist
-	where key_id = ?`
+	where kid = ?`
 
 	sqlRange = `
-	with keyid as (
+	with curkey as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
 		select len from rkey
-		where id = (select id from keyid)
+		where id = (select id from curkey)
 	),
 	bounds as (
 		select
@@ -180,34 +180,34 @@ const (
 	)
 	select elem
 	from rlist
-	where key_id = (select id from keyid)
+	where kid = (select id from curkey)
 	order by pos
 	limit
 		(select start from bounds),
 		((select stop from bounds) - (select start from bounds) + 1)`
 
 	sqlSet = `
-	with keyid as (
+	with curkey as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
     ),
     elems as (
 		select pos, row_number() over (order by pos asc) as rownum
 		from rlist
-		where key_id = (select id from keyid)
+		where kid = (select id from curkey)
     )
     update rlist set elem = ?
-    where key_id = (select id from keyid)
+    where kid = (select id from curkey)
 		and pos = (select pos from elems where rownum = ? + 1)`
 
 	sqlTrim = `
-	with keyid as (
+	with curkey as (
 		select id from rkey
 		where key = ? and type = 2 and (etime is null or etime > ?)
 	),
 	counts as (
 		select len from rkey
-		where id = (select id from keyid)
+		where id = (select id from curkey)
 	),
 	bounds as (
 		select
@@ -222,7 +222,7 @@ const (
 	),
 	remain as (
 		select rowid from rlist
-		where key_id = (select id from keyid)
+		where kid = (select id from curkey)
 		order by pos
 		limit
 			(select start from bounds),
@@ -230,7 +230,7 @@ const (
 	)
 	delete from rlist
 	where
-		key_id = (select id from keyid)
+		kid = (select id from curkey)
 		and rowid not in (select rowid from remain)`
 )
 

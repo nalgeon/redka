@@ -11,13 +11,13 @@ import (
 const (
 	sqlGet = `
 	select value
-	from rstring join rkey on key_id = rkey.id and type = 1
+	from rstring join rkey on kid = rkey.id and type = 1
 	where key = ? and (etime is null or etime > ?)`
 
 	sqlGetMany = `
 	select key, value
 	from rstring
-	join rkey on key_id = rkey.id and type = 1
+	join rkey on kid = rkey.id and type = 1
 	where key in (:keys) and (etime is null or etime > ?)`
 
 	sqlSet1 = `
@@ -31,9 +31,9 @@ const (
 	returning id`
 
 	sqlSet2 = `
-	insert into rstring (key_id, value)
+	insert into rstring (kid, value)
 	values (?, ?)
-	on conflict (key_id) do update
+	on conflict (kid) do update
 	set value = excluded.value`
 
 	sqlUpdate1 = `
@@ -46,9 +46,9 @@ const (
 	returning id`
 
 	sqlUpdate2 = `
-	insert into rstring (key_id, value)
+	insert into rstring (kid, value)
 	values (?, ?)
-	on conflict (key_id) do update
+	on conflict (kid) do update
 	set value = excluded.value`
 )
 

@@ -12,7 +12,7 @@ import (
 const (
 	sqlUnion = `
 	select elem, sum(score) as score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	order by sum(score), elem`
@@ -22,9 +22,9 @@ const (
 	sqlUnionStore2 = sqlAdd1
 
 	sqlUnionStore3 = `
-	insert into rzset (key_id, elem, score)
+	insert into rzset (kid, elem, score)
 	select ?, elem, sum(score) as score
-	from rzset join rkey on key_id = rkey.id and type = 5
+	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	order by sum(score), elem;`
