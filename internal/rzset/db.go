@@ -68,16 +68,19 @@ func (d *DB) Count(key string, min, max float64) (int, error) {
 // Returns the number of elements removed.
 // Ignores the elements that do not exist.
 // Does nothing if the key does not exist or is not a set.
-// Does not delete the key if the set becomes empty.
 func (d *DB) Delete(key string, elems ...any) (int, error) {
-	tx := NewTx(d.RW)
-	return tx.Delete(key, elems...)
+	var n int
+	err := d.Update(func(tx *Tx) error {
+		var err error
+		n, err = tx.Delete(key, elems...)
+		return err
+	})
+	return n, err
 }
 
 // DeleteWith removes elements from a set with additional options.
 func (d *DB) DeleteWith(key string) DeleteCmd {
-	tx := NewTx(d.RW)
-	return tx.DeleteWith(key)
+	return DeleteCmd{db: d, key: key}
 }
 
 // GetRank returns the rank and score of an element in a set.

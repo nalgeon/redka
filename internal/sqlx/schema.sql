@@ -162,6 +162,20 @@ rzset_pk_idx on rzset (key_id, elem);
 create index if not exists
 rzset_score_idx on rzset (key_id, score, elem);
 
+create trigger if not exists
+rzset_on_insert
+before insert on rzset
+for each row
+when (
+        select count(*) from rzset
+        where key_id = new.key_id and elem = new.elem
+    ) = 0
+begin
+    update rkey
+    set len = len + 1
+    where id = new.key_id;
+end;
+
 create view if not exists
 vzset as
 select

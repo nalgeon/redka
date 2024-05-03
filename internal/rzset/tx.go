@@ -11,8 +11,9 @@ import (
 
 const (
 	sqlAdd1 = `
-	insert into rkey (key, type, version, mtime)
-	values (?, 5, 1, ?)
+	insert into
+	rkey   (key, type, version, mtime, len)
+	values (  ?,    5,       1,     ?,   0)
 	on conflict (key, type) do update set
 		version = version+1,
 		mtime = excluded.mtime
@@ -34,12 +35,23 @@ const (
 	from rzset join rkey on key_id = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?) and score between ? and ?`
 
-	sqlDelete = `
+	sqlDelete1 = `
 	delete from rzset
 	where key_id = (
 			select id from rkey
 			where key = ? and type = 5 and (etime is null or etime > ?)
 		) and elem in (:elems)`
+
+	sqlDelete2 = `
+	update rkey set
+		version = version + 1,
+		mtime = ?,
+		len = len - ?
+	where key = ? and type = 5 and (etime is null or etime > ?)`
+
+	sqlDeleteKey = `
+	delete from rkey
+	where key = ? and type = 5 and (etime is null or etime > ?)`
 
 	sqlGetRank = `
 	with ranked as (
@@ -57,13 +69,7 @@ const (
 	from rzset join rkey on key_id = rkey.id and type = 5
 	where key = ? and (etime is null or etime > ?) and elem = ?`
 
-	sqlIncr1 = `
-	insert into rkey (key, type, version, mtime)
-	values (?, 5, 1, ?)
-	on conflict (key, type) do update set
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
+	sqlIncr1 = sqlAdd1
 
 	sqlIncr2 = `
 	insert into rzset (key_id, elem, score)
@@ -73,9 +79,8 @@ const (
 	returning score`
 
 	sqlLen = `
-	select count(elem)
-	from rzset join rkey on key_id = rkey.id and type = 5
-	where key = ? and (etime is null or etime > ?)`
+	select len from rkey
+	where key = ? and type = 5 and (etime is null or etime > ?)`
 
 	sqlScan = `
 	select rzset.rowid, elem, score
@@ -156,7 +161,6 @@ func (tx *Tx) Count(key string, min, max float64) (int, error) {
 // Returns the number of elements removed.
 // Ignores the elements that do not exist.
 // Does nothing if the key does not exist or is not a set.
-// Does not delete the key if the set becomes empty.
 func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 	// Check the types of the elements.
 	elembs, err := core.ToBytesMany(elems...)
@@ -165,20 +169,31 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 	}
 
 	// Remove the elements.
-	query, elemArgs := sqlx.ExpandIn(sqlDelete, ":elems", elembs)
-	args := append([]any{key, time.Now().UnixMilli()}, elemArgs...)
+	now := time.Now().UnixMilli()
+	query, elemArgs := sqlx.ExpandIn(sqlDelete1, ":elems", elembs)
+	args := append([]any{key, now}, elemArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return 0, nil
+	}
 
-	count, _ := res.RowsAffected()
-	return int(count), nil
+	// Update the key.
+	args = []any{now, n, key, now}
+	_, err = tx.tx.Exec(sqlDelete2, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(n), nil
 }
 
 // DeleteWith removes elements from a set with additional options.
 func (tx *Tx) DeleteWith(key string) DeleteCmd {
-	return DeleteCmd{tx: tx.tx, key: key}
+	return DeleteCmd{tx: tx, key: key}
 }
 
 // GetRank returns the rank and score of an element in a set.
@@ -268,6 +283,9 @@ func (tx *Tx) Len(key string) (int, error) {
 	var n int
 	args := []any{key, time.Now().UnixMilli()}
 	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
 	return n, err
 }
 

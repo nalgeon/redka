@@ -18,20 +18,9 @@ const (
 	having count(distinct key_id) = ?
 	order by sum(score), elem`
 
-	sqlInterStore1 = `
-	delete from rzset
-	where key_id = (
-		select id from rkey
-		where key = ? and type = 5 and (etime is null or etime > ?)
-	)`
+	sqlInterStore1 = sqlDeleteKey
 
-	sqlInterStore2 = `
-	insert into rkey (key, type, version, mtime)
-	values (?, 5, 1, ?)
-	on conflict (key, type) do update set
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
+	sqlInterStore2 = sqlAdd1
 
 	sqlInterStore3 = `
 	insert into rzset (key_id, elem, score)
