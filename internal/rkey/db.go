@@ -93,6 +93,12 @@ func (db *DB) Keys(pattern string) ([]core.Key, error) {
 	return tx.Keys(pattern)
 }
 
+// Len returns the total number of keys, including expired ones.
+func (db *DB) Len() (int, error) {
+	tx := NewTx(db.RO)
+	return tx.Len()
+}
+
 // Persist removes the expiration time for the key.
 // If the key does not exist, returns ErrNotFound.
 func (db *DB) Persist(key string) error {

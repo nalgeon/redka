@@ -278,6 +278,28 @@ func TestKeys(t *testing.T) {
 	}
 }
 
+func TestLen(t *testing.T) {
+	t.Run("len", func(t *testing.T) {
+		db, kkey := getDB(t)
+		defer db.Close()
+
+		_ = db.Str().Set("name", "alice")
+		_ = db.Str().Set("age", 25)
+
+		count, err := kkey.Len()
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 2)
+	})
+	t.Run("empty", func(t *testing.T) {
+		db, kkey := getDB(t)
+		defer db.Close()
+
+		count, err := kkey.Len()
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, count, 0)
+	})
+}
+
 func TestPersist(t *testing.T) {
 	t.Run("persist", func(t *testing.T) {
 		db, kkey := getDB(t)

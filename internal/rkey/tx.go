@@ -50,6 +50,9 @@ const (
 	select id, key, type, version, etime, mtime from rkey
 	where key glob ? and (etime is null or etime > ?)`
 
+	sqlLen = `
+	select count(*) from rkey`
+
 	sqlPersist = `
 	update rkey set
 		version = version + 1,
@@ -189,6 +192,16 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 	var keys []core.Key
 	keys, err := sqlx.Select(tx.tx, sqlKeys, args, scan)
 	return keys, err
+}
+
+// Len returns the total number of keys, including expired ones.
+func (tx *Tx) Len() (int, error) {
+	var n int
+	err := tx.tx.QueryRow(sqlLen).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // Persist removes the expiration time for the key.
