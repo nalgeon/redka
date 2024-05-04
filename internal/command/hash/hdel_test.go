@@ -3,6 +3,7 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -68,8 +69,8 @@ func TestHDelExec(t *testing.T) {
 		testx.AssertEqual(t, res, 1)
 		testx.AssertEqual(t, conn.Out(), "1")
 
-		name, _ := db.Hash().Get("person", "name")
-		testx.AssertEqual(t, name.Exists(), false)
+		_, err = db.Hash().Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 		age, _ := db.Hash().Get("person", "age")
 		testx.AssertEqual(t, age.String(), "25")
 	})
@@ -89,12 +90,12 @@ func TestHDelExec(t *testing.T) {
 		testx.AssertEqual(t, res, 2)
 		testx.AssertEqual(t, conn.Out(), "2")
 
-		name, _ := db.Hash().Get("person", "name")
-		testx.AssertEqual(t, name.Exists(), false)
+		_, err = db.Hash().Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 		age, _ := db.Hash().Get("person", "age")
 		testx.AssertEqual(t, age.String(), "25")
-		happy, _ := db.Hash().Get("person", "happy")
-		testx.AssertEqual(t, happy.Exists(), false)
+		_, err = db.Hash().Get("person", "happy")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("all", func(t *testing.T) {
 		db, red := getDB(t)
@@ -111,9 +112,9 @@ func TestHDelExec(t *testing.T) {
 		testx.AssertEqual(t, res, 2)
 		testx.AssertEqual(t, conn.Out(), "2")
 
-		name, _ := db.Hash().Get("person", "name")
-		testx.AssertEqual(t, name.Exists(), false)
-		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age.Exists(), false)
+		_, err = db.Hash().Get("person", "name")
+		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = db.Hash().Get("person", "age")
+		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 }

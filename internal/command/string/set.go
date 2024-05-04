@@ -111,8 +111,8 @@ func (cmd *Set) Run(w redis.Writer, red redis.Redka) (any, error) {
 	}
 
 	if cmd.get {
-		// GET given: The key didn't exist before the SET.
-		if !out.Prev.Exists() {
+		if out.Created {
+			// no previous value
 			w.WriteNull()
 			return core.Value(nil), nil
 		}

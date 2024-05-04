@@ -80,7 +80,7 @@ func (v Value) Bytes() []byte {
 
 // Bool returns the value as a boolean.
 func (v Value) Bool() (bool, error) {
-	if !v.Exists() {
+	if v.IsZero() {
 		return false, nil
 	}
 	return strconv.ParseBool(string(v))
@@ -99,7 +99,7 @@ func (v Value) MustBool() bool {
 
 // Int returns the value as an integer.
 func (v Value) Int() (int, error) {
-	if !v.Exists() {
+	if v.IsZero() {
 		return 0, nil
 	}
 	return strconv.Atoi(string(v))
@@ -118,7 +118,7 @@ func (v Value) MustInt() int {
 
 // Float returns the value as a float64.
 func (v Value) Float() (float64, error) {
-	if !v.Exists() {
+	if v.IsZero() {
 		return 0, nil
 	}
 	return strconv.ParseFloat(string(v), 64)
@@ -134,8 +134,10 @@ func (v Value) MustFloat() float64 {
 	}
 	return f
 }
-func (v Value) Exists() bool {
-	return len(v) != 0
+
+// IsZero reports whether the value is empty.
+func (v Value) IsZero() bool {
+	return len(v) == 0
 }
 
 // IsValueType reports if the value has a valid type to be persisted

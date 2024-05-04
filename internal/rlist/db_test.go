@@ -344,9 +344,8 @@ func TestGet(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		elem, err := list.Get("key", 0)
+		_, err := list.Get("key", 0)
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 	t.Run("single elem", func(t *testing.T) {
 		db, list := getDB(t)
@@ -381,9 +380,8 @@ func TestGet(t *testing.T) {
 		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
-		elem, err := list.Get("key", 1)
+		_, err := list.Get("key", 1)
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 	t.Run("negative index", func(t *testing.T) {
 		db, list := getDB(t)
@@ -401,9 +399,8 @@ func TestGet(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		elem, err := list.Get("key", 0)
+		_, err := list.Get("key", 0)
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 }
 
@@ -773,9 +770,8 @@ func TestPopBack(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		elem, err := list.PopBack("key")
+		_, err := list.PopBack("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 	t.Run("pop elem", func(t *testing.T) {
 		db, list := getDB(t)
@@ -843,9 +839,8 @@ func TestPopBack(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		elem, err := list.PopBack("key")
+		_, err := list.PopBack("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 }
 
@@ -854,9 +849,8 @@ func TestPopBackPushFront(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		elem, err := list.PopBackPushFront("src", "dest")
+		_, err := list.PopBackPushFront("src", "dest")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 	t.Run("pop elem", func(t *testing.T) {
 		db, list := getDB(t)
@@ -934,9 +928,8 @@ func TestPopBackPushFront(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("src", "value")
 
-		elem, err := list.PopBackPushFront("src", "dest")
+		_, err := list.PopBackPushFront("src", "dest")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 }
 
@@ -945,9 +938,8 @@ func TestPopFront(t *testing.T) {
 		db, list := getDB(t)
 		defer db.Close()
 
-		elem, err := list.PopFront("key")
+		_, err := list.PopFront("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 	t.Run("pop elem", func(t *testing.T) {
 		db, list := getDB(t)
@@ -1015,9 +1007,8 @@ func TestPopFront(t *testing.T) {
 		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
-		elem, err := list.PopFront("key")
+		_, err := list.PopFront("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, elem.Exists(), false)
 	})
 }
 

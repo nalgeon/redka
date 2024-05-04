@@ -1,6 +1,9 @@
 package string
 
-import "github.com/nalgeon/redka/internal/redis"
+import (
+	"github.com/nalgeon/redka/internal/core"
+	"github.com/nalgeon/redka/internal/redis"
+)
 
 // Returns the previous string value of a key after setting it to a new value.
 // GETSET key value
@@ -27,9 +30,10 @@ func (cmd *GetSet) Run(w redis.Writer, red redis.Redka) (any, error) {
 		w.WriteError(cmd.Error(err))
 		return nil, err
 	}
-	if !out.Prev.Exists() {
+	if out.Created {
+		// no previous value
 		w.WriteNull()
-		return out.Prev, nil
+		return core.Value(nil), nil
 	}
 	w.WriteBulk(out.Prev)
 	return out.Prev, nil

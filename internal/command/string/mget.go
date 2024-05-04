@@ -33,22 +33,20 @@ func (cmd *MGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 		return nil, err
 	}
 
-	// Build the result slice.
+	// Write the result.
 	// It will contain all values in the order of keys.
 	// Missing keys will have nil values.
+	w.WriteArray(len(cmd.keys))
 	vals := make([]core.Value, len(cmd.keys))
 	for i, key := range cmd.keys {
-		vals[i] = items[key]
-	}
-
-	// Write the result.
-	w.WriteArray(len(vals))
-	for _, v := range vals {
-		if v.Exists() {
+		v, ok := items[key]
+		vals[i] = v
+		if ok {
 			w.WriteBulk(v.Bytes())
 		} else {
 			w.WriteNull()
 		}
 	}
+
 	return vals, nil
 }

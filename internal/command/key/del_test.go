@@ -3,6 +3,7 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
@@ -80,8 +81,8 @@ func TestDelExec(t *testing.T) {
 			testx.AssertEqual(t, res, test.res)
 			testx.AssertEqual(t, conn.Out(), test.out)
 
-			name, _ := db.Str().Get("name")
-			testx.AssertEqual(t, name.Exists(), false)
+			_, err = db.Str().Get("name")
+			testx.AssertErr(t, err, core.ErrNotFound)
 			city, _ := db.Str().Get("city")
 			testx.AssertEqual(t, city.String(), "paris")
 		})

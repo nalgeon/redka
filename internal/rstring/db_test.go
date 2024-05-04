@@ -327,7 +327,7 @@ func TestSet(t *testing.T) {
 			want  any
 		}{
 			{"string", "name", "alice", core.Value("alice")},
-			{"empty string", "empty", "", core.Value("")},
+			{"zero", "zero", 0, core.Value("0")},
 			{"int", "age", 25, core.Value("25")},
 			{"float", "pi", 3.14, core.Value("3.14")},
 			{"bool true", "true", true, core.Value("1")},
@@ -345,6 +345,19 @@ func TestSet(t *testing.T) {
 			testx.AssertEqual(t, key.Version, 1)
 			testx.AssertEqual(t, key.ETime, (*int64)(nil))
 		}
+	})
+	t.Run("empty string", func(t *testing.T) {
+		db, str := getDB(t)
+		defer db.Close()
+
+		err := str.Set("empty", "")
+		testx.AssertNoErr(t, err)
+
+		val, _ := str.Get("empty")
+		testx.AssertEqual(t, val.IsZero(), true)
+
+		key, _ := db.Key().Get("empty")
+		testx.AssertEqual(t, key.Version, 1)
 	})
 	t.Run("struct", func(t *testing.T) {
 		db, str := getDB(t)
@@ -604,8 +617,8 @@ func TestSetWithAt(t *testing.T) {
 		_, err := str.SetWith("name", "alice").At(at).Run()
 		testx.AssertNoErr(t, err)
 
-		val, _ := str.Get("name")
-		testx.AssertEqual(t, val.Exists(), false)
+		_, err = str.Get("name")
+		testx.AssertErr(t, err, core.ErrNotFound)
 
 		_, err = db.Key().Get("name")
 		testx.AssertErr(t, err, core.ErrNotFound)

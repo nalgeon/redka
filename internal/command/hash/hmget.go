@@ -35,22 +35,20 @@ func (cmd *HMGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 		return nil, err
 	}
 
-	// Build the result slice.
+	// Write the result.
 	// It will contain all values in the order of fields.
 	// Missing fields will have nil values.
+	w.WriteArray(len(cmd.fields))
 	vals := make([]core.Value, len(cmd.fields))
 	for i, field := range cmd.fields {
-		vals[i] = items[field]
-	}
-
-	// Write the result.
-	w.WriteArray(len(vals))
-	for _, v := range vals {
-		if v.Exists() {
+		v, ok := items[field]
+		vals[i] = v
+		if ok {
 			w.WriteBulk(v.Bytes())
 		} else {
 			w.WriteNull()
 		}
 	}
+
 	return vals, nil
 }
