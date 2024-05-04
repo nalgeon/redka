@@ -20,36 +20,45 @@ const (
 	join rkey on kid = rkey.id and type = 1
 	where key in (:keys) and (etime is null or etime > ?)`
 
-	sqlSet1 = `
+	// The (1 or ?) hack is required for compatibility with
+	// the modernc driver. It uses the same arguments for each
+	// statement in Exec, so for multiple statements to work,
+	// they should all have the same argument order.
+	//
+	// The rstring statement requires value as its second argument,
+	// so we need to put it second in the rkey statement as well.
+	// And since the rkey statement does not actually need the value,
+	// (1 or ?) effectively ignores it.
+	//
+	// The alternative is to use two Exec calls. This results in
+	// cleaner code, but 16% less throughput in the benchmark.
+	sqlSet = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (?, 1, 1, ?, ?)
+	values (?, 1, 1 or ?, ?, ?)
 	on conflict (key) do update set
 		type = case when type = excluded.type then type else null end,
 		version = version+1,
 		etime = excluded.etime,
-		mtime = excluded.mtime
-	returning id`
+		mtime = excluded.mtime;
 
-	sqlSet2 = `
 	insert into rstring (kid, value)
-	values (?, ?)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (kid) do update
-	set value = excluded.value`
+	set value = excluded.value;`
 
-	sqlUpdate1 = `
+	// See sqlSet for the explanation of (1 or ?).
+	sqlUpdate = `
 	insert into rkey (key, type, version, etime, mtime)
-	values (?, 1, 1, null, ?)
+	values (?, 1, 1 or ?, null, ?)
 	on conflict (key) do update set
 		type = case when type = excluded.type then type else null end,
 		version = version+1,
-		mtime = excluded.mtime
-	returning id`
+		mtime = excluded.mtime;
 
-	sqlUpdate2 = `
 	insert into rstring (kid, value)
-	values (?, ?)
+	values ((select id from rkey where key = ?), ?)
 	on conflict (kid) do update
-	set value = excluded.value`
+	set value = excluded.value;`
 )
 
 // Tx is a string repository transaction.
@@ -233,17 +242,11 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	}
 
 	args := []any{
-		key,                    // key
-		etime,                  // etime
-		time.Now().UnixMilli(), // mtime
+		key, valueb, etime, time.Now().UnixMilli(),
+		key, valueb,
 	}
-	var keyID int
-	err = tx.QueryRow(sqlSet1, args...).Scan(&keyID)
-	if err != nil {
-		return sqlx.TypedError(err)
-	}
-	_, err = tx.Exec(sqlSet2, keyID, valueb)
-	return err
+	_, err = tx.Exec(sqlSet, args...)
+	return sqlx.TypedError(err)
 }
 
 // update updates the value of the existing key without changing its
@@ -254,12 +257,11 @@ func update(tx sqlx.Tx, key string, value any) error {
 	if err != nil {
 		return err
 	}
-	args := []any{key, time.Now().UnixMilli()}
-	var keyID int
-	err = tx.QueryRow(sqlUpdate1, args...).Scan(&keyID)
-	if err != nil {
-		return sqlx.TypedError(err)
+
+	args := []any{
+		key, valueb, time.Now().UnixMilli(),
+		key, valueb,
 	}
-	_, err = tx.Exec(sqlUpdate2, keyID, valueb)
-	return err
+	_, err = tx.Exec(sqlUpdate, args...)
+	return sqlx.TypedError(err)
 }

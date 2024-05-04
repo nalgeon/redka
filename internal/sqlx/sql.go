@@ -72,6 +72,9 @@ func Select[T any](db Tx, query string, args []any,
 
 // Returns typed errors for some specific cases.
 func TypedError(err error) error {
+	if err == nil {
+		return nil
+	}
 	if ConstraintFailed(err, "NOT NULL", "rkey.type") {
 		return core.ErrKeyType
 	}
