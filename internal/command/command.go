@@ -23,6 +23,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 	// server
 	case "command":
 		return server.ParseOK(b)
+	case "dbsize":
+		return server.ParseDBSize(b)
 	case "flushdb":
 		return key.ParseFlushDB(b)
 	case "info":
@@ -59,6 +61,10 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return key.ParseRenameNX(b)
 	case "scan":
 		return key.ParseScan(b)
+	case "ttl":
+		return key.ParseTTL(b)
+	case "type":
+		return key.ParseType(b)
 
 	// list
 	case "lindex":

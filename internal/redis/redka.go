@@ -40,6 +40,7 @@ type RKey interface {
 	ExpireAt(key string, at time.Time) error
 	Get(key string) (core.Key, error)
 	Keys(pattern string) ([]core.Key, error)
+	Len() (int, error)
 	Persist(key string) error
 	Random() (core.Key, error)
 	Rename(key, newKey string) error
