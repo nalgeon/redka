@@ -54,11 +54,30 @@ APPEND  GETDEL  GETEX  GETRANGE  LCS  MSETNX  SETRANGE  STRLEN  SUBSTR
 
 ### Lists
 
-Lists are lists of strings sorted by insertion order. Redka aims to support the following list-related commands in 1.0:
+Lists are sequences of strings sorted by insertion order. Redka supports the following list-related commands:
 
 ```
-LINDEX  LINSERT  LLEN  LPOP  LPUSHX  LRANGE  LREM  LSET
-LTRIM  RPOP  RPOPLPUSH  RPUSH  RPUSHX
+Command      Go API                      Description
+-------      ------                      -----------
+LINDEX       DB.List().Get               Returns an element by its index.
+LINSERT      DB.List().Insert*           Inserts an element before or after another element.
+LLEN         DB.List().Len               Returns the length of a list.
+LPOP         DB.List().PopFront          Returns the first element after removing it.
+LPUSH        DB.List().PushFront         Prepends an element to a list.
+LRANGE       DB.List().Range             Returns a range of elements.
+LREM         DB.List().Delete*           Removes elements from a list.
+LSET         DB.List().Set               Sets the value of an element by its index.
+LTRIM        DB.List().Trim              Removes elements from both ends a list.
+RPOP         DB.List().PopBack           Returns the last element after removing it.
+RPUSHLPOP    DB.List().PopBackPushFront  Removes the last element and pushes it to another list.
+RPUSH        DB.List().PushBack          Appends an element to a list.
+```
+
+The following list-related commands are not planned for 1.0:
+
+```
+BLMOVE  BLMPOP  BLPOP  BRPOP  BRPOPLPUSH  LMOVE  LMPOP
+LPOS  LPUSHX  RPUSHX
 ```
 
 ### Sets
@@ -143,10 +162,12 @@ Redka supports the following key management (generic) commands:
 ```
 Command    Go API                    Description
 -------    ------                    -----------
+DBSIZE     DB.Key().Len              Returns the total number of keys.
 DEL        DB.Key().Delete           Deletes one or more keys.
 EXISTS     DB.Key().Count            Determines whether one or more keys exist.
 EXPIRE     DB.Key().Expire           Sets the expiration time of a key (in seconds).
 EXPIREAT   DB.Key().ExpireAt         Sets the expiration time of a key to a Unix timestamp.
+FLUSHDB    DB.Key().DeleteAll        Deletes all keys from the database.
 KEYS       DB.Key().Keys             Returns all key names that match a pattern.
 PERSIST    DB.Key().Persist          Removes the expiration time of a key.
 PEXPIRE    DB.Key().Expire           Sets the expiration time of a key in ms.
@@ -155,6 +176,8 @@ RANDOMKEY  DB.Key().Random           Returns a random key name from the database
 RENAME     DB.Key().Rename           Renames a key and overwrites the destination.
 RENAMENX   DB.Key().RenameNotExists  Renames a key only when the target key name doesn't exist.
 SCAN       DB.Key().Scanner          Iterates over the key names in the database.
+TTL        DB.Key().Get              Returns the expiration time in seconds of a key.
+TYPE       DB.Key().Get              Returns the type of value stored at a key.
 ```
 
 The following generic commands are not planned for 1.0:
@@ -193,7 +216,7 @@ Redka supports only a couple of server and connection management commands:
 Command    Go API                Description
 -------    ------                -----------
 ECHO       -                     Returns the given string.
-FLUSHDB    DB.Key().DeleteAll    Remove all keys from the database.
+PING       -                     Returns the server's liveliness response.
 ```
 
 The rest of the server and connection management commands are not planned for 1.0.
@@ -209,7 +232,7 @@ Redka server is a single-file binary. Download it from the [releases](https://gi
 Linux (x86 CPU only):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.3.0/redka_linux_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.4.0/redka_linux_amd64.zip"
 unzip redka_linux_amd64.zip
 chmod +x redka
 ```
@@ -217,7 +240,7 @@ chmod +x redka
 macOS (both x86 and ARM/Apple Silicon CPU):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.3.0/redka_darwin_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.4.0/redka_darwin_amd64.zip"
 unzip redka_darwin_amd64.zip
 # remove the build from quarantine
 # (macOS disables unsigned binaries)
@@ -408,21 +431,28 @@ type     integer not null    -- 1 string, 2 list, 3 set, 4 hash, 5 sorted set
 version  integer not null    -- incremented when the key value is updated
 etime    integer             -- expiration timestamp in unix milliseconds
 mtime    integer not null    -- modification timestamp in unix milliseconds
+len      integer             -- number of child elements
 
 rstring
 ---
-key_id   integer not null    -- FK -> rkey.id
+kid      integer not null    -- FK -> rkey.id
 value    blob not null
+
+rlist
+---
+kid      integer not null    -- FK -> rkey.id
+pos      real not null       -- is used for ordering, but is not an index
+elem     blob not null
 
 rhash
 ---
-key_id   integer not null    -- FK -> rkey.id
+kid      integer not null    -- FK -> rkey.id
 field    text not null
 value    blob not null
 
 rzset
 ---
-key_id   integer not null    -- FK -> rkey.id
+kid      integer not null    -- FK -> rkey.id
 elem     blob not null
 score    real not null
 ```
@@ -434,12 +464,12 @@ select * from vstring;
 ```
 
 ```
-┌────────┬──────┬───────┬───────┬─────────────────────┐
-│ key_id │ key  │ value │ etime │        mtime        │
-├────────┼──────┼───────┼───────┼─────────────────────┤
-│ 1      │ name │ alice │       │ 2024-04-03 16:58:14 │
-│ 2      │ age  │ 50    │       │ 2024-04-03 16:34:52 │
-└────────┴──────┴───────┴───────┴─────────────────────┘
+┌─────┬──────┬───────┬───────┬─────────────────────┐
+│ kid │ key  │ value │ etime │        mtime        │
+├─────┼──────┼───────┼───────┼─────────────────────┤
+│ 1   │ name │ alice │       │ 2024-04-03 16:58:14 │
+│ 2   │ age  │ 50    │       │ 2024-04-03 16:34:52 │
+└─────┴──────┴───────┴───────┴─────────────────────┘
 ```
 
 `etime` and `mtime` are in UTC.
@@ -447,7 +477,7 @@ select * from vstring;
 There is a separate view for every data type:
 
 ```
-vstring  vhash  vzset
+vkey  vstring  vlist  vhash  vzset
 ```
 
 ## Performance
@@ -487,8 +517,8 @@ Redka (in-memory):
 ./redka -p 6380
 redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 30084.24 requests per second, p50=0.255 msec
-GET: 63011.97 requests per second, p50=0.103 msec
+SET: 34927.18 requests per second, p50=0.175 msec
+GET: 52173.01 requests per second, p50=0.143 msec
 ```
 
 Redka (persisted to disk):
@@ -497,11 +527,11 @@ Redka (persisted to disk):
 ./redka -p 6380 data.db
 redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 21913.01 requests per second, p50=0.335 msec
-GET: 56795.59 requests per second, p50=0.119 msec
+SET: 26028.11 requests per second, p50=0.215 msec
+GET: 93923.17 requests per second, p50=0.071 msec
 ```
 
-So while Redka is 2-6 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 22K writes/sec and 57K reads/sec, which is pretty good if you ask me.
+So while Redka is 2-5 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 26K writes/sec and 94K reads/sec, which is pretty good if you ask me.
 
 Note that running in a container may result in poorer performance.
 
@@ -512,8 +542,8 @@ The project is on its way to 1.0.
 The 1.0 release will include the following features:
 
 -   ✅ Strings.
--   ⏳ Lists.
--   ⬜ Sets.
+-   ✅ Lists.
+-   ⏳ Sets.
 -   ✅ Hashes.
 -   ✅ Sorted sets.
 -   ✅ Key management.
