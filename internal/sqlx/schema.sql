@@ -48,9 +48,8 @@ select
     rkey.id as kid, rkey.key, rstring.value,
     datetime(etime/1000, 'unixepoch') as etime,
     datetime(mtime/1000, 'unixepoch') as mtime
-from rkey join rstring on rkey.id = rstring.kid
-where rkey.type = 1
-    and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
+from rstring join rkey on rstring.kid = rkey.id and rkey.type = 1
+where rkey.etime is null or rkey.etime > unixepoch('subsec');
 
 -- ┌───────────────┐
 -- │ Lists         │
@@ -98,9 +97,8 @@ select
     row_number() over w as idx, rlist.elem,
     datetime(etime/1000, 'unixepoch') as etime,
     datetime(mtime/1000, 'unixepoch') as mtime
-from rkey join rlist on rkey.id = rlist.kid
-where rkey.type = 2
-    and (rkey.etime is null or rkey.etime > unixepoch('subsec'))
+from rlist join rkey on rlist.kid = rkey.id and rkey.type = 2
+where rkey.etime is null or rkey.etime > unixepoch('subsec')
 window w as (partition by kid order by pos);
 
 -- ┌───────────────┐
@@ -139,9 +137,8 @@ select
     rkey.id as kid, rkey.key, rhash.field, rhash.value,
     datetime(etime/1000, 'unixepoch') as etime,
     datetime(mtime/1000, 'unixepoch') as mtime
-from rkey join rhash on rkey.id = rhash.kid
-where rkey.type = 4
-    and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
+from rhash join rkey on rhash.kid = rkey.id and rkey.type = 4
+where rkey.etime is null or rkey.etime > unixepoch('subsec');
 
 -- ┌───────────────┐
 -- │ Sorted sets   │
@@ -182,6 +179,5 @@ select
     rkey.id as kid, rkey.key, rzset.elem, rzset.score,
     datetime(etime/1000, 'unixepoch') as etime,
     datetime(mtime/1000, 'unixepoch') as mtime
-from rkey join rzset on rkey.id = rzset.kid
-where rkey.type = 5
-    and (rkey.etime is null or rkey.etime > unixepoch('subsec'));
+from rzset join rkey on rzset.kid = rkey.id and rkey.type = 5
+where rkey.etime is null or rkey.etime > unixepoch('subsec');
