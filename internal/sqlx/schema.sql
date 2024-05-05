@@ -27,6 +27,15 @@ create index if not exists
 rkey_etime_idx on rkey (etime)
 where etime is not null;
 
+create view if not exists
+vkey as
+select
+    id as kid, key, type, len,
+    datetime(etime/1000, 'unixepoch') as etime,
+    datetime(mtime/1000, 'unixepoch') as mtime
+from rkey
+where rkey.etime is null or rkey.etime > unixepoch('subsec');
+
 -- ┌───────────────┐
 -- │ Strings       │
 -- └───────────────┘
