@@ -69,7 +69,7 @@ LREM         DB.List().Delete*           Removes elements from a list.
 LSET         DB.List().Set               Sets the value of an element by its index.
 LTRIM        DB.List().Trim              Removes elements from both ends a list.
 RPOP         DB.List().PopBack           Returns the last element after removing it.
-RPUSHLPOP    DB.List().PopBackPushFront  Removes the last element and pushes it to another list.
+RPOPLPUSH    DB.List().PopBackPushFront  Removes the last element and pushes it to another list.
 RPUSH        DB.List().PushBack          Appends an element to a list.
 ```
 
