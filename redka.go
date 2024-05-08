@@ -19,6 +19,7 @@ import (
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
 	"github.com/nalgeon/redka/internal/rlist"
+	"github.com/nalgeon/redka/internal/rset"
 	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/sqlx"
@@ -65,6 +66,7 @@ type DB struct {
 	hashDB   *rhash.DB
 	keyDB    *rkey.DB
 	listDB   *rlist.DB
+	setDB    *rset.DB
 	stringDB *rstring.DB
 	zsetDB   *rzset.DB
 	bg       *time.Ticker
@@ -113,6 +115,7 @@ func Open(path string, opts *Options) (*DB, error) {
 		hashDB:   rhash.New(rw, ro),
 		keyDB:    rkey.New(rw, ro),
 		listDB:   rlist.New(rw, ro),
+		setDB:    rset.New(rw, ro),
 		stringDB: rstring.New(rw, ro),
 		zsetDB:   rzset.New(rw, ro),
 		log:      opts.Logger,
@@ -142,6 +145,14 @@ func (db *DB) Key() *rkey.DB {
 // Use the list repository to work with lists and their elements.
 func (db *DB) List() *rlist.DB {
 	return db.listDB
+}
+
+// Set returns the set repository.
+// A set is an unordered collection of unique strings.
+// Use the set repository to work with individual sets
+// and their elements, and to perform set operations.
+func (db *DB) Set() *rset.DB {
+	return db.setDB
 }
 
 // Str returns the string repository.
@@ -246,6 +257,7 @@ type Tx struct {
 	hashTx *rhash.Tx
 	keyTx  *rkey.Tx
 	listTx *rlist.Tx
+	setTx  *rset.Tx
 	strTx  *rstring.Tx
 	zsetTx *rzset.Tx
 }
@@ -256,6 +268,7 @@ func newTx(tx sqlx.Tx) *Tx {
 		hashTx: rhash.NewTx(tx),
 		keyTx:  rkey.NewTx(tx),
 		listTx: rlist.NewTx(tx),
+		setTx:  rset.NewTx(tx),
 		strTx:  rstring.NewTx(tx),
 		zsetTx: rzset.NewTx(tx),
 	}
@@ -274,6 +287,11 @@ func (tx *Tx) Key() *rkey.Tx {
 // List returns the list transaction.
 func (tx *Tx) List() *rlist.Tx {
 	return tx.listTx
+}
+
+// Set returns the set transaction.
+func (tx *Tx) Set() *rset.Tx {
+	return tx.setTx
 }
 
 // Str returns the string transaction.

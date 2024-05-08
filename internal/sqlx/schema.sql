@@ -111,6 +111,40 @@ where rkey.etime is null or rkey.etime > unixepoch('subsec')
 window w as (partition by kid order by pos);
 
 -- ┌───────────────┐
+-- │ Sets          │
+-- └───────────────┘
+create table if not exists
+rset (
+    kid    integer not null,
+    elem   blob not null,
+
+    foreign key (kid) references rkey (id)
+    on delete cascade
+) strict;
+
+create unique index if not exists
+rset_pk_idx on rset (kid, elem);
+
+create trigger if not exists
+rset_on_insert
+after insert on rset
+for each row
+begin
+    update rkey
+    set len = len + 1
+    where id = new.kid;
+end;
+
+create view if not exists
+vset as
+select
+    rkey.id as kid, rkey.key, rset.elem,
+    datetime(etime/1000, 'unixepoch') as etime,
+    datetime(mtime/1000, 'unixepoch') as mtime
+from rset join rkey on rset.kid = rkey.id and rkey.type = 3
+where rkey.etime is null or rkey.etime > unixepoch('subsec');
+
+-- ┌───────────────┐
 -- │ Hashes        │
 -- └───────────────┘
 create table if not exists
