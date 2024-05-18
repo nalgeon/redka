@@ -10,6 +10,7 @@ import (
 	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/command/list"
 	"github.com/nalgeon/redka/internal/command/server"
+	"github.com/nalgeon/redka/internal/command/set"
 	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/command/zset"
 	"github.com/nalgeon/redka/internal/redis"
@@ -149,6 +150,38 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return hash.ParseHSetNX(b)
 	case "hvals":
 		return hash.ParseHVals(b)
+
+	// set
+	case "sadd":
+		return set.ParseSAdd(b)
+	case "scard":
+		return set.ParseSCard(b)
+	case "sdiff":
+		return set.ParseSDiff(b)
+	case "sdiffstore":
+		return set.ParseSDiffStore(b)
+	case "sinter":
+		return set.ParseSInter(b)
+	case "sinterstore":
+		return set.ParseSInterStore(b)
+	case "sismember":
+		return set.ParseSIsMember(b)
+	case "smembers":
+		return set.ParseSMembers(b)
+	case "smove":
+		return set.ParseSMove(b)
+	case "spop":
+		return set.ParseSPop(b)
+	case "srandmember":
+		return set.ParseSRandMember(b)
+	case "srem":
+		return set.ParseSRem(b)
+	case "sscan":
+		return set.ParseSScan(b)
+	case "sunion":
+		return set.ParseSUnion(b)
+	case "sunionstore":
+		return set.ParseSUnionStore(b)
 
 	// sorted set
 	case "zadd":

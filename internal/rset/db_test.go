@@ -175,8 +175,13 @@ func TestDiff(t *testing.T) {
 		_, _ = set.Add("key1", "one", "two", "thr")
 
 		items, err := set.Diff("key1")
+		sort.Slice(items, func(i, j int) bool {
+			return slices.Compare(items[i], items[j]) < 0
+		})
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []core.Value(nil))
+		testx.AssertEqual(t, items, []core.Value{
+			core.Value("one"), core.Value("thr"), core.Value("two"),
+		})
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, set := getDB(t)
@@ -788,7 +793,21 @@ func TestMove(t *testing.T) {
 		done, _ := set.Exists("dest", "one")
 		testx.AssertEqual(t, done, true)
 	})
-	t.Run("src not found", func(t *testing.T) {
+	t.Run("src elem not found", func(t *testing.T) {
+		db, set := getDB(t)
+		defer db.Close()
+		_, _ = set.Add("src", "two")
+		_, _ = set.Add("dest", "thr", "fou")
+
+		err := set.Move("src", "dest", "one")
+		testx.AssertErr(t, err, core.ErrNotFound)
+
+		dkey, _ := db.Key().Get("dest")
+		testx.AssertEqual(t, dkey.Version, 1)
+		dlen, _ := set.Len("dest")
+		testx.AssertEqual(t, dlen, 2)
+	})
+	t.Run("src key not found", func(t *testing.T) {
 		db, set := getDB(t)
 		defer db.Close()
 		_, _ = set.Add("dest", "thr", "fou")

@@ -245,7 +245,7 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 // If the first key does not exist or is not a set, returns an empty slice.
 // If any of the remaining keys do not exist or are not sets, ignores them.
 func (tx *Tx) Diff(keys ...string) ([]core.Value, error) {
-	if len(keys) < 2 {
+	if len(keys) == 0 {
 		return nil, nil
 	}
 	others := keys[1:]

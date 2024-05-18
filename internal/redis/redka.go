@@ -7,6 +7,7 @@ import (
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rhash"
 	"github.com/nalgeon/redka/internal/rkey"
+	"github.com/nalgeon/redka/internal/rset"
 	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/rzset"
 )
@@ -68,6 +69,26 @@ type RList interface {
 	Trim(key string, start, stop int) (int, error)
 }
 
+// RSet is a set repository.
+type RSet interface {
+	Add(key string, elems ...any) (int, error)
+	Delete(key string, elems ...any) (int, error)
+	Diff(keys ...string) ([]core.Value, error)
+	DiffStore(dest string, keys ...string) (int, error)
+	Exists(key, elem any) (bool, error)
+	Inter(keys ...string) ([]core.Value, error)
+	InterStore(dest string, keys ...string) (int, error)
+	Items(key string) ([]core.Value, error)
+	Len(key string) (int, error)
+	Move(src, dest string, elem any) error
+	Pop(key string) (core.Value, error)
+	Random(key string) (core.Value, error)
+	Scan(key string, cursor int, pattern string, count int) (rset.ScanResult, error)
+	Scanner(key, pattern string, pageSize int) *rset.Scanner
+	Union(keys ...string) ([]core.Value, error)
+	UnionStore(dest string, keys ...string) (int, error)
+}
+
 // RStr is a string repository.
 type RStr interface {
 	Get(key string) (core.Value, error)
@@ -108,6 +129,7 @@ type Redka struct {
 	hash RHash
 	key  RKey
 	list RList
+	set  RSet
 	str  RStr
 	zset RZSet
 }
@@ -118,6 +140,7 @@ func RedkaDB(db *redka.DB) Redka {
 		hash: db.Hash(),
 		key:  db.Key(),
 		list: db.List(),
+		set:  db.Set(),
 		str:  db.Str(),
 		zset: db.ZSet(),
 	}
@@ -129,6 +152,7 @@ func RedkaTx(tx *redka.Tx) Redka {
 		hash: tx.Hash(),
 		key:  tx.Key(),
 		list: tx.List(),
+		set:  tx.Set(),
 		str:  tx.Str(),
 		zset: tx.ZSet(),
 	}
@@ -144,8 +168,14 @@ func (r Redka) Key() RKey {
 	return r.key
 }
 
+// List returns the list repository.
 func (r Redka) List() RList {
 	return r.list
+}
+
+// Set returns the set repository.
+func (r Redka) Set() RSet {
+	return r.set
 }
 
 // Str returns the string repository.
