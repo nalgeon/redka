@@ -82,12 +82,32 @@ LPOS  LPUSHX  RPUSHX
 
 ### Sets
 
-Sets are unordered collections of unique strings. Redka aims to support the following set-related commands in 1.0:
+Sets are unordered collections of unique strings. Redka supports the following set-related commands:
 
 ```
-SADD  SCARD  SDIFF  SDIFFSTORE  SINTER  SINTERSTORE
-SISMEMBER  SMEMBERS  SMOVE  SPOP  SRANDMEMBER  SREM
-SUNION  SUNIONSTORE
+Command      Go API                 Description
+-------      ------                 -----------
+SADD         DB.Set().Add           Adds one or more members to a set.
+SCARD        DB.Set().Len           Returns the number of members in a set.
+SDIFF        DB.Set().Diff          Returns the difference of multiple sets.
+SDIFFSTORE   DB.Set().DiffStore     Stores the difference of multiple sets.
+SINTER       DB.Set().Inter         Returns the intersection of multiple sets.
+SINTERSTORE  DB.Set().InterStore    Stores the intersection of multiple sets.
+SISMEMBER    DB.Set().Exists        Determines whether a member belongs to a set.
+SMEMBERS     DB.Set().Items         Returns all members of a set.
+SMOVE        DB.Set().Move          Moves a member from one set to another.
+SPOP         DB.Set().Pop           Returns a random member after removing it.
+SRANDMEMBER  DB.Set().Random        Returns a random member from a set.
+SREM         DB.Set().Delete        Removes one or more members from a set.
+SSCAN        DB.Set().Scanner       Iterates over members of a set.
+SUNION       DB.Set().Union         Returns the union of multiple sets.
+SUNIONSTORE  DB.Set().UnionStore    Stores the union of multiple sets.
+```
+
+The following set-related commands are not planned for 1.0:
+
+```
+SINTERCARD  SMISMEMBER
 ```
 
 ### Hashes
@@ -444,6 +464,11 @@ kid      integer not null    -- FK -> rkey.id
 pos      real not null       -- is used for ordering, but is not an index
 elem     blob not null
 
+rset
+---
+kid      integer not null    -- FK -> rkey.id
+elem     blob not null
+
 rhash
 ---
 kid      integer not null    -- FK -> rkey.id
@@ -477,7 +502,7 @@ select * from vstring;
 There is a separate view for every data type:
 
 ```
-vkey  vstring  vlist  vhash  vzset
+vkey  vstring  vlist  vset  vhash  vzset
 ```
 
 ## Performance
@@ -537,13 +562,13 @@ Note that running in a container may result in poorer performance.
 
 ## Roadmap
 
-The project is on its way to 1.0.
+The project is functionally ready for 1.0. Feel free to try it in non-critical production scenarios and provide feedback in the issues.
 
 The 1.0 release will include the following features:
 
 -   ✅ Strings.
 -   ✅ Lists.
--   ⏳ Sets.
+-   ✅ Sets.
 -   ✅ Hashes.
 -   ✅ Sorted sets.
 -   ✅ Key management.
