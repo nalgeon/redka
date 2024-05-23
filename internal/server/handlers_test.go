@@ -42,10 +42,11 @@ func TestHandlers(t *testing.T) {
 type fakeConn struct {
 	parts []string
 	ctx   any
+	addr  string
 }
 
 func (c *fakeConn) RemoteAddr() string {
-	return ""
+	return c.addr
 }
 func (c *fakeConn) Close() error {
 	return nil

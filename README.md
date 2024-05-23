@@ -237,6 +237,7 @@ Command    Go API                Description
 -------    ------                -----------
 ECHO       -                     Returns the given string.
 PING       -                     Returns the server's liveliness response.
+MONITOR    -                     Streams back every command processed by the server.
 ```
 
 The rest of the server and connection management commands are not planned for 1.0.

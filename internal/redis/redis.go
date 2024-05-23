@@ -25,6 +25,7 @@ var (
 	ErrSyntaxError       = errors.New("ERR syntax error")
 	ErrUnknownCmd        = errors.New("ERR unknown command")
 	ErrUnknownSubcmd     = errors.New("ERR unknown subcommand")
+	ErrReplicaInteract   = errors.New("ERR Replica can't interact with the keyspace")
 )
 
 // Writer is an interface to write responses to the client.

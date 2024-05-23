@@ -12,11 +12,28 @@ import (
 
 // createHandlers returns the server command handlers.
 func createHandlers(db *redka.DB) redcon.HandlerFunc {
-	return logging(parse(multi(handle(db))))
+	h := handlers{
+		db:       db,
+		monitors: &monitors{},
+	}
+	return h.logging(
+		h.parse(
+			h.monitor(
+				h.multi(
+					h.handle(),
+				),
+			),
+		),
+	)
+}
+
+type handlers struct {
+	db       *redka.DB
+	monitors *monitors
 }
 
 // logging logs the command processing time.
-func logging(next redcon.HandlerFunc) redcon.HandlerFunc {
+func (h *handlers) logging(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		start := time.Now()
 		next(conn, cmd)
@@ -26,7 +43,7 @@ func logging(next redcon.HandlerFunc) redcon.HandlerFunc {
 }
 
 // parse parses the command arguments.
-func parse(next redcon.HandlerFunc) redcon.HandlerFunc {
+func (h *handlers) parse(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		pcmd, err := command.Parse(cmd.Args)
 		if err != nil {
@@ -41,21 +58,24 @@ func parse(next redcon.HandlerFunc) redcon.HandlerFunc {
 
 // multi handles the MULTI, EXEC, and DISCARD commands and delegates
 // the rest to the next handler either in multi or single mode.
-func multi(next redcon.HandlerFunc) redcon.HandlerFunc {
+func (h *handlers) multi(next redcon.HandlerFunc) redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		name := normName(cmd)
 		state := getState(conn)
 		if state.inMulti {
 			switch name {
 			case "multi":
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.pop()
 				conn.WriteError(redis.ErrNestedMulti.Error())
 			case "exec":
 				state.pop()
 				conn.WriteArray(len(state.cmds))
 				next(conn, cmd)
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.inMulti = false
 			case "discard":
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.clear()
 				conn.WriteString("OK")
 				state.inMulti = false
@@ -65,13 +85,16 @@ func multi(next redcon.HandlerFunc) redcon.HandlerFunc {
 		} else {
 			switch name {
 			case "multi":
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.inMulti = true
 				state.pop()
 				conn.WriteString("OK")
 			case "exec":
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.pop()
 				conn.WriteError(redis.ErrNotInMulti.Error())
 			case "discard":
+				h.monitors.monitor(time.Now(), 0, conn, cmd)
 				state.pop()
 				conn.WriteError(redis.ErrNotInMulti.Error())
 			default:
@@ -81,23 +104,42 @@ func multi(next redcon.HandlerFunc) redcon.HandlerFunc {
 	}
 }
 
+func (h *handlers) monitor(next redcon.HandlerFunc) redcon.HandlerFunc {
+	return func(conn redcon.Conn, cmd redcon.Command) {
+		name := normName(cmd)
+		state := getState(conn)
+		switch name {
+		case "monitor":
+			h.monitors.monitor(time.Now(), 0, conn, cmd)
+			state.pop()
+			detached := conn.Detach()
+			detached.WriteString("OK")
+			detached.Flush()
+			h.monitors.subscribe(detached)
+		default:
+			next(conn, cmd)
+		}
+	}
+}
+
 // handle processes the command in either multi or single mode.
-func handle(db *redka.DB) redcon.HandlerFunc {
+func (h *handlers) handle() redcon.HandlerFunc {
 	return func(conn redcon.Conn, cmd redcon.Command) {
 		state := getState(conn)
 		if state.inMulti {
-			handleMulti(conn, state, db)
+			h.handleMulti(conn, cmd, state)
 		} else {
-			handleSingle(conn, state, db)
+			h.handleSingle(conn, cmd, state)
 		}
 		state.clear()
 	}
 }
 
 // handleMulti processes a batch of commands in a transaction.
-func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
-	err := db.Update(func(tx *redka.Tx) error {
+func (h *handlers) handleMulti(conn redcon.Conn, cmd redcon.Command, state *connState) {
+	err := h.db.Update(func(tx *redka.Tx) error {
 		for _, pcmd := range state.cmds {
+			h.monitors.monitor(time.Now(), 0, conn, cmd)
 			_, err := pcmd.Run(conn, redis.RedkaTx(tx))
 			if err != nil {
 				slog.Warn("run multi command", "client", conn.RemoteAddr(),
@@ -113,9 +155,10 @@ func handleMulti(conn redcon.Conn, state *connState, db *redka.DB) {
 }
 
 // handleSingle processes a single command.
-func handleSingle(conn redcon.Conn, state *connState, db *redka.DB) {
+func (h *handlers) handleSingle(conn redcon.Conn, cmd redcon.Command, state *connState) {
+	h.monitors.monitor(time.Now(), 0, conn, cmd)
 	pcmd := state.pop()
-	_, err := pcmd.Run(conn, redis.RedkaDB(db))
+	_, err := pcmd.Run(conn, redis.RedkaDB(h.db))
 	if err != nil {
 		slog.Warn("run single command", "client", conn.RemoteAddr(),
 			"name", pcmd.Name(), "err", err)
