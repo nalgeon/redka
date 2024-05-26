@@ -1,6 +1,7 @@
 package redka_test
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -186,6 +187,19 @@ func ExampleDB_View() {
 
 	// Output:
 	// person={name:alice age:25}, err=<nil>
+}
+
+func TestOpenDB(t *testing.T) {
+	sdb, err := sql.Open("sqlite3", ":memory:")
+	testx.AssertNoErr(t, err)
+
+	db, err := redka.OpenDB(sdb, sdb, nil)
+	testx.AssertNoErr(t, err)
+	defer db.Close()
+
+	n, err := db.Key().Len()
+	testx.AssertNoErr(t, err)
+	testx.AssertEqual(t, n, 0)
 }
 
 func TestDBView(t *testing.T) {

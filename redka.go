@@ -47,12 +47,14 @@ type Value = core.Value
 
 // Options is the configuration for the database.
 type Options struct {
-	// Logger is the logger for the database.
-	// If nil, a silent logger is used.
+	// SQL pragmas to set on the database connection.
+	Pragma map[string]string
+	// Logger for the database. If nil, a silent logger is used.
 	Logger *slog.Logger
 }
 
 var defaultOptions = Options{
+	Pragma: sqlx.DefaultPragma,
 	Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 }
 
@@ -88,6 +90,9 @@ type DB struct {
 // [simple]: https://github.com/nalgeon/redka/blob/main/example/simple/main.go
 // [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
 func Open(path string, opts *Options) (*DB, error) {
+	// Apply the default options if necessary.
+	opts = applyOptions(defaultOptions, opts)
+
 	// Open the read-write database handle.
 	dataSource := sqlx.DataSource(path, true)
 	rw, err := sql.Open(driverName, dataSource)
@@ -103,21 +108,37 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	// Create the database-backed repository.
-	sdb, err := sqlx.Open(rw, ro, newTx)
+	sdb, err := sqlx.Open(rw, ro, newTx, opts.Pragma)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the database instance.
+	return new(sdb, opts)
+}
+
+// OpenDB connects to an existing SQL database.
+// Creates the database schema if necessary.
+// Does not apply any database settings.
+func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
+	// Disable pragmas since we are using an already opened database.
+	sdb, err := sqlx.Open(rw, ro, newTx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return new(sdb, opts)
+}
+
+// new creates a new database.
+func new(sdb *sqlx.DB[*Tx], opts *Options) (*DB, error) {
 	rdb := &DB{
 		DB:       sdb,
-		hashDB:   rhash.New(rw, ro),
-		keyDB:    rkey.New(rw, ro),
-		listDB:   rlist.New(rw, ro),
-		setDB:    rset.New(rw, ro),
-		stringDB: rstring.New(rw, ro),
-		zsetDB:   rzset.New(rw, ro),
+		hashDB:   rhash.New(sdb.RW, sdb.RO),
+		keyDB:    rkey.New(sdb.RW, sdb.RO),
+		listDB:   rlist.New(sdb.RW, sdb.RO),
+		setDB:    rset.New(sdb.RW, sdb.RO),
+		stringDB: rstring.New(sdb.RW, sdb.RO),
+		zsetDB:   rzset.New(sdb.RW, sdb.RO),
 		log:      opts.Logger,
 	}
 	rdb.bg = rdb.startBgManager()
@@ -309,6 +330,9 @@ func (tx *Tx) ZSet() *rzset.Tx {
 func applyOptions(opts Options, custom *Options) *Options {
 	if custom == nil {
 		return &opts
+	}
+	if custom.Pragma != nil {
+		opts.Pragma = custom.Pragma
 	}
 	if custom.Logger != nil {
 		opts.Logger = custom.Logger

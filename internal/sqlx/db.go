@@ -13,17 +13,17 @@ import (
 // Database schema version.
 // const schemaVersion = 1
 
-// Default database settings.
-const sqlSettings = `
-pragma journal_mode = wal;
-pragma synchronous = normal;
-pragma temp_store = memory;
-pragma mmap_size = 268435456;
-pragma foreign_keys = on;
-`
-
 //go:embed schema.sql
 var sqlSchema string
+
+// DefaultPragma is a set of default database settings.
+var DefaultPragma = map[string]string{
+	"journal_mode": "wal",
+	"synchronous":  "normal",
+	"temp_store":   "memory",
+	"mmap_size":    "268435456",
+	"foreign_keys": "on",
+}
 
 // DB is a generic database-backed repository
 // with a domain-specific transaction of type T.
@@ -38,9 +38,9 @@ type DB[T any] struct {
 
 // Open creates a new database-backed repository.
 // Creates the database schema if necessary.
-func Open[T any](rw *sql.DB, ro *sql.DB, newT func(Tx) T) (*DB[T], error) {
+func Open[T any](rw *sql.DB, ro *sql.DB, newT func(Tx) T, pragma map[string]string) (*DB[T], error) {
 	d := New(rw, ro, newT)
-	err := d.init()
+	err := d.init(pragma)
 	return d, err
 }
 
@@ -72,12 +72,17 @@ func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
 }
 
 // Init sets the connection properties and creates the necessary tables.
-func (d *DB[T]) init() error {
-	// SQLite allows only one writer at a time. Setting the maximum
-	// number of DB connections to 1 for the read-write DB handle
-	// is the best and fastest way to enforce this.
-	d.RW.SetMaxOpenConns(1)
+func (d *DB[T]) init(pragma map[string]string) error {
+	d.setNumConns()
+	err := d.applySettings(pragma)
+	if err != nil {
+		return err
+	}
+	return d.createSchema()
+}
 
+// setNumConns sets the number of connections.
+func (d *DB[T]) setNumConns() {
 	// For the read-only DB handle the number of open connections
 	// should be equal to the number of idle connections. Otherwise,
 	// the handle will keep opening and closing connections, severely
@@ -90,18 +95,39 @@ func (d *DB[T]) init() error {
 	d.RO.SetMaxOpenConns(nConns)
 	d.RO.SetMaxIdleConns(nConns)
 
-	// Set the journal mode and other settings.
-	if _, err := d.RW.Exec(sqlSettings); err != nil {
+	// SQLite allows only one writer at a time. Setting the maximum
+	// number of DB connections to 1 for the read-write DB handle
+	// is the best and fastest way to enforce this.
+	d.RW.SetMaxOpenConns(1)
+}
+
+// applySettings applies the database settings.
+func (d *DB[T]) applySettings(pragma map[string]string) error {
+	if pragma == nil {
+		return nil
+	}
+
+	var query strings.Builder
+	for name, val := range pragma {
+		query.WriteString("pragma ")
+		query.WriteString(name)
+		query.WriteString("=")
+		query.WriteString(val)
+		query.WriteString(";")
+	}
+	if _, err := d.RW.Exec(query.String()); err != nil {
 		return err
 	}
-	if _, err := d.RO.Exec(sqlSettings); err != nil {
-		return err
-	}
-	// Create the schema.
-	if _, err := d.RW.Exec(sqlSchema); err != nil {
+	if _, err := d.RO.Exec(query.String()); err != nil {
 		return err
 	}
 	return nil
+}
+
+// createSchema creates the database schema.
+func (d *DB[T]) createSchema() error {
+	_, err := d.RW.Exec(sqlSchema)
+	return err
 }
 
 // execTx executes a function within a transaction.
