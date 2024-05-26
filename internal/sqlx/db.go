@@ -103,7 +103,7 @@ func (d *DB[T]) setNumConns() {
 
 // applySettings applies the database settings.
 func (d *DB[T]) applySettings(pragma map[string]string) error {
-	if pragma == nil {
+	if len(pragma) == 0 {
 		return nil
 	}
 
