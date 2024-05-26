@@ -25,8 +25,6 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const driverName = "sqlite3"
-
 // Common errors returned by data structure methods.
 var (
 	ErrKeyType   = core.ErrKeyType   // key type mismatch
@@ -47,15 +45,25 @@ type Value = core.Value
 
 // Options is the configuration for the database.
 type Options struct {
+	// SQL driver name.
+	// If empty, uses "sqlite3".
+	DriverName string
 	// SQL pragmas to set on the database connection.
+	// If nil, uses the default pragmas:
+	//  - journal_mode=wal
+	//  - synchronous=normal
+	//  - temp_store=memory
+	//  - mmap_size=268435456
+	//  - foreign_keys=on
 	Pragma map[string]string
-	// Logger for the database. If nil, a silent logger is used.
+	// Logger for the database. If nil, uses a silent logger.
 	Logger *slog.Logger
 }
 
 var defaultOptions = Options{
-	Pragma: sqlx.DefaultPragma,
-	Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+	DriverName: "sqlite3",
+	Pragma:     sqlx.DefaultPragma,
+	Logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 }
 
 // DB is a Redis-like database backed by SQLite.
@@ -78,31 +86,25 @@ type DB struct {
 // Open opens a new or existing database at the given path.
 // Creates the database schema if necessary.
 //
-// Expects the database driver to be already imported with the name "sqlite3".
-// See the [simple] and [modernc] examples for details.
-//
 // The returned [DB] is safe for concurrent use by multiple goroutines
 // as long as you use a single instance throughout your program.
 // Typically, you only close the DB when the program exits.
 //
 // The opts parameter is optional. If nil, uses default options.
-//
-// [simple]: https://github.com/nalgeon/redka/blob/main/example/simple/main.go
-// [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
 func Open(path string, opts *Options) (*DB, error) {
 	// Apply the default options if necessary.
 	opts = applyOptions(defaultOptions, opts)
 
 	// Open the read-write database handle.
 	dataSource := sqlx.DataSource(path, true)
-	rw, err := sql.Open(driverName, dataSource)
+	rw, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Open the read-only database handle.
 	dataSource = sqlx.DataSource(path, false)
-	ro, err := sql.Open(driverName, dataSource)
+	ro, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
@@ -330,6 +332,9 @@ func (tx *Tx) ZSet() *rzset.Tx {
 func applyOptions(opts Options, custom *Options) *Options {
 	if custom == nil {
 		return &opts
+	}
+	if custom.DriverName != "" {
+		opts.DriverName = custom.DriverName
 	}
 	if custom.Pragma != nil {
 		opts.Pragma = custom.Pragma

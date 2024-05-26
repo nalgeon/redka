@@ -3,20 +3,20 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"log/slog"
 
 	"github.com/nalgeon/redka"
-	driver "modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
-	// modernc.org/sqlite uses a different driver name ("sqlite"), while
-	// Redka expects "sqlite3". So we have to re-register it as "sqlite3".
-	sql.Register("sqlite3", &driver.Driver{})
-
-	db, err := redka.Open("data.db", nil)
+	// modernc.org/sqlite uses a different driver name
+	// ("sqlite" instead of "sqlite3").
+	opts := redka.Options{
+		DriverName: "sqlite",
+	}
+	db, err := redka.Open("data.db", &opts)
 	if err != nil {
 		log.Fatal(err)
 	}
