@@ -188,6 +188,26 @@ func TestExpire(t *testing.T) {
 		err := kkey.Expire("name", 10*time.Second)
 		testx.AssertEqual(t, err, core.ErrNotFound)
 	})
+	t.Run("expire then set", func(t *testing.T) {
+		db, kkey := getDB(t)
+		defer db.Close()
+
+		_ = db.Str().Set("name", "alice")
+
+		err := kkey.Expire("name", 0)
+		testx.AssertNoErr(t, err)
+
+		time.Sleep(1 * time.Millisecond)
+		_, err = kkey.Get("name")
+		testx.AssertEqual(t, err, core.ErrNotFound)
+
+		err = db.Str().Set("name", "bob")
+		testx.AssertNoErr(t, err)
+
+		key, _ := kkey.Get("name")
+		testx.AssertEqual(t, key.Version, 3)
+		testx.AssertEqual(t, key.ETime, (*int64)(nil))
+	})
 }
 
 func TestExpireAt(t *testing.T) {
