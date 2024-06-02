@@ -123,8 +123,7 @@ func Open(path string, opts *Options) (*DB, error) {
 // Does not apply any database settings.
 func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
-	// Disable pragmas since we are using an already opened database.
-	sdb, err := sqlx.Open(rw, ro, newTx, nil)
+	sdb, err := sqlx.Open(rw, ro, newTx, opts.Pragma)
 	if err != nil {
 		return nil, err
 	}
