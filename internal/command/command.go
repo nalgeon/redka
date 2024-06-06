@@ -30,6 +30,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return key.ParseFlushDB(b)
 	case "info":
 		return server.ParseOK(b)
+	case "lolwut":
+		return server.ParseLolwut(b)
 
 	// connection
 	case "echo":
