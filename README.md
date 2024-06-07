@@ -257,10 +257,21 @@ unzip redka_linux_amd64.zip
 chmod +x redka
 ```
 
-macOS (both x86 and ARM/Apple Silicon CPU):
+macOS (x86 CPU):
 
 ```shell
 curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.0/redka_darwin_amd64.zip"
+unzip redka_darwin_amd64.zip
+# remove the build from quarantine
+# (macOS disables unsigned binaries)
+xattr -d com.apple.quarantine redka
+chmod +x redka
+```
+
+macOS (ARM/Apple Silicon CPU):
+
+```shell
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.0/redka_darwin_arm64.zip"
 unzip redka_darwin_amd64.zip
 # remove the build from quarantine
 # (macOS disables unsigned binaries)
