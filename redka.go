@@ -120,7 +120,7 @@ func Open(path string, opts *Options) (*DB, error) {
 
 // OpenDB connects to an existing SQL database.
 // Creates the database schema if necessary.
-// Does not apply any database settings.
+// The opts parameter is optional. If nil, uses default options.
 func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 	sdb, err := sqlx.Open(rw, ro, newTx, opts.Pragma)
