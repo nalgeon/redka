@@ -3,6 +3,7 @@ package parser
 import (
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Bytes parses a positional argument as a byte slice.
@@ -157,7 +158,7 @@ func Flag(name string, dest *bool) ParserFunc {
 		if len(args) == 0 {
 			return false, args, nil
 		}
-		if string(args[0]) != name {
+		if !strings.EqualFold(string(args[0]), name) {
 			return false, args, nil
 		}
 		*dest = true
@@ -172,7 +173,7 @@ func Named(name string, parsers ...ParserFunc) ParserFunc {
 		if len(args) == 0 {
 			return false, args, nil
 		}
-		if string(args[0]) != name {
+		if !strings.EqualFold(string(args[0]), name) {
 			return false, args, nil
 		}
 		nFired := 0
