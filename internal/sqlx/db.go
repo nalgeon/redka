@@ -107,6 +107,17 @@ func (d *DB[T]) applySettings(pragma map[string]string) error {
 	// (see [DataSource]), so we wouldn't need this function.
 	// But since the mattn driver does not support setting pragmas
 	// in the connection string, we also set them here.
+	//
+	// The correct way to set pragmas for the mattn driver is to
+	// use the connection hook (see cmd/redka/main.go on how to do this).
+	// But since we can't be sure the user does that, we also set them here.
+	//
+	// Unfortunately, setting pragmas using Exec only sets them for
+	// a single connection. It's not a problem for d.RW (which has only
+	// one connection), but it is for d.RO (which has multiple connections).
+	// Still, it's better than nothing.
+	//
+	// See https://github.com/nalgeon/redka/issues/28 for more details.
 	if len(pragma) == 0 {
 		return nil
 	}
