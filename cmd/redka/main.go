@@ -10,6 +10,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mattn/go-sqlite3"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/server"
@@ -30,7 +32,14 @@ var (
 	date    = "unknown"
 )
 
+const driverName = "redka"
 const memoryURI = "file:redka?mode=memory&cache=shared"
+const pragma = `
+pragma journal_mode = wal;
+pragma synchronous = normal;
+pragma temp_store = memory;
+pragma mmap_size = 268435456;
+pragma foreign_keys = on;`
 
 // Config holds the server configuration.
 type Config struct {
@@ -47,6 +56,7 @@ func (c *Config) Addr() string {
 var config Config
 
 func init() {
+	// Set up command line flags.
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: redka [options] <data-source>\n")
 		flag.PrintDefaults()
@@ -54,6 +64,16 @@ func init() {
 	flag.StringVar(&config.Host, "h", "localhost", "server host")
 	flag.StringVar(&config.Port, "p", "6379", "server port")
 	flag.BoolVar(&config.Verbose, "v", false, "verbose logging")
+
+	// Register an SQLite driver with custom pragmas.
+	// Ensures that the PRAGMA settings apply to
+	// all connections opened by the driver.
+	sql.Register(driverName, &sqlite3.SQLiteDriver{
+		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+			_, err := conn.Exec(pragma, nil)
+			return err
+		},
+	})
 }
 
 func main() {
@@ -88,7 +108,12 @@ func main() {
 	slog.Info("starting redka", "version", version, "commit", commit, "built_at", date)
 
 	// Open the database.
-	db, err := redka.Open(config.Path, &redka.Options{Logger: logger})
+	opts := redka.Options{
+		DriverName: driverName,
+		Logger:     logger,
+		Pragma:     map[string]string{},
+	}
+	db, err := redka.Open(config.Path, &opts)
 	if err != nil {
 		slog.Error("data source", "error", err)
 		os.Exit(1)
