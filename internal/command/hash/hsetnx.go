@@ -12,10 +12,10 @@ type HSetNX struct {
 	value []byte
 }
 
-func ParseHSetNX(b redis.BaseCmd) (*HSetNX, error) {
-	cmd := &HSetNX{BaseCmd: b}
+func ParseHSetNX(b redis.BaseCmd) (HSetNX, error) {
+	cmd := HSetNX{BaseCmd: b}
 	if len(cmd.Args()) != 3 {
-		return cmd, redis.ErrInvalidArgNum
+		return HSetNX{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	cmd.field = string(cmd.Args()[1])
@@ -23,7 +23,7 @@ func ParseHSetNX(b redis.BaseCmd) (*HSetNX, error) {
 	return cmd, nil
 }
 
-func (cmd *HSetNX) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HSetNX) Run(w redis.Writer, red redis.Redka) (any, error) {
 	ok, err := red.Hash().SetNotExists(cmd.key, cmd.field, cmd.value)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

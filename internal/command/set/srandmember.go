@@ -13,16 +13,16 @@ type SRandMember struct {
 	key string
 }
 
-func ParseSRandMember(b redis.BaseCmd) (*SRandMember, error) {
-	cmd := &SRandMember{BaseCmd: b}
+func ParseSRandMember(b redis.BaseCmd) (SRandMember, error) {
+	cmd := SRandMember{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return SRandMember{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *SRandMember) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SRandMember) Run(w redis.Writer, red redis.Redka) (any, error) {
 	elem, err := red.Set().Random(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteNull()

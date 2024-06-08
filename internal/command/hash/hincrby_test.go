@@ -51,6 +51,8 @@ func TestHIncrByParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.key)
 				testx.AssertEqual(t, cmd.field, test.field)
 				testx.AssertEqual(t, cmd.delta, test.delta)
+			} else {
+				testx.AssertEqual(t, cmd, HIncrBy{})
 			}
 		})
 	}

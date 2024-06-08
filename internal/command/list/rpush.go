@@ -15,19 +15,19 @@ type RPush struct {
 	elem []byte
 }
 
-func ParseRPush(b redis.BaseCmd) (*RPush, error) {
-	cmd := &RPush{BaseCmd: b}
+func ParseRPush(b redis.BaseCmd) (RPush, error) {
+	cmd := RPush{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Bytes(&cmd.elem),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return RPush{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *RPush) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd RPush) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.List().PushBack(cmd.key, cmd.elem)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

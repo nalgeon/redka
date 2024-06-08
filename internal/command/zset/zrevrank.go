@@ -16,20 +16,20 @@ type ZRevRank struct {
 	withScore bool
 }
 
-func ParseZRevRank(b redis.BaseCmd) (*ZRevRank, error) {
-	cmd := &ZRevRank{BaseCmd: b}
+func ParseZRevRank(b redis.BaseCmd) (ZRevRank, error) {
+	cmd := ZRevRank{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.String(&cmd.member),
 		parser.Flag("withscore", &cmd.withScore),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRevRank{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRevRank) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRevRank) Run(w redis.Writer, red redis.Redka) (any, error) {
 	rank, score, err := red.ZSet().GetRankRev(cmd.key, cmd.member)
 	if err == core.ErrNotFound {
 		w.WriteNull()

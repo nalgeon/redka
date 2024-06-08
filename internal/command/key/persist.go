@@ -13,16 +13,16 @@ type Persist struct {
 	key string
 }
 
-func ParsePersist(b redis.BaseCmd) (*Persist, error) {
-	cmd := &Persist{BaseCmd: b}
+func ParsePersist(b redis.BaseCmd) (Persist, error) {
+	cmd := Persist{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return Persist{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *Persist) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Persist) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Key().Persist(cmd.key)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))

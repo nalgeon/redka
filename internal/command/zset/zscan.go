@@ -16,8 +16,8 @@ type ZScan struct {
 	count  int
 }
 
-func ParseZScan(b redis.BaseCmd) (*ZScan, error) {
-	cmd := &ZScan{BaseCmd: b}
+func ParseZScan(b redis.BaseCmd) (ZScan, error) {
+	cmd := ZScan{BaseCmd: b}
 
 	err := parser.New(
 		parser.String(&cmd.key),
@@ -26,7 +26,7 @@ func ParseZScan(b redis.BaseCmd) (*ZScan, error) {
 		parser.Named("count", parser.Int(&cmd.count)),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return ZScan{}, err
 	}
 
 	// all elements by default
@@ -37,7 +37,7 @@ func ParseZScan(b redis.BaseCmd) (*ZScan, error) {
 	return cmd, nil
 }
 
-func (cmd *ZScan) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZScan) Run(w redis.Writer, red redis.Redka) (any, error) {
 	res, err := red.ZSet().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

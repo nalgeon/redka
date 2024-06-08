@@ -20,20 +20,20 @@ type IncrBy struct {
 	delta int
 }
 
-func ParseIncrBy(b redis.BaseCmd, sign int) (*IncrBy, error) {
-	cmd := &IncrBy{BaseCmd: b}
+func ParseIncrBy(b redis.BaseCmd, sign int) (IncrBy, error) {
+	cmd := IncrBy{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.delta),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return IncrBy{}, err
 	}
 	cmd.delta *= sign
 	return cmd, nil
 }
 
-func (cmd *IncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd IncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Str().Incr(cmd.key, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

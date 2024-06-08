@@ -44,6 +44,8 @@ func TestSMoveParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.src, test.want.src)
 				testx.AssertEqual(t, cmd.dest, test.want.dest)
 				testx.AssertEqual(t, cmd.member, test.want.member)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

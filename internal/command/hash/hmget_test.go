@@ -48,6 +48,8 @@ func TestHMGetParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.key)
 				testx.AssertEqual(t, cmd.fields, test.fields)
+			} else {
+				testx.AssertEqual(t, cmd, HMGet{})
 			}
 		})
 	}

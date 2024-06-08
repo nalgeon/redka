@@ -15,16 +15,16 @@ type TTL struct {
 	key string
 }
 
-func ParseTTL(b redis.BaseCmd) (*TTL, error) {
-	cmd := &TTL{BaseCmd: b}
+func ParseTTL(b redis.BaseCmd) (TTL, error) {
+	cmd := TTL{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return TTL{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *TTL) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd TTL) Run(w redis.Writer, red redis.Redka) (any, error) {
 	k, err := red.Key().Get(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteInt(-2)

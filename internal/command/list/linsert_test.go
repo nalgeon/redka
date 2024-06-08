@@ -61,6 +61,8 @@ func TestLInsertParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.where, test.want.where)
 				testx.AssertEqual(t, cmd.pivot, test.want.pivot)
 				testx.AssertEqual(t, cmd.elem, test.want.elem)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

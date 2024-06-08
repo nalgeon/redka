@@ -30,8 +30,11 @@ func TestRandomKeyParse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
-			_, err := redis.Parse(ParseRandomKey, test.cmd)
+			cmd, err := redis.Parse(ParseRandomKey, test.cmd)
 			testx.AssertEqual(t, err, test.err)
+			if err != nil {
+				testx.AssertEqual(t, cmd, RandomKey{})
+			}
 		})
 	}
 }

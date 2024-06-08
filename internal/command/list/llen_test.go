@@ -36,6 +36,8 @@ func TestLLenParse(t *testing.T) {
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

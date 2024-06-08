@@ -14,18 +14,18 @@ type LPop struct {
 	key string
 }
 
-func ParseLPop(b redis.BaseCmd) (*LPop, error) {
-	cmd := &LPop{BaseCmd: b}
+func ParseLPop(b redis.BaseCmd) (LPop, error) {
+	cmd := LPop{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LPop{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LPop) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LPop) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.List().PopFront(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteNull()

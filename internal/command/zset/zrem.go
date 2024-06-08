@@ -14,19 +14,19 @@ type ZRem struct {
 	members []any
 }
 
-func ParseZRem(b redis.BaseCmd) (*ZRem, error) {
-	cmd := &ZRem{BaseCmd: b}
+func ParseZRem(b redis.BaseCmd) (ZRem, error) {
+	cmd := ZRem{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Anys(&cmd.members),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRem{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRem) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRem) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.ZSet().Delete(cmd.key, cmd.members...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

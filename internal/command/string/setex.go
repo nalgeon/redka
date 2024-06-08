@@ -18,8 +18,8 @@ type SetEX struct {
 	ttl   time.Duration
 }
 
-func ParseSetEX(b redis.BaseCmd, multi int) (*SetEX, error) {
-	cmd := &SetEX{BaseCmd: b}
+func ParseSetEX(b redis.BaseCmd, multi int) (SetEX, error) {
+	cmd := SetEX{BaseCmd: b}
 	var ttl int
 	err := parser.New(
 		parser.String(&cmd.key),
@@ -27,13 +27,13 @@ func ParseSetEX(b redis.BaseCmd, multi int) (*SetEX, error) {
 		parser.Bytes(&cmd.value),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SetEX{}, err
 	}
 	cmd.ttl = time.Duration(multi*ttl) * time.Millisecond
 	return cmd, nil
 }
 
-func (cmd *SetEX) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SetEX) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

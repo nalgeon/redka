@@ -13,16 +13,16 @@ type Type struct {
 	key string
 }
 
-func ParseType(b redis.BaseCmd) (*Type, error) {
-	cmd := &Type{BaseCmd: b}
+func ParseType(b redis.BaseCmd) (Type, error) {
+	cmd := Type{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return Type{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *Type) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Type) Run(w redis.Writer, red redis.Redka) (any, error) {
 	k, err := red.Key().Get(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteString("none")

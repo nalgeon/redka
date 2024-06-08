@@ -17,8 +17,8 @@ type Expire struct {
 	ttl time.Duration
 }
 
-func ParseExpire(b redis.BaseCmd, multi int) (*Expire, error) {
-	cmd := &Expire{BaseCmd: b}
+func ParseExpire(b redis.BaseCmd, multi int) (Expire, error) {
+	cmd := Expire{BaseCmd: b}
 
 	var ttl int
 	err := parser.New(
@@ -26,14 +26,14 @@ func ParseExpire(b redis.BaseCmd, multi int) (*Expire, error) {
 		parser.Int(&ttl),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Expire{}, err
 	}
 
 	cmd.ttl = time.Duration(multi*ttl) * time.Millisecond
 	return cmd, nil
 }
 
-func (cmd *Expire) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Expire) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Key().Expire(cmd.key, cmd.ttl)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))

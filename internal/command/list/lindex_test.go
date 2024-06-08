@@ -43,6 +43,8 @@ func TestLIndexParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.index, test.want.index)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

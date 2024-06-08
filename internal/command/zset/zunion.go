@@ -16,8 +16,8 @@ type ZUnion struct {
 	withScores bool
 }
 
-func ParseZUnion(b redis.BaseCmd) (*ZUnion, error) {
-	cmd := &ZUnion{BaseCmd: b}
+func ParseZUnion(b redis.BaseCmd) (ZUnion, error) {
+	cmd := ZUnion{BaseCmd: b}
 	var nKeys int
 	err := parser.New(
 		parser.Int(&nKeys),
@@ -26,12 +26,12 @@ func ParseZUnion(b redis.BaseCmd) (*ZUnion, error) {
 		parser.Flag("withscores", &cmd.withScores),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZUnion{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZUnion) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZUnion) Run(w redis.Writer, red redis.Redka) (any, error) {
 	union := red.ZSet().UnionWith(cmd.keys...)
 	switch cmd.aggregate {
 	case sqlx.Min:

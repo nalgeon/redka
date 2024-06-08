@@ -10,16 +10,16 @@ type Keys struct {
 	pattern string
 }
 
-func ParseKeys(b redis.BaseCmd) (*Keys, error) {
-	cmd := &Keys{BaseCmd: b}
+func ParseKeys(b redis.BaseCmd) (Keys, error) {
+	cmd := Keys{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return Keys{}, redis.ErrInvalidArgNum
 	}
 	cmd.pattern = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *Keys) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Keys) Run(w redis.Writer, red redis.Redka) (any, error) {
 	keys, err := red.Key().Keys(cmd.pattern)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

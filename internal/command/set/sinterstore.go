@@ -14,19 +14,19 @@ type SInterStore struct {
 	keys []string
 }
 
-func ParseSInterStore(b redis.BaseCmd) (*SInterStore, error) {
-	cmd := &SInterStore{BaseCmd: b}
+func ParseSInterStore(b redis.BaseCmd) (SInterStore, error) {
+	cmd := SInterStore{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.dest),
 		parser.Strings(&cmd.keys),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SInterStore{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SInterStore) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SInterStore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.Set().InterStore(cmd.dest, cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

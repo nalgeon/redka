@@ -10,16 +10,16 @@ type HGetAll struct {
 	key string
 }
 
-func ParseHGetAll(b redis.BaseCmd) (*HGetAll, error) {
-	cmd := &HGetAll{BaseCmd: b}
+func ParseHGetAll(b redis.BaseCmd) (HGetAll, error) {
+	cmd := HGetAll{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return HGetAll{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *HGetAll) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HGetAll) Run(w redis.Writer, red redis.Redka) (any, error) {
 	items, err := red.Hash().Items(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

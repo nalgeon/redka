@@ -11,17 +11,17 @@ type SetNX struct {
 	value []byte
 }
 
-func ParseSetNX(b redis.BaseCmd) (*SetNX, error) {
-	cmd := &SetNX{BaseCmd: b}
+func ParseSetNX(b redis.BaseCmd) (SetNX, error) {
+	cmd := SetNX{BaseCmd: b}
 	if len(cmd.Args()) != 2 {
-		return cmd, redis.ErrInvalidArgNum
+		return SetNX{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	cmd.value = cmd.Args()[1]
 	return cmd, nil
 }
 
-func (cmd *SetNX) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SetNX) Run(w redis.Writer, red redis.Redka) (any, error) {
 	out, err := red.Str().SetWith(cmd.key, cmd.value).IfNotExists().Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

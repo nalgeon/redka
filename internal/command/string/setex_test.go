@@ -41,7 +41,7 @@ func TestSetEXParse(t *testing.T) {
 		},
 	}
 
-	parse := func(b redis.BaseCmd) (*SetEX, error) {
+	parse := func(b redis.BaseCmd) (SetEX, error) {
 		return ParseSetEX(b, 1000)
 	}
 
@@ -53,13 +53,15 @@ func TestSetEXParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.value, test.want.value)
 				testx.AssertEqual(t, cmd.ttl, test.want.ttl)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}
 }
 
 func TestSetEXExec(t *testing.T) {
-	parse := func(b redis.BaseCmd) (*SetEX, error) {
+	parse := func(b redis.BaseCmd) (SetEX, error) {
 		return ParseSetEX(b, 1000)
 	}
 

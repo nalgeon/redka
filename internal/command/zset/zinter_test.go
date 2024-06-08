@@ -74,6 +74,8 @@ func TestZInterParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.keys, test.want.keys)
 				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
 				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

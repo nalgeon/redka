@@ -9,15 +9,15 @@ type DBSize struct {
 	redis.BaseCmd
 }
 
-func ParseDBSize(b redis.BaseCmd) (*DBSize, error) {
-	cmd := &DBSize{BaseCmd: b}
+func ParseDBSize(b redis.BaseCmd) (DBSize, error) {
+	cmd := DBSize{BaseCmd: b}
 	if len(cmd.Args()) != 0 {
-		return cmd, redis.ErrInvalidArgNum
+		return DBSize{}, redis.ErrInvalidArgNum
 	}
 	return cmd, nil
 }
 
-func (cmd *DBSize) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd DBSize) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.Key().Len()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

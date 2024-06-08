@@ -16,8 +16,8 @@ type ZRevRange struct {
 	withScores bool
 }
 
-func ParseZRevRange(b redis.BaseCmd) (*ZRevRange, error) {
-	cmd := &ZRevRange{BaseCmd: b}
+func ParseZRevRange(b redis.BaseCmd) (ZRevRange, error) {
+	cmd := ZRevRange{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.start),
@@ -25,12 +25,12 @@ func ParseZRevRange(b redis.BaseCmd) (*ZRevRange, error) {
 		parser.Flag("withscores", &cmd.withScores),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRevRange{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRevRange) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRevRange) Run(w redis.Writer, red redis.Redka) (any, error) {
 	items, err := red.ZSet().RangeWith(cmd.key).ByRank(cmd.start, cmd.stop).Desc().Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

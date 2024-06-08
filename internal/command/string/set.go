@@ -24,8 +24,8 @@ type Set struct {
 	keepTTL bool
 }
 
-func ParseSet(b redis.BaseCmd) (*Set, error) {
-	cmd := &Set{BaseCmd: b}
+func ParseSet(b redis.BaseCmd) (Set, error) {
+	cmd := Set{BaseCmd: b}
 
 	// Parse the command arguments.
 	var ttlSec, ttlMs, atSec, atMs int
@@ -46,7 +46,7 @@ func ParseSet(b redis.BaseCmd) (*Set, error) {
 		),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Set{}, err
 	}
 
 	// Set the expiration time.
@@ -60,13 +60,13 @@ func ParseSet(b redis.BaseCmd) (*Set, error) {
 		cmd.at = time.Unix(0, int64(atMs)*int64(time.Millisecond))
 	}
 	if cmd.ttl < 0 {
-		return cmd, redis.ErrInvalidExpireTime
+		return Set{}, redis.ErrInvalidExpireTime
 	}
 
 	return cmd, nil
 }
 
-func (cmd *Set) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Set) Run(w redis.Writer, red redis.Redka) (any, error) {
 	if !cmd.ifNX && !cmd.ifXX && !cmd.get && !cmd.keepTTL && cmd.at.IsZero() {
 		// Simple SET without additional options (except ttl).
 		err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)

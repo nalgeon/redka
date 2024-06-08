@@ -37,6 +37,8 @@ func TestDelParse(t *testing.T) {
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				testx.AssertEqual(t, cmd.keys, test.want)
+			} else {
+				testx.AssertEqual(t, cmd, Del{})
 			}
 		})
 	}

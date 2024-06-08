@@ -48,7 +48,7 @@ func TestExpireAtParse(t *testing.T) {
 		},
 	}
 
-	parse := func(b redis.BaseCmd) (*ExpireAt, error) {
+	parse := func(b redis.BaseCmd) (ExpireAt, error) {
 		return ParseExpireAt(b, 1000)
 	}
 
@@ -59,13 +59,15 @@ func TestExpireAtParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.key)
 				testx.AssertEqual(t, cmd.at.Unix(), test.at.Unix())
+			} else {
+				testx.AssertEqual(t, cmd, ExpireAt{})
 			}
 		})
 	}
 }
 
 func TestExpireAtExec(t *testing.T) {
-	parse := func(b redis.BaseCmd) (*ExpireAt, error) {
+	parse := func(b redis.BaseCmd) (ExpireAt, error) {
 		return ParseExpireAt(b, 1000)
 	}
 	t.Run("create expireat", func(t *testing.T) {

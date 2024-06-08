@@ -16,19 +16,19 @@ type RPopLPush struct {
 	dst string
 }
 
-func ParseRPopLPush(b redis.BaseCmd) (*RPopLPush, error) {
-	cmd := &RPopLPush{BaseCmd: b}
+func ParseRPopLPush(b redis.BaseCmd) (RPopLPush, error) {
+	cmd := RPopLPush{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.src),
 		parser.String(&cmd.dst),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return RPopLPush{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *RPopLPush) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd RPopLPush) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.List().PopBackPushFront(cmd.src, cmd.dst)
 	if err == core.ErrNotFound {
 		w.WriteNull()

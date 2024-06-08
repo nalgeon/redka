@@ -13,18 +13,18 @@ type Exists struct {
 	keys []string
 }
 
-func ParseExists(b redis.BaseCmd) (*Exists, error) {
-	cmd := &Exists{BaseCmd: b}
+func ParseExists(b redis.BaseCmd) (Exists, error) {
+	cmd := Exists{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Exists{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *Exists) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Exists) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.Key().Count(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

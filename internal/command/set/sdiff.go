@@ -13,18 +13,18 @@ type SDiff struct {
 	keys []string
 }
 
-func ParseSDiff(b redis.BaseCmd) (*SDiff, error) {
-	cmd := &SDiff{BaseCmd: b}
+func ParseSDiff(b redis.BaseCmd) (SDiff, error) {
+	cmd := SDiff{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SDiff{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SDiff) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SDiff) Run(w redis.Writer, red redis.Redka) (any, error) {
 	elems, err := red.Set().Diff(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

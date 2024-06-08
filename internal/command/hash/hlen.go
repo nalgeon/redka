@@ -10,16 +10,16 @@ type HLen struct {
 	key string
 }
 
-func ParseHLen(b redis.BaseCmd) (*HLen, error) {
-	cmd := &HLen{BaseCmd: b}
+func ParseHLen(b redis.BaseCmd) (HLen, error) {
+	cmd := HLen{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return HLen{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *HLen) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HLen) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.Hash().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

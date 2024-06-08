@@ -130,6 +130,8 @@ func TestSetParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.ifNX, test.want.ifNX)
 				testx.AssertEqual(t, cmd.ifXX, test.want.ifXX)
 				testx.AssertEqual(t, cmd.ttl, test.want.ttl)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

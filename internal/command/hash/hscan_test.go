@@ -109,6 +109,8 @@ func TestHScanParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.cursor, test.cursor)
 				testx.AssertEqual(t, cmd.match, test.match)
 				testx.AssertEqual(t, cmd.count, test.count)
+			} else {
+				testx.AssertEqual(t, cmd, HScan{})
 			}
 		})
 	}

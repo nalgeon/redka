@@ -76,6 +76,8 @@ func TestZRangeByScoreParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.offset, test.want.offset)
 				testx.AssertEqual(t, cmd.count, test.want.count)
 				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

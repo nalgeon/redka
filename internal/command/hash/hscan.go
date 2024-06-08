@@ -16,8 +16,8 @@ type HScan struct {
 	count  int
 }
 
-func ParseHScan(b redis.BaseCmd) (*HScan, error) {
-	cmd := &HScan{BaseCmd: b}
+func ParseHScan(b redis.BaseCmd) (HScan, error) {
+	cmd := HScan{BaseCmd: b}
 
 	err := parser.New(
 		parser.String(&cmd.key),
@@ -26,7 +26,7 @@ func ParseHScan(b redis.BaseCmd) (*HScan, error) {
 		parser.Named("count", parser.Int(&cmd.count)),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return HScan{}, err
 	}
 
 	// all keys by default
@@ -37,7 +37,7 @@ func ParseHScan(b redis.BaseCmd) (*HScan, error) {
 	return cmd, nil
 }
 
-func (cmd *HScan) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HScan) Run(w redis.Writer, red redis.Redka) (any, error) {
 	res, err := red.Hash().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

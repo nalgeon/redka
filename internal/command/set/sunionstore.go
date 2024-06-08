@@ -14,19 +14,19 @@ type SUnionStore struct {
 	keys []string
 }
 
-func ParseSUnionStore(b redis.BaseCmd) (*SUnionStore, error) {
-	cmd := &SUnionStore{BaseCmd: b}
+func ParseSUnionStore(b redis.BaseCmd) (SUnionStore, error) {
+	cmd := SUnionStore{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.dest),
 		parser.Strings(&cmd.keys),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SUnionStore{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SUnionStore) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SUnionStore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.Set().UnionStore(cmd.dest, cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

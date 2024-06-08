@@ -15,19 +15,19 @@ type HMGet struct {
 	fields []string
 }
 
-func ParseHMGet(b redis.BaseCmd) (*HMGet, error) {
-	cmd := &HMGet{BaseCmd: b}
+func ParseHMGet(b redis.BaseCmd) (HMGet, error) {
+	cmd := HMGet{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Strings(&cmd.fields),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return HMGet{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *HMGet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HMGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Get the field-value map for requested fields.
 	items, err := red.Hash().GetMany(cmd.key, cmd.fields...)
 	if err != nil {

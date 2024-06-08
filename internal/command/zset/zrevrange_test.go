@@ -50,6 +50,8 @@ func TestZRevRangeParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.start, test.want.start)
 				testx.AssertEqual(t, cmd.stop, test.want.stop)
 				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

@@ -16,8 +16,8 @@ type ZInter struct {
 	withScores bool
 }
 
-func ParseZInter(b redis.BaseCmd) (*ZInter, error) {
-	cmd := &ZInter{BaseCmd: b}
+func ParseZInter(b redis.BaseCmd) (ZInter, error) {
+	cmd := ZInter{BaseCmd: b}
 	var nKeys int
 	err := parser.New(
 		parser.Int(&nKeys),
@@ -26,12 +26,12 @@ func ParseZInter(b redis.BaseCmd) (*ZInter, error) {
 		parser.Flag("withscores", &cmd.withScores),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZInter{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZInter) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZInter) Run(w redis.Writer, red redis.Redka) (any, error) {
 	inter := red.ZSet().InterWith(cmd.keys...)
 	switch cmd.aggregate {
 	case sqlx.Min:

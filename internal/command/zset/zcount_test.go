@@ -48,6 +48,8 @@ func TestZCountParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.min, test.want.min)
 				testx.AssertEqual(t, cmd.max, test.want.max)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

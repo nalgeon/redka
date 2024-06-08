@@ -13,16 +13,16 @@ type SPop struct {
 	key string
 }
 
-func ParseSPop(b redis.BaseCmd) (*SPop, error) {
-	cmd := &SPop{BaseCmd: b}
+func ParseSPop(b redis.BaseCmd) (SPop, error) {
+	cmd := SPop{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return SPop{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *SPop) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SPop) Run(w redis.Writer, red redis.Redka) (any, error) {
 	elem, err := red.Set().Pop(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteNull()

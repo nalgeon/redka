@@ -43,6 +43,8 @@ func TestZRevRankParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.member, test.want.member)
 				testx.AssertEqual(t, cmd.withScore, test.want.withScore)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

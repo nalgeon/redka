@@ -37,6 +37,8 @@ func TestEchoParse(t *testing.T) {
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				testx.AssertEqual(t, cmd.parts, test.want)
+			} else {
+				testx.AssertEqual(t, cmd, Echo{})
 			}
 		})
 	}

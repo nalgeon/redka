@@ -12,15 +12,15 @@ type RandomKey struct {
 	redis.BaseCmd
 }
 
-func ParseRandomKey(b redis.BaseCmd) (*RandomKey, error) {
-	cmd := &RandomKey{BaseCmd: b}
+func ParseRandomKey(b redis.BaseCmd) (RandomKey, error) {
+	cmd := RandomKey{BaseCmd: b}
 	if len(cmd.Args()) != 0 {
-		return cmd, redis.ErrInvalidArgNum
+		return RandomKey{}, redis.ErrInvalidArgNum
 	}
 	return cmd, nil
 }
 
-func (cmd *RandomKey) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd RandomKey) Run(w redis.Writer, red redis.Redka) (any, error) {
 	key, err := red.Key().Random()
 	if err == core.ErrNotFound {
 		w.WriteNull()

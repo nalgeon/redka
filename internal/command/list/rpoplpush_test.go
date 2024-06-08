@@ -38,6 +38,8 @@ func TestRPopLPushParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.src, test.want.src)
 				testx.AssertEqual(t, cmd.dst, test.want.dst)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

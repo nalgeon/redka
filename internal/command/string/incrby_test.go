@@ -30,7 +30,7 @@ func TestIncrByParse(t *testing.T) {
 		},
 	}
 
-	parse := func(b redis.BaseCmd) (*IncrBy, error) {
+	parse := func(b redis.BaseCmd) (IncrBy, error) {
 		return ParseIncrBy(b, 1)
 	}
 
@@ -41,13 +41,15 @@ func TestIncrByParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.delta, test.want.delta)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}
 }
 
 func TestIncrByExec(t *testing.T) {
-	parse := func(b redis.BaseCmd) (*IncrBy, error) {
+	parse := func(b redis.BaseCmd) (IncrBy, error) {
 		return ParseIncrBy(b, 1)
 	}
 

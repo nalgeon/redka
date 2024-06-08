@@ -10,16 +10,16 @@ type HKeys struct {
 	key string
 }
 
-func ParseHKeys(b redis.BaseCmd) (*HKeys, error) {
-	cmd := &HKeys{BaseCmd: b}
+func ParseHKeys(b redis.BaseCmd) (HKeys, error) {
+	cmd := HKeys{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return HKeys{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *HKeys) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HKeys) Run(w redis.Writer, red redis.Redka) (any, error) {
 	fields, err := red.Hash().Fields(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

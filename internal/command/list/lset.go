@@ -16,20 +16,20 @@ type LSet struct {
 	elem  []byte
 }
 
-func ParseLSet(b redis.BaseCmd) (*LSet, error) {
-	cmd := &LSet{BaseCmd: b}
+func ParseLSet(b redis.BaseCmd) (LSet, error) {
+	cmd := LSet{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.index),
 		parser.Bytes(&cmd.elem),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LSet{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LSet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LSet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.List().Set(cmd.key, cmd.index, cmd.elem)
 	if err == core.ErrNotFound {
 		w.WriteError(cmd.Error(redis.ErrOutOfRange))

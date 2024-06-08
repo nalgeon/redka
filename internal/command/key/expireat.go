@@ -17,8 +17,8 @@ type ExpireAt struct {
 	at  time.Time
 }
 
-func ParseExpireAt(b redis.BaseCmd, multi int) (*ExpireAt, error) {
-	cmd := &ExpireAt{BaseCmd: b}
+func ParseExpireAt(b redis.BaseCmd, multi int) (ExpireAt, error) {
+	cmd := ExpireAt{BaseCmd: b}
 
 	var at int
 	err := parser.New(
@@ -26,14 +26,14 @@ func ParseExpireAt(b redis.BaseCmd, multi int) (*ExpireAt, error) {
 		parser.Int(&at),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return ExpireAt{}, err
 	}
 
 	cmd.at = time.UnixMilli(int64(multi * at))
 	return cmd, nil
 }
 
-func (cmd *ExpireAt) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ExpireAt) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Key().ExpireAt(cmd.key, cmd.at)
 	if err != nil && err != core.ErrNotFound {
 		w.WriteError(cmd.Error(err))

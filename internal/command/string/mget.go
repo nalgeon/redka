@@ -13,10 +13,10 @@ type MGet struct {
 	keys []string
 }
 
-func ParseMGet(b redis.BaseCmd) (*MGet, error) {
-	cmd := &MGet{BaseCmd: b}
+func ParseMGet(b redis.BaseCmd) (MGet, error) {
+	cmd := MGet{BaseCmd: b}
 	if len(cmd.Args()) < 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return MGet{}, redis.ErrInvalidArgNum
 	}
 	cmd.keys = make([]string, len(cmd.Args()))
 	for i, arg := range cmd.Args() {
@@ -25,7 +25,7 @@ func ParseMGet(b redis.BaseCmd) (*MGet, error) {
 	return cmd, nil
 }
 
-func (cmd *MGet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd MGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	// Get the key-value map for requested keys.
 	items, err := red.Str().GetMany(cmd.keys...)
 	if err != nil {

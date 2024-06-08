@@ -16,20 +16,20 @@ type ZRank struct {
 	withScore bool
 }
 
-func ParseZRank(b redis.BaseCmd) (*ZRank, error) {
-	cmd := &ZRank{BaseCmd: b}
+func ParseZRank(b redis.BaseCmd) (ZRank, error) {
+	cmd := ZRank{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.String(&cmd.member),
 		parser.Flag("withscore", &cmd.withScore),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRank{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRank) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRank) Run(w redis.Writer, red redis.Redka) (any, error) {
 	rank, score, err := red.ZSet().GetRank(cmd.key, cmd.member)
 	if err == core.ErrNotFound {
 		w.WriteNull()

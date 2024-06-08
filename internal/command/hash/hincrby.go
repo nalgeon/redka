@@ -16,20 +16,20 @@ type HIncrBy struct {
 	delta int
 }
 
-func ParseHIncrBy(b redis.BaseCmd) (*HIncrBy, error) {
-	cmd := &HIncrBy{BaseCmd: b}
+func ParseHIncrBy(b redis.BaseCmd) (HIncrBy, error) {
+	cmd := HIncrBy{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.String(&cmd.field),
 		parser.Int(&cmd.delta),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return HIncrBy{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *HIncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HIncrBy) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Hash().Incr(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

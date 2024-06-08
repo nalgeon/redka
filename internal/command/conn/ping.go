@@ -16,18 +16,18 @@ type Ping struct {
 	message string
 }
 
-func ParsePing(b redis.BaseCmd) (*Ping, error) {
-	cmd := &Ping{BaseCmd: b}
+func ParsePing(b redis.BaseCmd) (Ping, error) {
+	cmd := Ping{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.message),
 	).Required(0).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Ping{}, err
 	}
 	return cmd, nil
 }
 
-func (c *Ping) Run(w redis.Writer, _ redis.Redka) (any, error) {
+func (c Ping) Run(w redis.Writer, _ redis.Redka) (any, error) {
 	if c.message == "" {
 		w.WriteAny(PONG)
 		return PONG, nil

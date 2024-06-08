@@ -15,20 +15,20 @@ type ZRemRangeByScore struct {
 	max float64
 }
 
-func ParseZRemRangeByScore(b redis.BaseCmd) (*ZRemRangeByScore, error) {
-	cmd := &ZRemRangeByScore{BaseCmd: b}
+func ParseZRemRangeByScore(b redis.BaseCmd) (ZRemRangeByScore, error) {
+	cmd := ZRemRangeByScore{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Float(&cmd.min),
 		parser.Float(&cmd.max),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRemRangeByScore{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRemRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRemRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.ZSet().DeleteWith(cmd.key).ByScore(cmd.min, cmd.max).Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

@@ -15,19 +15,19 @@ type ZScore struct {
 	member string
 }
 
-func ParseZScore(b redis.BaseCmd) (*ZScore, error) {
-	cmd := &ZScore{BaseCmd: b}
+func ParseZScore(b redis.BaseCmd) (ZScore, error) {
+	cmd := ZScore{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.String(&cmd.member),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZScore{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZScore) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZScore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	score, err := red.ZSet().GetScore(cmd.key, cmd.member)
 	if err == core.ErrNotFound {
 		w.WriteNull()

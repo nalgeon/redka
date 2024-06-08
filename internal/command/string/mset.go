@@ -13,18 +13,18 @@ type MSet struct {
 	items map[string]any
 }
 
-func ParseMSet(b redis.BaseCmd) (*MSet, error) {
-	cmd := &MSet{BaseCmd: b}
+func ParseMSet(b redis.BaseCmd) (MSet, error) {
+	cmd := MSet{BaseCmd: b}
 	err := parser.New(
 		parser.AnyMap(&cmd.items),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return MSet{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *MSet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd MSet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Str().SetMany(cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

@@ -15,19 +15,19 @@ type SAdd struct {
 	members []any
 }
 
-func ParseSAdd(b redis.BaseCmd) (*SAdd, error) {
-	cmd := &SAdd{BaseCmd: b}
+func ParseSAdd(b redis.BaseCmd) (SAdd, error) {
+	cmd := SAdd{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Anys(&cmd.members),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SAdd{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.Set().Add(cmd.key, cmd.members...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

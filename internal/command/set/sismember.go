@@ -14,19 +14,19 @@ type SIsMember struct {
 	member []byte
 }
 
-func ParseSIsMember(b redis.BaseCmd) (*SIsMember, error) {
-	cmd := &SIsMember{BaseCmd: b}
+func ParseSIsMember(b redis.BaseCmd) (SIsMember, error) {
+	cmd := SIsMember{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Bytes(&cmd.member),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SIsMember{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SIsMember) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SIsMember) Run(w redis.Writer, red redis.Redka) (any, error) {
 	ok, err := red.Set().Exists(cmd.key, cmd.member)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

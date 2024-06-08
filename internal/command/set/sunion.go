@@ -13,18 +13,18 @@ type SUnion struct {
 	keys []string
 }
 
-func ParseSUnion(b redis.BaseCmd) (*SUnion, error) {
-	cmd := &SUnion{BaseCmd: b}
+func ParseSUnion(b redis.BaseCmd) (SUnion, error) {
+	cmd := SUnion{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SUnion{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SUnion) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SUnion) Run(w redis.Writer, red redis.Redka) (any, error) {
 	elems, err := red.Set().Union(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

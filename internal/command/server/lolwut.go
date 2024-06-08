@@ -41,18 +41,18 @@ type Lolwut struct {
 	parts []string
 }
 
-func ParseLolwut(b redis.BaseCmd) (*Lolwut, error) {
-	cmd := &Lolwut{BaseCmd: b}
+func ParseLolwut(b redis.BaseCmd) (Lolwut, error) {
+	cmd := Lolwut{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.parts),
 	).Required(0).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Lolwut{}, err
 	}
 	return cmd, nil
 }
 
-func (c *Lolwut) Run(w redis.Writer, _ redis.Redka) (any, error) {
+func (c Lolwut) Run(w redis.Writer, _ redis.Redka) (any, error) {
 	var answer string
 	if len(c.parts) != 0 {
 		answer = lolwutAnswers[rand.Intn(len(lolwutAnswers))]

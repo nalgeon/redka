@@ -37,6 +37,8 @@ func TestSUnionParse(t *testing.T) {
 			testx.AssertEqual(t, err, test.err)
 			if err == nil {
 				testx.AssertEqual(t, cmd.keys, test.want.keys)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

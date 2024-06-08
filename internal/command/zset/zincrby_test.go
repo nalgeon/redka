@@ -44,6 +44,8 @@ func TestZIncrByParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.member, test.want.member)
 				testx.AssertEqual(t, cmd.delta, test.want.delta)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

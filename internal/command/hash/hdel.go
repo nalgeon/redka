@@ -15,19 +15,19 @@ type HDel struct {
 	fields []string
 }
 
-func ParseHDel(b redis.BaseCmd) (*HDel, error) {
-	cmd := &HDel{BaseCmd: b}
+func ParseHDel(b redis.BaseCmd) (HDel, error) {
+	cmd := HDel{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Strings(&cmd.fields),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return HDel{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *HDel) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HDel) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.Hash().Delete(cmd.key, cmd.fields...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

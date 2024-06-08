@@ -48,6 +48,8 @@ func TestLRemParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.count, test.want.count)
 				testx.AssertEqual(t, cmd.elem, test.want.elem)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

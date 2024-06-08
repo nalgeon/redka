@@ -14,17 +14,17 @@ type HGet struct {
 	field string
 }
 
-func ParseHGet(b redis.BaseCmd) (*HGet, error) {
-	cmd := &HGet{BaseCmd: b}
+func ParseHGet(b redis.BaseCmd) (HGet, error) {
+	cmd := HGet{BaseCmd: b}
 	if len(cmd.Args()) != 2 {
-		return cmd, redis.ErrInvalidArgNum
+		return HGet{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	cmd.field = string(cmd.Args()[1])
 	return cmd, nil
 }
 
-func (cmd *HGet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HGet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Hash().Get(cmd.key, cmd.field)
 	if err == core.ErrNotFound {
 		w.WriteNull()

@@ -22,8 +22,8 @@ type LInsert struct {
 	elem  []byte
 }
 
-func ParseLInsert(b redis.BaseCmd) (*LInsert, error) {
-	cmd := &LInsert{BaseCmd: b}
+func ParseLInsert(b redis.BaseCmd) (LInsert, error) {
+	cmd := LInsert{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Enum(&cmd.where, Before, After),
@@ -31,12 +31,12 @@ func ParseLInsert(b redis.BaseCmd) (*LInsert, error) {
 		parser.Bytes(&cmd.elem),
 	).Required(4).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LInsert{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LInsert) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LInsert) Run(w redis.Writer, red redis.Redka) (any, error) {
 	var n int
 	var err error
 	if cmd.where == Before {

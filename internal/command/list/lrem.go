@@ -15,20 +15,20 @@ type LRem struct {
 	elem  []byte
 }
 
-func ParseLRem(b redis.BaseCmd) (*LRem, error) {
-	cmd := &LRem{BaseCmd: b}
+func ParseLRem(b redis.BaseCmd) (LRem, error) {
+	cmd := LRem{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.count),
 		parser.Bytes(&cmd.elem),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LRem{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LRem) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LRem) Run(w redis.Writer, red redis.Redka) (any, error) {
 	var n int
 	var err error
 	switch {

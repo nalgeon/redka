@@ -47,7 +47,7 @@ func TestExpireParse(t *testing.T) {
 		},
 	}
 
-	parse := func(b redis.BaseCmd) (*Expire, error) {
+	parse := func(b redis.BaseCmd) (Expire, error) {
 		return ParseExpire(b, 1000)
 	}
 
@@ -58,13 +58,15 @@ func TestExpireParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.key)
 				testx.AssertEqual(t, cmd.ttl, test.ttl)
+			} else {
+				testx.AssertEqual(t, cmd, Expire{})
 			}
 		})
 	}
 }
 
 func TestExpireExec(t *testing.T) {
-	parse := func(b redis.BaseCmd) (*Expire, error) {
+	parse := func(b redis.BaseCmd) (Expire, error) {
 		return ParseExpire(b, 1000)
 	}
 	t.Run("create expire", func(t *testing.T) {

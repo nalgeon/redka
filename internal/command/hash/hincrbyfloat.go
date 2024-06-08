@@ -16,20 +16,20 @@ type HIncrByFloat struct {
 	delta float64
 }
 
-func ParseHIncrByFloat(b redis.BaseCmd) (*HIncrByFloat, error) {
-	cmd := &HIncrByFloat{BaseCmd: b}
+func ParseHIncrByFloat(b redis.BaseCmd) (HIncrByFloat, error) {
+	cmd := HIncrByFloat{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.String(&cmd.field),
 		parser.Float(&cmd.delta),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return HIncrByFloat{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *HIncrByFloat) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd HIncrByFloat) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Hash().IncrFloat(cmd.key, cmd.field, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

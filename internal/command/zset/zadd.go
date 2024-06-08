@@ -15,19 +15,19 @@ type ZAdd struct {
 	items map[any]float64
 }
 
-func ParseZAdd(b redis.BaseCmd) (*ZAdd, error) {
-	cmd := &ZAdd{BaseCmd: b}
+func ParseZAdd(b redis.BaseCmd) (ZAdd, error) {
+	cmd := ZAdd{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.FloatMap(&cmd.items),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZAdd{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZAdd) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.ZSet().AddMany(cmd.key, cmd.items)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

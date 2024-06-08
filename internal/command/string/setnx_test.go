@@ -42,6 +42,8 @@ func TestSetNXParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.value, test.want.value)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

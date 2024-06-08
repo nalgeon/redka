@@ -69,6 +69,8 @@ func TestZUnionStoreParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.dest, test.want.dest)
 				testx.AssertEqual(t, cmd.keys, test.want.keys)
 				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

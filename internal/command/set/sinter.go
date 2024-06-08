@@ -13,18 +13,18 @@ type SInter struct {
 	keys []string
 }
 
-func ParseSInter(b redis.BaseCmd) (*SInter, error) {
-	cmd := &SInter{BaseCmd: b}
+func ParseSInter(b redis.BaseCmd) (SInter, error) {
+	cmd := SInter{BaseCmd: b}
 	err := parser.New(
 		parser.Strings(&cmd.keys),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SInter{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SInter) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SInter) Run(w redis.Writer, red redis.Redka) (any, error) {
 	elems, err := red.Set().Inter(cmd.keys...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

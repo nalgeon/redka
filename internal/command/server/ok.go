@@ -7,11 +7,11 @@ type OK struct {
 	redis.BaseCmd
 }
 
-func ParseOK(b redis.BaseCmd) (*OK, error) {
-	return &OK{BaseCmd: b}, nil
+func ParseOK(b redis.BaseCmd) (OK, error) {
+	return OK{BaseCmd: b}, nil
 }
 
-func (c *OK) Run(w redis.Writer, _ redis.Redka) (any, error) {
+func (c OK) Run(w redis.Writer, _ redis.Redka) (any, error) {
 	w.WriteString("OK")
 	return true, nil
 }

@@ -14,17 +14,17 @@ type GetSet struct {
 	value []byte
 }
 
-func ParseGetSet(b redis.BaseCmd) (*GetSet, error) {
-	cmd := &GetSet{BaseCmd: b}
+func ParseGetSet(b redis.BaseCmd) (GetSet, error) {
+	cmd := GetSet{BaseCmd: b}
 	if len(cmd.Args()) != 2 {
-		return cmd, redis.ErrInvalidArgNum
+		return GetSet{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	cmd.value = cmd.Args()[1]
 	return cmd, nil
 }
 
-func (cmd *GetSet) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd GetSet) Run(w redis.Writer, red redis.Redka) (any, error) {
 	out, err := red.Str().SetWith(cmd.key, cmd.value).Run()
 	if err != nil {
 		w.WriteError(cmd.Error(err))

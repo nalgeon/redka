@@ -15,20 +15,20 @@ type ZCount struct {
 	max float64
 }
 
-func ParseZCount(b redis.BaseCmd) (*ZCount, error) {
-	cmd := &ZCount{BaseCmd: b}
+func ParseZCount(b redis.BaseCmd) (ZCount, error) {
+	cmd := ZCount{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Float(&cmd.min),
 		parser.Float(&cmd.max),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZCount{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZCount) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZCount) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.ZSet().Count(cmd.key, cmd.min, cmd.max)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

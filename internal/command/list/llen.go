@@ -13,18 +13,18 @@ type LLen struct {
 	key string
 }
 
-func ParseLLen(b redis.BaseCmd) (*LLen, error) {
-	cmd := &LLen{BaseCmd: b}
+func ParseLLen(b redis.BaseCmd) (LLen, error) {
+	cmd := LLen{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LLen{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LLen) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LLen) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.List().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

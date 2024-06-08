@@ -16,8 +16,8 @@ type SScan struct {
 	count  int
 }
 
-func ParseSScan(b redis.BaseCmd) (*SScan, error) {
-	cmd := &SScan{BaseCmd: b}
+func ParseSScan(b redis.BaseCmd) (SScan, error) {
+	cmd := SScan{BaseCmd: b}
 
 	err := parser.New(
 		parser.String(&cmd.key),
@@ -26,7 +26,7 @@ func ParseSScan(b redis.BaseCmd) (*SScan, error) {
 		parser.Named("count", parser.Int(&cmd.count)),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return SScan{}, err
 	}
 
 	// all elements by default
@@ -37,7 +37,7 @@ func ParseSScan(b redis.BaseCmd) (*SScan, error) {
 	return cmd, nil
 }
 
-func (cmd *SScan) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SScan) Run(w redis.Writer, red redis.Redka) (any, error) {
 	res, err := red.Set().Scan(cmd.key, cmd.cursor, cmd.match, cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

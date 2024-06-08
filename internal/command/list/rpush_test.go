@@ -43,6 +43,8 @@ func TestRPushParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.elem, test.want.elem)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

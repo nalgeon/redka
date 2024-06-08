@@ -14,19 +14,19 @@ type SRem struct {
 	members []any
 }
 
-func ParseSRem(b redis.BaseCmd) (*SRem, error) {
-	cmd := &SRem{BaseCmd: b}
+func ParseSRem(b redis.BaseCmd) (SRem, error) {
+	cmd := SRem{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Anys(&cmd.members),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SRem{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SRem) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SRem) Run(w redis.Writer, red redis.Redka) (any, error) {
 	count, err := red.Set().Delete(cmd.key, cmd.members...)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

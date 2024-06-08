@@ -44,6 +44,8 @@ func TestLRangeParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.start, test.want.start)
 				testx.AssertEqual(t, cmd.stop, test.want.stop)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

@@ -15,19 +15,19 @@ type IncrByFloat struct {
 	delta float64
 }
 
-func ParseIncrByFloat(b redis.BaseCmd) (*IncrByFloat, error) {
-	cmd := &IncrByFloat{BaseCmd: b}
+func ParseIncrByFloat(b redis.BaseCmd) (IncrByFloat, error) {
+	cmd := IncrByFloat{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Float(&cmd.delta),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return IncrByFloat{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *IncrByFloat) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd IncrByFloat) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Str().IncrFloat(cmd.key, cmd.delta)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

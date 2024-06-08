@@ -10,16 +10,16 @@ type SCard struct {
 	key string
 }
 
-func ParseSCard(b redis.BaseCmd) (*SCard, error) {
-	cmd := &SCard{BaseCmd: b}
+func ParseSCard(b redis.BaseCmd) (SCard, error) {
+	cmd := SCard{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return SCard{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *SCard) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SCard) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.Set().Len(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

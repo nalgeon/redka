@@ -16,20 +16,20 @@ type SMove struct {
 	member []byte
 }
 
-func ParseSMove(b redis.BaseCmd) (*SMove, error) {
-	cmd := &SMove{BaseCmd: b}
+func ParseSMove(b redis.BaseCmd) (SMove, error) {
+	cmd := SMove{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.src),
 		parser.String(&cmd.dest),
 		parser.Bytes(&cmd.member),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return SMove{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *SMove) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SMove) Run(w redis.Writer, red redis.Redka) (any, error) {
 	err := red.Set().Move(cmd.src, cmd.dest, cmd.member)
 	if err == core.ErrNotFound {
 		w.WriteInt(0)

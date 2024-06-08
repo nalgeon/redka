@@ -55,6 +55,8 @@ func TestHSetParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.items, test.want.items)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

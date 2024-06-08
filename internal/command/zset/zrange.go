@@ -20,8 +20,8 @@ type ZRange struct {
 	withScores bool
 }
 
-func ParseZRange(b redis.BaseCmd) (*ZRange, error) {
-	cmd := &ZRange{BaseCmd: b}
+func ParseZRange(b redis.BaseCmd) (ZRange, error) {
+	cmd := ZRange{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Float(&cmd.start),
@@ -32,12 +32,12 @@ func ParseZRange(b redis.BaseCmd) (*ZRange, error) {
 		parser.Flag("withscores", &cmd.withScores),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRange{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRange) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRange) Run(w redis.Writer, red redis.Redka) (any, error) {
 	rang := red.ZSet().RangeWith(cmd.key)
 
 	// filter by score or rank

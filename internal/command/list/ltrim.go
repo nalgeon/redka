@@ -15,20 +15,20 @@ type LTrim struct {
 	stop  int
 }
 
-func ParseLTrim(b redis.BaseCmd) (*LTrim, error) {
-	cmd := &LTrim{BaseCmd: b}
+func ParseLTrim(b redis.BaseCmd) (LTrim, error) {
+	cmd := LTrim{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.start),
 		parser.Int(&cmd.stop),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LTrim{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LTrim) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LTrim) Run(w redis.Writer, red redis.Redka) (any, error) {
 	n, err := red.List().Trim(cmd.key, cmd.start, cmd.stop)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

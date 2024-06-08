@@ -15,19 +15,19 @@ type LIndex struct {
 	index int
 }
 
-func ParseLIndex(b redis.BaseCmd) (*LIndex, error) {
-	cmd := &LIndex{BaseCmd: b}
+func ParseLIndex(b redis.BaseCmd) (LIndex, error) {
+	cmd := LIndex{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Int(&cmd.index),
 	).Required(2).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return LIndex{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *LIndex) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd LIndex) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.List().Get(cmd.key, cmd.index)
 	if err == core.ErrNotFound {
 		w.WriteNull()

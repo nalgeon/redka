@@ -25,8 +25,8 @@ type Scan struct {
 	ktype  string
 }
 
-func ParseScan(b redis.BaseCmd) (*Scan, error) {
-	cmd := &Scan{BaseCmd: b}
+func ParseScan(b redis.BaseCmd) (Scan, error) {
+	cmd := Scan{BaseCmd: b}
 
 	err := parser.New(
 		parser.Int(&cmd.cursor),
@@ -36,7 +36,7 @@ func ParseScan(b redis.BaseCmd) (*Scan, error) {
 			TypeHash, TypeList, TypeSet, TypeString, TypeZSet)),
 	).Required(1).Run(cmd.Args())
 	if err != nil {
-		return cmd, err
+		return Scan{}, err
 	}
 
 	// all keys by default
@@ -47,7 +47,7 @@ func ParseScan(b redis.BaseCmd) (*Scan, error) {
 	return cmd, nil
 }
 
-func (cmd *Scan) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Scan) Run(w redis.Writer, red redis.Redka) (any, error) {
 	res, err := red.Key().Scan(cmd.cursor, cmd.match, toTypeID(cmd.ktype), cmd.count)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

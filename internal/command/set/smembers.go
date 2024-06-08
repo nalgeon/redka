@@ -10,16 +10,16 @@ type SMembers struct {
 	key string
 }
 
-func ParseSMembers(b redis.BaseCmd) (*SMembers, error) {
-	cmd := &SMembers{BaseCmd: b}
+func ParseSMembers(b redis.BaseCmd) (SMembers, error) {
+	cmd := SMembers{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return SMembers{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *SMembers) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd SMembers) Run(w redis.Writer, red redis.Redka) (any, error) {
 	items, err := red.Set().Items(cmd.key)
 	if err != nil {
 		w.WriteError(cmd.Error(err))

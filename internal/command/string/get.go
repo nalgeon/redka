@@ -13,16 +13,16 @@ type Get struct {
 	key string
 }
 
-func ParseGet(b redis.BaseCmd) (*Get, error) {
-	cmd := &Get{BaseCmd: b}
+func ParseGet(b redis.BaseCmd) (Get, error) {
+	cmd := Get{BaseCmd: b}
 	if len(cmd.Args()) != 1 {
-		return cmd, redis.ErrInvalidArgNum
+		return Get{}, redis.ErrInvalidArgNum
 	}
 	cmd.key = string(cmd.Args()[0])
 	return cmd, nil
 }
 
-func (cmd *Get) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd Get) Run(w redis.Writer, red redis.Redka) (any, error) {
 	val, err := red.Str().Get(cmd.key)
 	if err == core.ErrNotFound {
 		w.WriteNull()

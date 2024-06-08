@@ -49,6 +49,8 @@ func TestLSetParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.key, test.want.key)
 				testx.AssertEqual(t, cmd.index, test.want.index)
 				testx.AssertEqual(t, cmd.elem, test.want.elem)
+			} else {
+				testx.AssertEqual(t, cmd, test.want)
 			}
 		})
 	}

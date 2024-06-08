@@ -42,6 +42,8 @@ func TestRenameNXParse(t *testing.T) {
 			if err == nil {
 				testx.AssertEqual(t, cmd.key, test.key)
 				testx.AssertEqual(t, cmd.newKey, test.newKey)
+			} else {
+				testx.AssertEqual(t, cmd, RenameNX{})
 			}
 		})
 	}

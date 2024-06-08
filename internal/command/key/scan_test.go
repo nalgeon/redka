@@ -114,6 +114,8 @@ func TestScanParse(t *testing.T) {
 				testx.AssertEqual(t, cmd.match, test.match)
 				testx.AssertEqual(t, cmd.ktype, test.ktype)
 				testx.AssertEqual(t, cmd.count, test.count)
+			} else {
+				testx.AssertEqual(t, cmd, Scan{})
 			}
 		})
 	}

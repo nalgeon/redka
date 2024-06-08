@@ -18,8 +18,8 @@ type ZRevRangeByScore struct {
 	count      int
 }
 
-func ParseZRevRangeByScore(b redis.BaseCmd) (*ZRevRangeByScore, error) {
-	cmd := &ZRevRangeByScore{BaseCmd: b}
+func ParseZRevRangeByScore(b redis.BaseCmd) (ZRevRangeByScore, error) {
+	cmd := ZRevRangeByScore{BaseCmd: b}
 	err := parser.New(
 		parser.String(&cmd.key),
 		parser.Float(&cmd.min),
@@ -28,12 +28,12 @@ func ParseZRevRangeByScore(b redis.BaseCmd) (*ZRevRangeByScore, error) {
 		parser.Named("limit", parser.Int(&cmd.offset), parser.Int(&cmd.count)),
 	).Required(3).Run(cmd.Args())
 	if err != nil {
-		return nil, err
+		return ZRevRangeByScore{}, err
 	}
 	return cmd, nil
 }
 
-func (cmd *ZRevRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
+func (cmd ZRevRangeByScore) Run(w redis.Writer, red redis.Redka) (any, error) {
 	rang := red.ZSet().RangeWith(cmd.key).ByScore(cmd.min, cmd.max).Desc()
 
 	// limit and offset
