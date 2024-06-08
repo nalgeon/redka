@@ -96,14 +96,14 @@ func Open(path string, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 
 	// Open the read-write database handle.
-	dataSource := sqlx.DataSource(path, true)
+	dataSource := sqlx.DataSource(path, true, opts.Pragma)
 	rw, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Open the read-only database handle.
-	dataSource = sqlx.DataSource(path, false)
+	dataSource = sqlx.DataSource(path, false, opts.Pragma)
 	ro, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err

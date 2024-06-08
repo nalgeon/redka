@@ -103,6 +103,10 @@ func (d *DB[T]) setNumConns() {
 
 // applySettings applies the database settings.
 func (d *DB[T]) applySettings(pragma map[string]string) error {
+	// Ideally, we'd only set the pragmas in the connection string
+	// (see [DataSource]), so we wouldn't need this function.
+	// But since the mattn driver does not support setting pragmas
+	// in the connection string, we also set them here.
 	if len(pragma) == 0 {
 		return nil
 	}
@@ -155,7 +159,7 @@ func (d *DB[T]) execTx(ctx context.Context, writable bool, f func(tx T) error) e
 
 // DataSource returns an SQLite connection string
 // for a read-only or read-write mode.
-func DataSource(path string, writable bool) string {
+func DataSource(path string, writable bool, pragma map[string]string) string {
 	var ds string
 
 	// Parse the parameters.
@@ -180,6 +184,7 @@ func DataSource(path string, writable bool) string {
 	// sql.DB is concurrent-safe, so we don't need SQLite mutexes.
 	params.Set("_mutex", "no")
 
+	// Set the connection mode (writable or read-only).
 	if writable {
 		// Enable IMMEDIATE transactions for writable databases.
 		// https://www.sqlite.org/lang_transaction.html
@@ -189,6 +194,16 @@ func DataSource(path string, writable bool) string {
 		// (except for in-memory databases, which are always writable).
 		// https://www.sqlite.org/c3ref/open.html
 		params.Set("mode", "ro")
+	}
+
+	// Apply the pragma settings.
+	// Some drivers (modernc and ncruces) setting passing pragmas
+	// in the connection string, so we add them here.
+	// The mattn driver does not support this, so it'll just ignore them.
+	// For mattn driver, we have to set the pragmas in the connection hook.
+	// (see cmd/redka/main.go on how to do this).
+	for name, val := range pragma {
+		params.Add("_pragma", name+"="+val)
 	}
 
 	return ds + "?" + params.Encode()
