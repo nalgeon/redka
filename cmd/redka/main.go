@@ -20,7 +20,6 @@ import (
 	"syscall"
 
 	"github.com/mattn/go-sqlite3"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/server"
 )
