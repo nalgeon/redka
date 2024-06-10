@@ -12,7 +12,7 @@ import (
 )
 
 func TestHandlers(t *testing.T) {
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

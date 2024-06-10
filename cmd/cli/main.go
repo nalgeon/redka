@@ -13,7 +13,7 @@ import (
 	"github.com/nalgeon/redka/internal/redis"
 )
 
-const dbURI = ":memory:"
+const dbURI = "file:/data.db?vfs=memdb"
 
 func init() {
 	flag.Usage = func() {

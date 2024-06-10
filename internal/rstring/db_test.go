@@ -821,7 +821,7 @@ func TestSetNotExists(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rstring.DB) {
 	tb.Helper()
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}

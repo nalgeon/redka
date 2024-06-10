@@ -30,7 +30,7 @@ To open an in-memory database that doesn't persist to disk, use the following pa
 
 ```go
 // All data is lost when the database is closed.
-redka.Open("file:redka?mode=memory&cache=shared")
+redka.Open("file:/data.db?vfs=memdb")
 ```
 
 After opening the database, call `redka.DB` methods to run individual commands:

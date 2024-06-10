@@ -35,8 +35,8 @@ Redka (in-memory):
 ./redka -p 6380
 redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 34927.18 requests per second, p50=0.175 msec
-GET: 52173.01 requests per second, p50=0.143 msec
+SET: 36188.62  requests per second, p50=0.167 msec
+GET: 104405.93 requests per second, p50=0.063 msec
 ```
 
 Redka (persisted to disk):

@@ -32,7 +32,7 @@ var (
 )
 
 const driverName = "redka"
-const memoryURI = "file:redka?mode=memory&cache=shared"
+const memoryURI = "file:/data.db?vfs=memdb"
 const pragma = `
 pragma journal_mode = wal;
 pragma synchronous = normal;

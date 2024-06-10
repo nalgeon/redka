@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleOpen() {
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -21,7 +21,7 @@ func ExampleOpen() {
 }
 
 func ExampleDB_Close() {
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +33,7 @@ func ExampleDB_Hash() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open(":memory:", nil)
+	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
 	defer db.Close()
 
 	ok, err := db.Hash().Set("user:1", "name", "alice")
@@ -57,7 +57,7 @@ func ExampleDB_Key() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open(":memory:", nil)
+	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
 	defer db.Close()
 
 	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
@@ -79,7 +79,7 @@ func ExampleDB_Str() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open(":memory:", nil)
+	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
 	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
@@ -99,7 +99,7 @@ func ExampleDB_ZSet() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open(":memory:", nil)
+	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
 	defer db.Close()
 
 	ok, err := db.ZSet().Add("race", "alice", 11)
@@ -121,7 +121,7 @@ func ExampleDB_ZSet() {
 }
 
 func ExampleDB_Update() {
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -153,7 +153,7 @@ func ExampleDB_View() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open(":memory:", nil)
+	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
 	defer db.Close()
 
 	_ = db.Str().SetMany(map[string]any{
@@ -190,7 +190,7 @@ func ExampleDB_View() {
 }
 
 func TestOpenDB(t *testing.T) {
-	sdb, err := sql.Open("sqlite3", ":memory:")
+	sdb, err := sql.Open("sqlite3", "file:/data.db?vfs=memdb")
 	testx.AssertNoErr(t, err)
 
 	db, err := redka.OpenDB(sdb, sdb, nil)
@@ -282,7 +282,7 @@ func TestDBUpdateRollback(t *testing.T) {
 
 func getDB(tb testing.TB) *redka.DB {
 	tb.Helper()
-	db, err := redka.Open(":memory:", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}
