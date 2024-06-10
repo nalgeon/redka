@@ -3,7 +3,9 @@ name: build
 on:
     push:
         branches: [main]
-        paths-ignore: [README.md]
+        paths-ignore:
+            - "docs/**"
+            - README.md
     pull_request:
         branches: [main]
     workflow_dispatch:
