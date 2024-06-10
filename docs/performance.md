@@ -45,8 +45,8 @@ Redka (persisted to disk):
 ./redka -p 6380 data.db
 redis-benchmark -p 6380 -q -c 10 -n 1000000 -r 10000 -t get,set
 
-SET: 26028.11 requests per second, p50=0.215 msec
-GET: 93923.17 requests per second, p50=0.071 msec
+SET: 26773.76  requests per second, p50=0.215 msec
+GET: 103092.78 requests per second, p50=0.063 msec
 ```
 
 So while Redka is 2-5 times slower than Redis (not surprising, since we are comparing a relational database to a key-value data store), it can still do 26K writes/sec and 94K reads/sec, which is pretty good if you ask me.

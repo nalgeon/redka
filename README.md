@@ -33,7 +33,7 @@ Redka comes in two flavors:
 
 ## Performance
 
-According to the [benchmarks](docs/performance.md), Redka is several times slower than Redis. Still, it can do 26K writes/sec and 94K reads/sec on a Macbook Air, which is pretty good if you ask me (and probably 10x more than most applications will ever need).
+According to the [benchmarks](docs/performance.md), Redka is several times slower than Redis. Still, it can do up to 100K op/sec on a Macbook Air, which is pretty good if you ask me (and probably 10x more than most applications will ever need).
 
 Redka stores data in a [SQLite database](docs/persistence.md) with a simple schema and provides views for better introspection.
 
