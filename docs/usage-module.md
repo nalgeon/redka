@@ -1,5 +1,11 @@
 # Using Redka as a Go module
 
+If you are using Go, Redka is available as a module without the need to start a separate server.
+
+See the [package documentation](https://pkg.go.dev/github.com/nalgeon/redka) for API reference.
+
+## Opening the database
+
 The primary object in Redka is the `DB`. To open or create your database, use the `redka.Open()` function:
 
 ```go
@@ -24,7 +30,7 @@ func main() {
 }
 ```
 
-Don't forget to import the driver (here I use `github.com/mattn/go-sqlite3`). Using `modernc.org/sqlite` is slightly different, see [example/modernc/main.go](example/modernc/main.go) for details.
+Don't forget to import the driver (here I use `github.com/mattn/go-sqlite3`). See the list of the supported drivers below.
 
 To open an in-memory database that doesn't persist to disk, use the following path:
 
@@ -32,6 +38,8 @@ To open an in-memory database that doesn't persist to disk, use the following pa
 // All data is lost when the database is closed.
 redka.Open("file:/data.db?vfs=memdb")
 ```
+
+## Running commands
 
 After opening the database, call `redka.DB` methods to run individual commands:
 
@@ -51,7 +59,9 @@ count count=2 err=<nil>
 get name="alice" err=<nil>
 ```
 
-See the full example in [example/simple/main.go](example/simple/main.go).
+See the full example in [example/simple/main.go](../example/simple/main.go).
+
+## Transactions
 
 Use transactions to batch commands. There are `View` (read-only transaction) and `Update` (writable transaction) methods for this:
 
@@ -78,6 +88,13 @@ slog.Info("updated", "count", updCount, "err", err)
 updated count=2 err=<nil>
 ```
 
-See the full example in [example/tx/main.go](example/tx/main.go).
+See the full example in [example/tx/main.go](../example/tx/main.go).
 
-See the [package documentation](https://pkg.go.dev/github.com/nalgeon/redka) for API reference.
+## Supported drivers
+
+Redka supports the following SQLite drivers:
+
+-   `github.com/mattn/go-sqlite3` ([example](../example/simple/main.go))
+-   `github.com/ncruces/go-sqlite3` ([example](../example/ncruces/main.go))
+-   `github.com/tursodatabase/go-libsql` ([example](../example/libsql/main.go))
+-   `modernc.org/sqlite` ([example](../example/modernc/main.go))
