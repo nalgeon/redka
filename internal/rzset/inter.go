@@ -18,18 +18,17 @@ const (
 	having count(distinct kid) = ?
 	order by sum(score), elem`
 
-	sqlInterStore1 = sqlDeleteAll
-
-	sqlInterStore2 = sqlAdd1
-
-	sqlInterStore3 = `
+	sqlInterStore1 = sqlDeleteAll1
+	sqlInterStore2 = sqlDeleteAll2
+	sqlInterStore3 = sqlAdd1
+	sqlInterStore4 = `
 	insert into rzset (kid, elem, score)
 	select ?, elem, sum(score) as score
 	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
 	having count(distinct kid) = ?
-	order by sum(score), elem;`
+	order by sum(score), elem`
 )
 
 // InterCmd intersects multiple sets.
@@ -145,27 +144,29 @@ func (c InterCmd) store(tx sqlx.Tx) (int, error) {
 	now := time.Now().UnixMilli()
 
 	// Delete the destination key if it exists.
-	args := []any{c.dest, now, c.dest, now}
-	_, err := tx.Exec(sqlInterStore1, args...)
+	_, err := tx.Exec(sqlInterStore1, c.dest, now)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(sqlInterStore2, c.dest, now)
 	if err != nil {
 		return 0, err
 	}
 
 	// Create the destination key.
-	args = []any{c.dest, now}
 	var destID int
-	err = tx.QueryRow(sqlInterStore2, args...).Scan(&destID)
+	err = tx.QueryRow(sqlInterStore3, c.dest, now).Scan(&destID)
 	if err != nil {
 		return 0, sqlx.TypedError(err)
 	}
 
 	// Intersect the source sets and store the result.
-	query := sqlInterStore3
+	query := sqlInterStore4
 	if c.aggregate != sqlx.Sum {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = slices.Concat([]any{destID}, keyArgs, []any{now, len(c.keys)})
+	args := slices.Concat([]any{destID}, keyArgs, []any{now, len(c.keys)})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err

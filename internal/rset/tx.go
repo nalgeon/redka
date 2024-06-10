@@ -40,17 +40,19 @@ const (
 		len = len - ?
 	where key = ? and type = 3 and (etime is null or etime > ?)`
 
-	sqlDeleteKey = `
+	sqlDeleteKey1 = `
 	delete from rset
 	where kid = (
 		select id from rkey
 		where key = ? and type = 3 and (etime is null or etime > ?)
-	);
+	)`
+
+	sqlDeleteKey2 = `
 	update rkey set
 		version = 0,
 		mtime = 0,
 		len = 0
-	where key = ? and type = 3 and (etime is null or etime > ?);`
+	where key = ? and type = 3 and (etime is null or etime > ?)`
 
 	sqlDiff = `
 	with others as (
@@ -535,8 +537,11 @@ func (tx *Tx) UnionStore(dest string, keys ...string) (int, error) {
 
 // deleteKey deletes set elements and resets the key metadata.
 func (tx *Tx) deleteKey(key string, now int64) error {
-	args := []any{key, now, key, now}
-	_, err := tx.tx.Exec(sqlDeleteKey, args...)
+	_, err := tx.tx.Exec(sqlDeleteKey1, key, now)
+	if err != nil {
+		return err
+	}
+	_, err = tx.tx.Exec(sqlDeleteKey2, key, now)
 	return err
 }
 

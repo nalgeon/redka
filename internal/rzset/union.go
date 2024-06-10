@@ -17,17 +17,16 @@ const (
 	group by elem
 	order by sum(score), elem`
 
-	sqlUnionStore1 = sqlDeleteAll
-
-	sqlUnionStore2 = sqlAdd1
-
-	sqlUnionStore3 = `
+	sqlUnionStore1 = sqlDeleteAll1
+	sqlUnionStore2 = sqlDeleteAll2
+	sqlUnionStore3 = sqlAdd1
+	sqlUnionStore4 = `
 	insert into rzset (kid, elem, score)
 	select ?, elem, sum(score) as score
 	from rzset join rkey on kid = rkey.id and type = 5
 	where key in (:keys) and (etime is null or etime > ?)
 	group by elem
-	order by sum(score), elem;`
+	order by sum(score), elem`
 )
 
 // UnionCmd unions multiple sets.
@@ -142,27 +141,29 @@ func (c UnionCmd) store(tx sqlx.Tx) (int, error) {
 	now := time.Now().UnixMilli()
 
 	// Delete the destination key if it exists.
-	args := []any{c.dest, now, c.dest, now}
-	_, err := tx.Exec(sqlUnionStore1, args...)
+	_, err := tx.Exec(sqlUnionStore1, c.dest, now)
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.Exec(sqlUnionStore2, c.dest, now)
 	if err != nil {
 		return 0, err
 	}
 
 	// Create the destination key.
-	args = []any{c.dest, now}
 	var destID int
-	err = tx.QueryRow(sqlUnionStore2, args...).Scan(&destID)
+	err = tx.QueryRow(sqlUnionStore3, c.dest, now).Scan(&destID)
 	if err != nil {
 		return 0, sqlx.TypedError(err)
 	}
 
 	// Union the source sets and store the result.
-	query := sqlUnionStore3
+	query := sqlUnionStore4
 	if c.aggregate != sqlx.Sum {
 		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
 	}
 	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	args = slices.Concat([]any{destID}, keyArgs, []any{now})
+	args := slices.Concat([]any{destID}, keyArgs, []any{now})
 	res, err := tx.Exec(query, args...)
 	if err != nil {
 		return 0, err

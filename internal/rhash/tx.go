@@ -74,7 +74,7 @@ const (
 	insert into rhash (kid, field, value)
 	values (?, ?, ?)
 	on conflict (kid, field) do update
-	set value = excluded.value;`
+	set value = excluded.value`
 
 	sqlValues = `
 	select value

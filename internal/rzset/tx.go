@@ -50,18 +50,19 @@ const (
 		len = len - ?
 	where key = ? and type = 5 and (etime is null or etime > ?)`
 
-	sqlDeleteAll = `
+	sqlDeleteAll1 = `
 	delete from rzset
 	where kid = (
 		select id from rkey
 		where key = ? and type = 5 and (etime is null or etime > ?)
-	);
+	)`
 
+	sqlDeleteAll2 = `
 	update rkey set
 		version = 0,
 		mtime = 0,
 		len = 0
-	where key = ? and type = 5 and (etime is null or etime > ?);`
+	where key = ? and type = 5 and (etime is null or etime > ?)`
 
 	sqlGetRank = `
 	with ranked as (
