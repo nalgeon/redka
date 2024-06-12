@@ -7,7 +7,7 @@ go 1.22
 require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/nalgeon/redka v0.0.0-00010101000000-000000000000
-	github.com/ncruces/go-sqlite3 v0.16.2-0.20240609232415-e7f8311e2e0d
+	github.com/ncruces/go-sqlite3 v0.16.2
 	github.com/tursodatabase/go-libsql v0.0.0-20240429120401-651096bbee0b
 	modernc.org/sqlite v1.29.5
 )
@@ -22,7 +22,7 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/tetratelabs/wazero v1.7.2 // indirect
+	github.com/tetratelabs/wazero v1.7.3 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
