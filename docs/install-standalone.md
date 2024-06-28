@@ -5,7 +5,7 @@ Redka server is a single-file binary. Download it from the [releases](https://gi
 Linux (x86 CPU only):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.1/redka_linux_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.2/redka_linux_amd64.zip"
 unzip redka_linux_amd64.zip
 chmod +x redka
 ```
@@ -13,7 +13,7 @@ chmod +x redka
 macOS (x86 CPU):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.1/redka_darwin_amd64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.2/redka_darwin_amd64.zip"
 unzip redka_darwin_amd64.zip
 # remove the build from quarantine
 # (macOS disables unsigned binaries)
@@ -24,7 +24,7 @@ chmod +x redka
 macOS (ARM/Apple Silicon CPU):
 
 ```shell
-curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.1/redka_darwin_arm64.zip"
+curl -L -O "https://github.com/nalgeon/redka/releases/download/v0.5.2/redka_darwin_arm64.zip"
 unzip redka_darwin_arm64.zip
 # remove the build from quarantine
 # (macOS disables unsigned binaries)
