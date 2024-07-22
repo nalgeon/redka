@@ -58,6 +58,9 @@ type Options struct {
 	Pragma map[string]string
 	// Logger for the database. If nil, uses a silent logger.
 	Logger *slog.Logger
+
+	// If true, opens the database in read-only mode.
+	readonly bool
 }
 
 var defaultOptions = Options{
@@ -118,6 +121,24 @@ func Open(path string, opts *Options) (*DB, error) {
 	return new(sdb, opts)
 }
 
+// OpenRead opens an existing database at the given path in read-only mode.
+func OpenRead(path string, opts *Options) (*DB, error) {
+	// Apply the default options if necessary.
+	opts = applyOptions(defaultOptions, opts)
+	opts.readonly = true
+
+	// Open the read-only database handle.
+	dataSource := sqlx.DataSource(path, false, opts.Pragma)
+	db, err := sql.Open(opts.DriverName, dataSource)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the database-backed repository.
+	sdb := sqlx.New(db, db, newTx)
+	return new(sdb, opts)
+}
+
 // OpenDB connects to an existing SQL database.
 // Creates the database schema if necessary.
 // The opts parameter is optional. If nil, uses default options.
@@ -127,6 +148,14 @@ func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	return new(sdb, opts)
+}
+
+// OpenReadDB connects to an existing SQL database in read-only mode.
+func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
+	opts = applyOptions(defaultOptions, opts)
+	opts.readonly = true
+	sdb := sqlx.New(db, db, newTx)
 	return new(sdb, opts)
 }
 
@@ -142,7 +171,9 @@ func new(sdb *sqlx.DB[*Tx], opts *Options) (*DB, error) {
 		zsetDB:   rzset.New(sdb.RW, sdb.RO),
 		log:      opts.Logger,
 	}
-	rdb.bg = rdb.startBgManager()
+	if !opts.readonly {
+		rdb.bg = rdb.startBgManager()
+	}
 	return rdb, nil
 }
 
@@ -228,7 +259,9 @@ func (db *DB) ViewContext(ctx context.Context, f func(tx *Tx) error) error {
 // Close closes the database.
 // It's safe for concurrent use by multiple goroutines.
 func (db *DB) Close() error {
-	db.bg.Stop()
+	if db.bg != nil {
+		db.bg.Stop()
+	}
 	var allErr error
 	if err := db.RW.Close(); err != nil {
 		allErr = err

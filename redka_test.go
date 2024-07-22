@@ -20,6 +20,34 @@ func ExampleOpen() {
 	// ...
 }
 
+func ExampleOpenRead() {
+	// open a writable database
+	db, err := redka.Open("data.db", nil)
+	if err != nil {
+		panic(err)
+	}
+	db.Str().Set("name", "alice")
+	db.Close()
+
+	// open a read-only database
+	db, err = redka.OpenRead("data.db", nil)
+	if err != nil {
+		panic(err)
+	}
+	// read operations work fine
+	name, _ := db.Str().Get("name")
+	fmt.Println(name)
+	// write operations will fail
+	err = db.Str().Set("name", "bob")
+	fmt.Println(err)
+	// attempt to write a readonly database
+	db.Close()
+
+	// Output:
+	// alice
+	// attempt to write a readonly database
+}
+
 func ExampleDB_Close() {
 	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
 	if err != nil {
