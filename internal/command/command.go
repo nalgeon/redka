@@ -38,6 +38,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return conn.ParseEcho(b)
 	case "ping":
 		return conn.ParsePing(b)
+	case "select":
+		return conn.ParseSelect(b)
 
 	// key
 	case "del":
