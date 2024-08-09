@@ -10,6 +10,7 @@ DEL        DB.Key().Delete           Deletes one or more keys.
 EXISTS     DB.Key().Count            Determines whether one or more keys exist.
 EXPIRE     DB.Key().Expire           Sets the expiration time of a key (in seconds).
 EXPIREAT   DB.Key().ExpireAt         Sets the expiration time of a key to a Unix timestamp.
+FLUSHALL   DB.Key().DeleteAll        Deletes all keys from the database.
 FLUSHDB    DB.Key().DeleteAll        Deletes all keys from the database.
 KEYS       DB.Key().Keys             Returns all key names that match a pattern.
 PERSIST    DB.Key().Persist          Removes the expiration time of a key.
