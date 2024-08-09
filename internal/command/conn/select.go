@@ -5,11 +5,8 @@ import (
 	"github.com/nalgeon/redka/internal/redis"
 )
 
-const (
-	RESPONSE = "OK"
-)
-
-// Returns the server's liveliness response.
+// Changes the selected database.
+// SELECT index
 // https://redis.io/commands/select
 type Select struct {
 	redis.BaseCmd
@@ -28,6 +25,6 @@ func ParseSelect(b redis.BaseCmd) (Select, error) {
 }
 
 func (c Select) Run(w redis.Writer, _ redis.Redka) (any, error) {
-	w.WriteBulkString(RESPONSE)
-	return RESPONSE, nil
+	w.WriteString("OK")
+	return true, nil
 }
