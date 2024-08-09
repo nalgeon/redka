@@ -6,6 +6,7 @@ import (
 )
 
 // Changes the selected database.
+// Since Redka doesn't support multiple databases, this command is a no-op.
 // SELECT index
 // https://redis.io/commands/select
 type Select struct {
