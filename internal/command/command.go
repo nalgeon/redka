@@ -28,6 +28,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return server.ParseDBSize(b)
 	case "flushdb":
 		return key.ParseFlushDB(b)
+	case "flushall":
+		return key.ParseFlushDB(b)
 	case "info":
 		return server.ParseOK(b)
 	case "lolwut":
@@ -38,6 +40,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return conn.ParseEcho(b)
 	case "ping":
 		return conn.ParsePing(b)
+	case "select":
+		return conn.ParseSelect(b)
 
 	// key
 	case "del":
