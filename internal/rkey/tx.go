@@ -84,6 +84,7 @@ const (
 	where
 		id > ? and key glob ? and (type = ? or true)
 		and (etime is null or etime > ?)
+	order by id asc
 	limit ?`
 )
 
@@ -347,10 +348,8 @@ func (tx *Tx) Scan(cursor int, pattern string, ktype core.TypeID, count int) (Sc
 
 	// Select the maximum ID.
 	maxID := 0
-	for _, key := range keys {
-		if key.ID > maxID {
-			maxID = key.ID
-		}
+	if len(keys) > 0 {
+		maxID = keys[len(keys)-1].ID
 	}
 
 	return ScanResult{maxID, keys}, nil
