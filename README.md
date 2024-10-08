@@ -53,12 +53,10 @@ Redka would not be possible without these great projects and their creators:
 
 Logo font by [Ek Type](https://ektype.in/).
 
-## Funding
+## Author
 
 Redka is mostly a [one-man](https://antonz.org/) project, not backed by a VC fund or anything.
 
-If you find Redka useful, please consider sponsoring it on GitHub. It really helps to move the project forward.
-
-♥ [Become a sponsor](https://github.com/sponsors/nalgeon) to support Redka.
+If you find Redka useful, please star it on GitHub and spread the word among your peers. It really helps to move the project forward.
 
 ★ [Subscribe](https://antonz.org/subscribe/) to stay on top of new features.
