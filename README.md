@@ -53,7 +53,7 @@ Redka would not be possible without these great projects and their creators:
 
 Logo font by [Ek Type](https://ektype.in/).
 
-## Author
+## Support
 
 Redka is mostly a [one-man](https://antonz.org/) project, not backed by a VC fund or anything.
 
