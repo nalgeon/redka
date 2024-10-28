@@ -343,8 +343,21 @@ func (cmd Eval) Run(w redis.Writer, red redis.Redka) (any, error) {
 	L := lua.NewState()
 	defer L.Close()
 
+	keys := L.CreateTable(len(cmd.keys), 0)
+	for _, k := range cmd.keys {
+		keys.Append(lua.LString(k))
+	}
+
+	args := L.CreateTable(len(cmd.args), 0)
+	for _, a := range cmd.args {
+		args.Append(lua.LString(a))
+	}
+
 	tb := L.NewTable()
 	tb.RawSetString("call", L.NewFunction(call(red)))
+
+	L.SetGlobal("KEYS", keys)
+	L.SetGlobal("ARGV", args)
 	L.SetGlobal("redis", tb)
 
 	if err := L.DoString(cmd.script); err != nil {
