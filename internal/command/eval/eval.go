@@ -1,12 +1,10 @@
-// Package command implements Redis-compatible commands
-// for operations on data structures.
-package command
+package eval
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/nalgeon/redka/internal/command/conn"
-	"github.com/nalgeon/redka/internal/command/eval"
 	"github.com/nalgeon/redka/internal/command/hash"
 	"github.com/nalgeon/redka/internal/command/key"
 	"github.com/nalgeon/redka/internal/command/list"
@@ -14,11 +12,36 @@ import (
 	"github.com/nalgeon/redka/internal/command/set"
 	str "github.com/nalgeon/redka/internal/command/string"
 	"github.com/nalgeon/redka/internal/command/zset"
+	"github.com/nalgeon/redka/internal/parser"
 	"github.com/nalgeon/redka/internal/redis"
+	lua "github.com/yuin/gopher-lua"
 )
 
-// Parse parses a text representation of a command into a Cmd.
-func Parse(args [][]byte) (redis.Cmd, error) {
+type Eval struct {
+	redis.BaseCmd
+	script string
+	keys   []string
+	args   []string
+}
+
+func ParseEval(b redis.BaseCmd) (Eval, error) {
+	cmd := Eval{BaseCmd: b}
+	var nKeys int
+	err := parser.New(
+		parser.String(&cmd.script),
+		parser.Int(&nKeys),
+		parser.StringsN(&cmd.keys, &nKeys),
+		parser.Strings(&cmd.args),
+	).Required(2).Run(cmd.Args())
+	if err != nil {
+		return Eval{}, err
+	}
+	return cmd, nil
+}
+
+// Importing command.Parse is a circualr dependency, so we copy the function here.
+// Not sure what is the best way to handle this.
+func parse(args [][]byte) (redis.Cmd, error) {
 	name := strings.ToLower(string(args[0]))
 	b := redis.NewBaseCmd(args)
 	switch name {
@@ -232,9 +255,105 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 
 	// eval
 	case "eval":
-		return eval.ParseEval(b)
+		return ParseEval(b)
 
 	default:
 		return server.ParseUnknown(b)
 	}
+}
+
+// A writer to write the results of the command back to the lua state.
+type writer struct {
+	L          *lua.LState
+	numResults int
+}
+
+func (w *writer) WriteError(msg string) {
+	w.L.Error(lua.LString(msg), 0)
+	w.numResults++
+}
+func (w *writer) WriteString(str string) {
+	w.L.Push(lua.LString(str))
+	w.numResults++
+}
+func (w *writer) WriteBulk(bulk []byte) {
+	w.L.Push(lua.LString(string(bulk)))
+	w.numResults++
+}
+func (w *writer) WriteBulkString(bulk string) {
+	w.L.Push(lua.LString(bulk))
+	w.numResults++
+}
+func (w *writer) WriteInt(num int) {
+	w.L.Push(lua.LNumber(num))
+	w.numResults++
+}
+func (w *writer) WriteInt64(num int64) {
+	w.L.Push(lua.LNumber(num))
+	w.numResults++
+}
+func (w *writer) WriteUint64(num uint64) {
+	w.L.Push(lua.LNumber(num))
+	w.numResults++
+}
+func (w *writer) WriteArray(count int) {
+	// do nothing
+}
+func (w *writer) WriteNull() {
+	w.L.Push(lua.LNil)
+	w.numResults++
+}
+func (w *writer) WriteRaw(data []byte) {
+	w.L.Push(lua.LString(string(data)))
+	w.numResults++
+}
+func (w *writer) WriteAny(v any) {
+	w.L.Push(lua.LString(fmt.Sprintf("%v", v)))
+	w.numResults++
+}
+
+func call(red redis.Redka) func(*lua.LState) int {
+	return func(L *lua.LState) int {
+		n := L.GetTop()
+		args := make([][]byte, n)
+		for i := 0; i < n; i++ {
+			args[i] = []byte(L.ToString(i + 1))
+		}
+
+		cmd, err := parse(args)
+
+		if err != nil {
+			L.Error(lua.LString(err.Error()), 0)
+			return 1
+		}
+
+		w := &writer{L, 0}
+
+		_, err = cmd.Run(w, red)
+		if err != nil {
+			L.Error(lua.LString(err.Error()), 0)
+			return 1
+		}
+
+		return w.numResults
+	}
+}
+
+func (cmd Eval) Run(w redis.Writer, red redis.Redka) (any, error) {
+	L := lua.NewState()
+	defer L.Close()
+
+	tb := L.NewTable()
+	tb.RawSetString("call", L.NewFunction(call(red)))
+	L.SetGlobal("redis", tb)
+
+	if err := L.DoString(cmd.script); err != nil {
+		w.WriteError(cmd.Error(err))
+		return nil, err
+	}
+
+	// This needs some work as the lua code need not return a string.
+	// -1 takes the from the top of the stack.
+	w.WriteString(L.ToString(-1))
+	return nil, nil
 }
