@@ -339,6 +339,40 @@ func call(red redis.Redka) func(*lua.LState) int {
 	}
 }
 
+// This is probably incomplete.
+func writeResult(w redis.Writer, v lua.LValue) any {
+	if v == lua.LNil {
+		w.WriteNull()
+		return nil
+	}
+
+	if str, ok := v.(lua.LString); ok {
+		s := string(str)
+		w.WriteString(s)
+		return s
+	}
+
+	if num, ok := v.(lua.LNumber); ok {
+		n := int(num)
+		w.WriteInt(n)
+		return n
+	}
+
+	if tb, ok := v.(*lua.LTable); ok {
+		n := tb.Len()
+		w.WriteArray(n)
+		r := make([]any, n)
+		tb.ForEach(func(k, v lua.LValue) {
+			i := int(k.(lua.LNumber))
+			r[i-1] = writeResult(w, v)
+		})
+		return r
+	}
+
+	w.WriteNull()
+	return nil
+}
+
 func (cmd Eval) Run(w redis.Writer, red redis.Redka) (any, error) {
 	L := lua.NewState()
 	defer L.Close()
@@ -365,8 +399,20 @@ func (cmd Eval) Run(w redis.Writer, red redis.Redka) (any, error) {
 		return nil, err
 	}
 
-	// This needs some work as the lua code need not return a string.
-	// -1 takes the from the top of the stack.
-	w.WriteString(L.ToString(-1))
-	return nil, nil
+	n := L.GetTop()
+
+	if n == 0 {
+		w.WriteNull()
+		return nil, nil
+	} else if n == 1 {
+		r := writeResult(w, L.Get(n))
+		return r, nil
+	} else {
+		w.WriteArray(n)
+		r := make([]any, n)
+		for i := 0; i < n; i++ {
+			r[i] = writeResult(w, L.Get(i+1))
+		}
+		return r, nil
+	}
 }
