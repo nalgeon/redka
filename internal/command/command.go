@@ -126,6 +126,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 		return str.ParseSetEX(b, 1000)
 	case "setnx":
 		return str.ParseSetNX(b)
+	case "strlen":
+		return str.ParseStrlen(b)
 
 	// hash
 	case "hdel":
