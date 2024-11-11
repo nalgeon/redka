@@ -26,7 +26,7 @@ func ExampleOpenRead() {
 	if err != nil {
 		panic(err)
 	}
-	db.Str().Set("name", "alice")
+	_ = db.Str().Set("name", "alice")
 	db.Close()
 
 	// open a read-only database
@@ -89,6 +89,7 @@ func ExampleDB_Key() {
 	defer db.Close()
 
 	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+	_ = db.Str().Set("city", "paris")
 
 	key, _ := db.Key().Get("name")
 	fmt.Printf("key=%v, type=%v, version=%v, exists=%v\n",
@@ -98,9 +99,17 @@ func ExampleDB_Key() {
 	fmt.Printf("key=%v, type=%v, version=%v, exists=%v\n",
 		key.Key, key.TypeName(), key.Version, key.Exists())
 
+	scan, _ := db.Key().Scan(0, "*", redka.TypeString, 100)
+	fmt.Print("keys:")
+	for _, key := range scan.Keys {
+		fmt.Print(" ", key.Key)
+	}
+	fmt.Println()
+
 	// Output:
 	// key=name, type=string, version=1, exists=true
 	// key=, type=unknown, version=0, exists=false
+	// keys: name city
 }
 
 func ExampleDB_Str() {

@@ -25,6 +25,19 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
+// A TypeID identifies the type of the key and thus
+// the data structure of the value with that key.
+type TypeID = core.TypeID
+
+const (
+	TypeAny    = core.TypeAny
+	TypeString = core.TypeString
+	TypeList   = core.TypeList
+	TypeSet    = core.TypeSet
+	TypeHash   = core.TypeHash
+	TypeZSet   = core.TypeZSet
+)
+
 // Common errors returned by data structure methods.
 var (
 	ErrKeyType   = core.ErrKeyType   // key type mismatch
