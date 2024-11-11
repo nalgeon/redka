@@ -24,6 +24,8 @@ func Parse(args [][]byte) (redis.Cmd, error) {
 	// server
 	case "command":
 		return server.ParseOK(b)
+	case "config":
+		return server.ParseConfig(b)
 	case "dbsize":
 		return server.ParseDBSize(b)
 	case "flushdb":
