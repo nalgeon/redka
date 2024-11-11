@@ -18,10 +18,11 @@ PSETEX       DB.Str().SetExpires    Sets the value and expiration time (in ms) o
 SET          DB.Str().Set           Sets the value of a key.
 SETEX        DB.Str().SetExpires    Sets the value and expiration (in sec) time of a key.
 SETNX        DB.Str().SetWith       Sets the value of a key when the key doesn't exist.
+STRLEN       DB.Str().Get           Returns the length of a value in bytes.
 ```
 
 The following string-related commands are not planned for 1.0:
 
 ```
-APPEND  GETDEL  GETEX  GETRANGE  LCS  MSETNX  SETRANGE  STRLEN  SUBSTR
+APPEND  GETDEL  GETEX  GETRANGE  LCS  MSETNX  SETRANGE  SUBSTR
 ```
