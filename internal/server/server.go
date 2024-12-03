@@ -11,6 +11,7 @@ import (
 
 // Server represents a Redka server.
 type Server struct {
+	net  string
 	addr string
 	srv  *redcon.Server
 	db   *redka.DB
@@ -18,7 +19,7 @@ type Server struct {
 }
 
 // New creates a new Redka server.
-func New(addr string, db *redka.DB) *Server {
+func New(net string, addr string, db *redka.DB) *Server {
 	handler := createHandlers(db)
 	accept := func(conn redcon.Conn) bool {
 		slog.Info("accept connection", "client", conn.RemoteAddr())
@@ -31,9 +32,10 @@ func New(addr string, db *redka.DB) *Server {
 			slog.Debug("close connection", "client", conn.RemoteAddr())
 		}
 	}
-	return &Server{
+        return &Server{
+                net: net,
 		addr: addr,
-		srv:  redcon.NewServer(addr, handler, accept, closed),
+		srv:  redcon.NewServerNetwork(net, addr, handler, accept, closed),
 		db:   db,
 		wg:   &sync.WaitGroup{},
 	}

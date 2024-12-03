@@ -44,6 +44,7 @@ pragma foreign_keys = on;`
 type Config struct {
 	Host    string
 	Port    string
+	FIFO    string
 	Path    string
 	Verbose bool
 }
@@ -62,6 +63,7 @@ func init() {
 	}
 	flag.StringVar(&config.Host, "h", "localhost", "server host")
 	flag.StringVar(&config.Port, "p", "6379", "server port")
+	flag.StringVar(&config.FIFO, "F", "", "server FIFO")
 	flag.BoolVar(&config.Verbose, "v", false, "verbose logging")
 
 	// Register an SQLite driver with custom pragmas.
@@ -120,7 +122,13 @@ func main() {
 	slog.Info("data source", "path", config.Path)
 
 	// Start the server.
-	srv := server.New(config.Addr(), db)
+
+        var srv *server.Server
+        if config.FIFO == "" {
+	  srv = server.New("tcp", config.Addr(), db)
+        } else {
+	  srv = server.New("unix", config.FIFO, db)
+        }
 	srv.Start()
 
 	// Wait for a shutdown signal.
