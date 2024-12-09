@@ -32,8 +32,8 @@ func New(net string, addr string, db *redka.DB) *Server {
 			slog.Debug("close connection", "client", conn.RemoteAddr())
 		}
 	}
-        return &Server{
-                net: net,
+	return &Server{
+		net:  net,
 		addr: addr,
 		srv:  redcon.NewServerNetwork(net, addr, handler, accept, closed),
 		db:   db,

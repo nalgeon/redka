@@ -3,7 +3,7 @@
 Redka server is a single-file binary. After [downloading and unpacking](install-standalone.md) the release asset, run it as follows:
 
 ```
-redka [-h host] [-p port] [db-path]
+redka [-h host] [-p port] [-s unix-socket] [db-path]
 ```
 
 For example:
@@ -12,9 +12,10 @@ For example:
 ./redka
 ./redka data.db
 ./redka -h 0.0.0.0 -p 6379 data.db
+./redka -s /tmp/redka.sock data.db
 ```
 
-Server defaults are host `localhost`, port `6379` and empty DB path.
+Server defaults are host `localhost`, port `6379` and empty DB path. The unix socket path, if given, overrides the host/port arguments.
 
 Running without a DB path creates an in-memory database. The data is not persisted in this case, and will be gone when the server is stopped.
 
