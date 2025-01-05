@@ -59,4 +59,6 @@ Redka is mostly a [one-man](https://antonz.org/) project, not backed by a VC fun
 
 If you find Redka useful, please star it on GitHub and spread the word among your peers. It really helps to move the project forward.
 
+If you use Redka for commercial purposes, consider [purchasing support](https://antonz.gumroad.com/l/redka-plus).
+
 ★ [Subscribe](https://antonz.org/subscribe/) to stay on top of new features.
