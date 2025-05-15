@@ -121,14 +121,21 @@ func main() {
 	}
 	slog.Info("data source", "path", config.Path)
 
-	// Start the server.
+	// Create the server.
 	var srv *server.Server
 	if config.Sock != "" {
 		srv = server.New("unix", config.Sock, db)
 	} else {
 		srv = server.New("tcp", config.Addr(), db)
 	}
-	srv.Start()
+
+	// Start the server.
+	go func() {
+		if err := srv.Start(); err != nil {
+			slog.Error("start server", "error", err)
+			os.Exit(1)
+		}
+	}()
 
 	// Wait for a shutdown signal.
 	<-ctx.Done()

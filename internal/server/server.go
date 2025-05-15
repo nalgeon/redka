@@ -2,8 +2,8 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/nalgeon/redka"
 	"github.com/tidwall/redcon"
@@ -15,7 +15,6 @@ type Server struct {
 	addr string
 	srv  *redcon.Server
 	db   *redka.DB
-	wg   *sync.WaitGroup
 }
 
 // New creates a new Redka server.
@@ -37,37 +36,32 @@ func New(net string, addr string, db *redka.DB) *Server {
 		addr: addr,
 		srv:  redcon.NewServerNetwork(net, addr, handler, accept, closed),
 		db:   db,
-		wg:   &sync.WaitGroup{},
 	}
 }
 
 // Start starts the server.
-func (s *Server) Start() {
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-		slog.Info("serve connections", "addr", s.addr)
-		err := s.srv.ListenAndServe()
-		if err != nil {
-			slog.Error("serve connections", "error", err)
-		}
-	}()
+func (s *Server) Start() error {
+	slog.Info("start redcon server", "addr", s.addr)
+	err := s.srv.ListenAndServe()
+	if err != nil {
+		return fmt.Errorf("start redcon server: %w", err)
+	}
+	return nil
 }
 
 // Stop stops the server.
 func (s *Server) Stop() error {
 	err := s.srv.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("stop redcon server: %w", err)
 	}
 	slog.Debug("close redcon server", "addr", s.addr)
 
 	err = s.db.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("close database: %w", err)
 	}
 	slog.Debug("close database")
 
-	s.wg.Wait()
 	return nil
 }
