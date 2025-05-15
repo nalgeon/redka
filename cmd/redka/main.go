@@ -130,17 +130,46 @@ func main() {
 	}
 
 	// Start the server.
+	var errCh = make(chan error, 1)
 	go func() {
 		if err := srv.Start(); err != nil {
-			slog.Error("start server", "error", err)
-			os.Exit(1)
+			errCh <- fmt.Errorf("start server: %w", err)
 		}
 	}()
 
-	// Wait for a shutdown signal.
-	<-ctx.Done()
+	// Start the debug server.
+	var debugSrv *server.DebugServer
+	if config.Verbose {
+		debugSrv = server.NewDebug("localhost", 6060)
+		go func() {
+			if err := debugSrv.Start(); err != nil {
+				errCh <- fmt.Errorf("start debug server: %w", err)
+			}
+		}()
+	}
 
-	// Stop the server.
+	// Wait for a shutdown signal or a startup error.
+	select {
+	case <-ctx.Done():
+		shutdown(srv, debugSrv)
+	case err := <-errCh:
+		slog.Error("startup", "error", err)
+		shutdown(srv, debugSrv)
+		os.Exit(1)
+	}
+}
+
+// shutdown stops the main server and the debug server.
+func shutdown(srv *server.Server, debugSrv *server.DebugServer) {
+	// Stop the debug server.
+	if debugSrv != nil {
+		if err := debugSrv.Stop(); err != nil {
+			slog.Error("stop debug server", "error", err)
+		}
+		slog.Info("stop debug server")
+	}
+
+	// Stop the main server.
 	if err := srv.Stop(); err != nil {
 		slog.Error("stop server", "error", err)
 	}
