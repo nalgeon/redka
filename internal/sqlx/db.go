@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // Database schema version.
@@ -23,25 +24,34 @@ var DefaultPragma = map[string]string{
 	"foreign_keys": "on",
 }
 
+// Options is the configuration for the database.
+type Options struct {
+	// Options to set on the database connection.
+	Pragma map[string]string
+	// Timeout for database operations.
+	Timeout time.Duration
+}
+
 // DB is a database handle.
 // Has separate connection pools for read-write and read-only operations.
 type DB struct {
-	RW *sql.DB // read-write handle
-	RO *sql.DB // read-only handle
+	RW      *sql.DB       // read-write handle
+	RO      *sql.DB       // read-only handle
+	Timeout time.Duration // transaction timeout
 }
 
 // Open creates a new database handle.
 // Creates the database schema if necessary.
-func Open(rw *sql.DB, ro *sql.DB, pragma map[string]string) (*DB, error) {
-	d := New(rw, ro)
-	err := d.init(pragma)
+func Open(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
+	d := New(rw, ro, opts.Timeout)
+	err := d.init(opts.Pragma)
 	return d, err
 }
 
 // newSqlDB creates a new database handle.
 // Like openSQL, but does not create the database schema.
-func New(rw *sql.DB, ro *sql.DB) *DB {
-	d := &DB{RW: rw, RO: ro}
+func New(rw *sql.DB, ro *sql.DB, timeout time.Duration) *DB {
+	d := &DB{RW: rw, RO: ro, Timeout: timeout}
 	return d
 }
 

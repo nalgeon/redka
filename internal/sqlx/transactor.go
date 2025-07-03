@@ -19,7 +19,9 @@ func NewTransactor[T any](db *DB, newTx func(Tx) T) *Transactor[T] {
 
 // Update executes a function within a writable transaction.
 func (t *Transactor[T]) Update(f func(tx T) error) error {
-	return t.UpdateContext(context.Background(), f)
+	ctx, cancel := context.WithTimeout(context.Background(), t.db.Timeout)
+	defer cancel()
+	return t.UpdateContext(ctx, f)
 }
 
 // UpdateContext executes a function within a writable transaction.
@@ -29,7 +31,9 @@ func (t *Transactor[T]) UpdateContext(ctx context.Context, f func(tx T) error) e
 
 // View executes a function within a read-only transaction.
 func (t *Transactor[T]) View(f func(tx T) error) error {
-	return t.ViewContext(context.Background(), f)
+	ctx, cancel := context.WithTimeout(context.Background(), t.db.Timeout)
+	defer cancel()
+	return t.ViewContext(ctx, f)
 }
 
 // ViewContext executes a function within a read-only transaction.

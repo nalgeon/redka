@@ -61,7 +61,7 @@ type Options struct {
 	// SQL driver name.
 	// If empty, uses "sqlite3".
 	DriverName string
-	// SQL pragmas to set on the database connection.
+	// Options to set on the database connection.
 	// If nil, uses the default pragmas:
 	//  - journal_mode=wal
 	//  - synchronous=normal
@@ -69,6 +69,8 @@ type Options struct {
 	//  - mmap_size=268435456
 	//  - foreign_keys=on
 	Pragma map[string]string
+	// Timeout for database operations. Default is 5 seconds.
+	Timeout time.Duration
 	// Logger for the database. If nil, uses a silent logger.
 	Logger *slog.Logger
 
@@ -79,6 +81,7 @@ type Options struct {
 var defaultOptions = Options{
 	DriverName: "sqlite3",
 	Pragma:     sqlx.DefaultPragma,
+	Timeout:    5 * time.Second,
 	Logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 }
 
@@ -127,7 +130,8 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	// Create the database-backed repository.
-	sdb, err := sqlx.Open(rw, ro, opts.Pragma)
+	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout}
+	sdb, err := sqlx.Open(rw, ro, sopts)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +153,7 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 	}
 
 	// Create the database-backed repository.
-	sdb := sqlx.New(db, db)
+	sdb := sqlx.New(db, db, opts.Timeout)
 	return new(sdb, opts)
 }
 
@@ -158,7 +162,8 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 // The opts parameter is optional. If nil, uses default options.
 func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
-	sdb, err := sqlx.Open(rw, ro, opts.Pragma)
+	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout}
+	sdb, err := sqlx.Open(rw, ro, sopts)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +174,7 @@ func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 	opts.readonly = true
-	sdb := sqlx.New(db, db)
+	sdb := sqlx.New(db, db, opts.Timeout)
 	return new(sdb, opts)
 }
 
@@ -385,6 +390,9 @@ func applyOptions(opts Options, custom *Options) *Options {
 	}
 	if custom.Pragma != nil {
 		opts.Pragma = custom.Pragma
+	}
+	if custom.Timeout != 0 {
+		opts.Timeout = custom.Timeout
 	}
 	if custom.Logger != nil {
 		opts.Logger = custom.Logger

@@ -1,6 +1,7 @@
 package redka_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -239,8 +240,8 @@ func TestOpenDB(t *testing.T) {
 	testx.AssertEqual(t, n, 0)
 }
 
-func TestDBView(t *testing.T) {
-	db := getDB(t)
+func TestDB_View(t *testing.T) {
+	db := getDB(t, nil)
 	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
@@ -263,8 +264,8 @@ func TestDBView(t *testing.T) {
 	testx.AssertNoErr(t, err)
 }
 
-func TestDBUpdate(t *testing.T) {
-	db := getDB(t)
+func TestDB_Update(t *testing.T) {
+	db := getDB(t, nil)
 	defer db.Close()
 
 	err := db.Update(func(tx *redka.Tx) error {
@@ -295,8 +296,8 @@ func TestDBUpdate(t *testing.T) {
 	testx.AssertNoErr(t, err)
 }
 
-func TestDBUpdateRollback(t *testing.T) {
-	db := getDB(t)
+func TestRollback(t *testing.T) {
+	db := getDB(t, nil)
 	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
@@ -317,9 +318,16 @@ func TestDBUpdateRollback(t *testing.T) {
 	testx.AssertEqual(t, age.MustInt(), 25)
 }
 
-func getDB(tb testing.TB) *redka.DB {
+func TestTimeout(t *testing.T) {
+	db := getDB(t, &redka.Options{Timeout: time.Nanosecond})
+	defer db.Close()
+	err := db.Str().Set("name", "alice")
+	testx.AssertErr(t, err, context.DeadlineExceeded)
+}
+
+func getDB(tb testing.TB, opts *redka.Options) *redka.DB {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
+	db, err := redka.Open("file:/data.db?vfs=memdb", opts)
 	if err != nil {
 		tb.Fatal(err)
 	}
