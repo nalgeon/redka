@@ -14,14 +14,16 @@ import (
 // Use the hash repository to work with individual hashmaps
 // and their fields.
 type DB struct {
-	*sqlx.DB[*Tx]
+	ro     *sql.DB
+	rw     *sql.DB
+	update func(f func(tx *Tx) error) error
 }
 
 // New connects to the hash repository.
 // Does not create the database schema.
-func New(rw *sql.DB, ro *sql.DB) *DB {
-	d := sqlx.New(rw, ro, NewTx)
-	return &DB{d}
+func New(db *sqlx.DB) *DB {
+	actor := sqlx.NewTransactor(db, NewTx)
+	return &DB{ro: db.RO, rw: db.RW, update: actor.Update}
 }
 
 // Delete deletes one or more items from a hash.
@@ -30,7 +32,7 @@ func New(rw *sql.DB, ro *sql.DB) *DB {
 // Does nothing if the key does not exist or is not a hash.
 func (d *DB) Delete(key string, fields ...string) (int, error) {
 	var n int
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		n, err = tx.Delete(key, fields...)
 		return err
@@ -41,14 +43,14 @@ func (d *DB) Delete(key string, fields ...string) (int, error) {
 // Exists checks if a field exists in a hash.
 // If the key does not exist or is not a hash, returns false.
 func (d *DB) Exists(key, field string) (bool, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Exists(key, field)
 }
 
 // Fields returns all fields in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (d *DB) Fields(key string) ([]string, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Fields(key)
 }
 
@@ -56,7 +58,7 @@ func (d *DB) Fields(key string) ([]string, error) {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a hash, returns ErrNotFound.
 func (d *DB) Get(key, field string) (core.Value, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Get(key, field)
 }
 
@@ -64,7 +66,7 @@ func (d *DB) Get(key, field string) (core.Value, error) {
 // Ignores fields that do not exist and do not return them in the map.
 // If the key does not exist or is not a hash, returns an empty map.
 func (d *DB) GetMany(key string, fields ...string) (map[string]core.Value, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.GetMany(key, fields...)
 }
 
@@ -76,7 +78,7 @@ func (d *DB) GetMany(key string, fields ...string) (map[string]core.Value, error
 // If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) Incr(key, field string, delta int) (int, error) {
 	var val int
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		val, err = tx.Incr(key, field, delta)
 		return err
@@ -92,7 +94,7 @@ func (d *DB) Incr(key, field string, delta int) (int, error) {
 // If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) IncrFloat(key, field string, delta float64) (float64, error) {
 	var val float64
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		val, err = tx.IncrFloat(key, field, delta)
 		return err
@@ -103,14 +105,14 @@ func (d *DB) IncrFloat(key, field string, delta float64) (float64, error) {
 // Items returns a map of all fields and values in a hash.
 // If the key does not exist or is not a hash, returns an empty map.
 func (d *DB) Items(key string) (map[string]core.Value, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Items(key)
 }
 
 // Len returns the number of fields in a hash.
 // If the key does not exist or is not a hash, returns 0.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Len(key)
 }
 
@@ -121,7 +123,7 @@ func (d *DB) Len(key string) (int, error) {
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Scan(key, cursor, pattern, count)
 }
 
@@ -131,7 +133,7 @@ func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult
 // or an error occurs. If the key does not exist or is not a hash, stops immediately.
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Scanner(key, pattern, pageSize)
 }
 
@@ -141,7 +143,7 @@ func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
 // If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) Set(key, field string, value any) (bool, error) {
 	var created bool
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		created, err = tx.Set(key, field, value)
 		return err
@@ -155,7 +157,7 @@ func (d *DB) Set(key, field string, value any) (bool, error) {
 // If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) SetMany(key string, items map[string]any) (int, error) {
 	var n int
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		n, err = tx.SetMany(key, items)
 		return err
@@ -169,7 +171,7 @@ func (d *DB) SetMany(key string, items map[string]any) (int, error) {
 // If the key exists but is not a hash, returns ErrKeyType.
 func (d *DB) SetNotExists(key, field string, value any) (bool, error) {
 	var created bool
-	err := d.Update(func(tx *Tx) error {
+	err := d.update(func(tx *Tx) error {
 		var err error
 		created, err = tx.SetNotExists(key, field, value)
 		return err
@@ -180,6 +182,6 @@ func (d *DB) SetNotExists(key, field string, value any) (bool, error) {
 // Values returns all values in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (d *DB) Values(key string) ([]core.Value, error) {
-	tx := NewTx(d.RO)
+	tx := NewTx(d.ro)
 	return tx.Values(key)
 }

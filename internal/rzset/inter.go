@@ -70,7 +70,7 @@ func (c InterCmd) Max() InterCmd {
 // If any of the source keys do not exist or are not sets, returns an empty slice.
 func (c InterCmd) Run() ([]SetItem, error) {
 	if c.db != nil {
-		return c.run(c.db.RO)
+		return c.run(c.db.ro)
 	}
 	if c.tx != nil {
 		return c.run(c.tx.tx)
@@ -88,7 +88,7 @@ func (c InterCmd) Run() ([]SetItem, error) {
 func (c InterCmd) Store() (int, error) {
 	if c.db != nil {
 		var count int
-		err := c.db.Update(func(tx *Tx) error {
+		err := c.db.update(func(tx *Tx) error {
 			var err error
 			count, err = c.store(tx.tx)
 			return err

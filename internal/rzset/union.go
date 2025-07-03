@@ -69,7 +69,7 @@ func (c UnionCmd) Max() UnionCmd {
 // If no keys exist, returns a nil slice.
 func (c UnionCmd) Run() ([]SetItem, error) {
 	if c.db != nil {
-		return c.run(c.db.RO)
+		return c.run(c.db.ro)
 	}
 	if c.tx != nil {
 		return c.run(c.tx.tx)
@@ -88,7 +88,7 @@ func (c UnionCmd) Run() ([]SetItem, error) {
 func (c UnionCmd) Store() (int, error) {
 	if c.db != nil {
 		var count int
-		err := c.db.Update(func(tx *Tx) error {
+		err := c.db.update(func(tx *Tx) error {
 			var err error
 			count, err = c.store(tx.tx)
 			return err

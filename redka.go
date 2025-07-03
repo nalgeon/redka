@@ -88,7 +88,8 @@ var defaultOptions = Options{
 // DB is safe for concurrent use by multiple goroutines as long as you use
 // a single instance of DB throughout your program.
 type DB struct {
-	*sqlx.DB[*Tx]
+	sdb      *sqlx.DB
+	act      *sqlx.Transactor[*Tx]
 	hashDB   *rhash.DB
 	keyDB    *rkey.DB
 	listDB   *rlist.DB
@@ -126,7 +127,7 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	// Create the database-backed repository.
-	sdb, err := sqlx.Open(rw, ro, newTx, opts.Pragma)
+	sdb, err := sqlx.Open(rw, ro, opts.Pragma)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 	}
 
 	// Create the database-backed repository.
-	sdb := sqlx.New(db, db, newTx)
+	sdb := sqlx.New(db, db)
 	return new(sdb, opts)
 }
 
@@ -157,7 +158,7 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 // The opts parameter is optional. If nil, uses default options.
 func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
-	sdb, err := sqlx.Open(rw, ro, newTx, opts.Pragma)
+	sdb, err := sqlx.Open(rw, ro, opts.Pragma)
 	if err != nil {
 		return nil, err
 	}
@@ -168,20 +169,21 @@ func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 	opts.readonly = true
-	sdb := sqlx.New(db, db, newTx)
+	sdb := sqlx.New(db, db)
 	return new(sdb, opts)
 }
 
 // new creates a new database.
-func new(sdb *sqlx.DB[*Tx], opts *Options) (*DB, error) {
+func new(sdb *sqlx.DB, opts *Options) (*DB, error) {
 	rdb := &DB{
-		DB:       sdb,
-		hashDB:   rhash.New(sdb.RW, sdb.RO),
-		keyDB:    rkey.New(sdb.RW, sdb.RO),
-		listDB:   rlist.New(sdb.RW, sdb.RO),
-		setDB:    rset.New(sdb.RW, sdb.RO),
-		stringDB: rstring.New(sdb.RW, sdb.RO),
-		zsetDB:   rzset.New(sdb.RW, sdb.RO),
+		sdb:      sdb,
+		act:      sqlx.NewTransactor(sdb, newTx),
+		hashDB:   rhash.New(sdb),
+		keyDB:    rkey.New(sdb),
+		listDB:   rlist.New(sdb),
+		setDB:    rset.New(sdb),
+		stringDB: rstring.New(sdb),
+		zsetDB:   rzset.New(sdb),
 		log:      opts.Logger,
 	}
 	if !opts.readonly {
@@ -242,7 +244,7 @@ func (db *DB) ZSet() *rzset.DB {
 //
 // [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) Update(f func(tx *Tx) error) error {
-	return db.DB.Update(f)
+	return db.act.Update(f)
 }
 
 // UpdateContext executes a function within a writable transaction.
@@ -250,7 +252,7 @@ func (db *DB) Update(f func(tx *Tx) error) error {
 //
 // [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) UpdateContext(ctx context.Context, f func(tx *Tx) error) error {
-	return db.DB.UpdateContext(ctx, f)
+	return db.act.UpdateContext(ctx, f)
 }
 
 // View executes a function within a read-only transaction.
@@ -258,7 +260,7 @@ func (db *DB) UpdateContext(ctx context.Context, f func(tx *Tx) error) error {
 //
 // [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) View(f func(tx *Tx) error) error {
-	return db.DB.View(f)
+	return db.act.View(f)
 }
 
 // ViewContext executes a function within a read-only transaction.
@@ -266,7 +268,7 @@ func (db *DB) View(f func(tx *Tx) error) error {
 //
 // [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) ViewContext(ctx context.Context, f func(tx *Tx) error) error {
-	return db.DB.ViewContext(ctx, f)
+	return db.act.ViewContext(ctx, f)
 }
 
 // Close closes the database.
@@ -276,10 +278,10 @@ func (db *DB) Close() error {
 		db.bg.Stop()
 	}
 	var allErr error
-	if err := db.RW.Close(); err != nil {
+	if err := db.sdb.RW.Close(); err != nil {
 		allErr = err
 	}
-	if err := db.RO.Close(); allErr == nil {
+	if err := db.sdb.RO.Close(); allErr == nil {
 		allErr = err
 	}
 	return allErr

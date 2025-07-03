@@ -1,13 +1,11 @@
 package sqlx
 
 import (
-	"context"
 	"database/sql"
 	_ "embed"
 	"net/url"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 // Database schema version.
@@ -25,54 +23,30 @@ var DefaultPragma = map[string]string{
 	"foreign_keys": "on",
 }
 
-// DB is a generic database-backed repository
-// with a domain-specific transaction of type T.
-// Has separate database handles for read-write
-// and read-only operations.
-type DB[T any] struct {
-	RW   *sql.DB    // read-write handle
-	RO   *sql.DB    // read-only handle
-	newT func(Tx) T // creates a new domain transaction
-	sync.Mutex
+// DB is a database handle.
+// Has separate connection pools for read-write and read-only operations.
+type DB struct {
+	RW *sql.DB // read-write handle
+	RO *sql.DB // read-only handle
 }
 
-// Open creates a new database-backed repository.
+// Open creates a new database handle.
 // Creates the database schema if necessary.
-func Open[T any](rw *sql.DB, ro *sql.DB, newT func(Tx) T, pragma map[string]string) (*DB[T], error) {
-	d := New(rw, ro, newT)
+func Open(rw *sql.DB, ro *sql.DB, pragma map[string]string) (*DB, error) {
+	d := New(rw, ro)
 	err := d.init(pragma)
 	return d, err
 }
 
-// newSqlDB creates a new database-backed repository.
+// newSqlDB creates a new database handle.
 // Like openSQL, but does not create the database schema.
-func New[T any](rw *sql.DB, ro *sql.DB, newT func(Tx) T) *DB[T] {
-	d := &DB[T]{RW: rw, RO: ro, newT: newT}
+func New(rw *sql.DB, ro *sql.DB) *DB {
+	d := &DB{RW: rw, RO: ro}
 	return d
 }
 
-// Update executes a function within a writable transaction.
-func (d *DB[T]) Update(f func(tx T) error) error {
-	return d.UpdateContext(context.Background(), f)
-}
-
-// UpdateContext executes a function within a writable transaction.
-func (d *DB[T]) UpdateContext(ctx context.Context, f func(tx T) error) error {
-	return d.execTx(ctx, true, f)
-}
-
-// View executes a function within a read-only transaction.
-func (d *DB[T]) View(f func(tx T) error) error {
-	return d.ViewContext(context.Background(), f)
-}
-
-// ViewContext executes a function within a read-only transaction.
-func (d *DB[T]) ViewContext(ctx context.Context, f func(tx T) error) error {
-	return d.execTx(ctx, false, f)
-}
-
 // Init sets the connection properties and creates the necessary tables.
-func (d *DB[T]) init(pragma map[string]string) error {
+func (d *DB) init(pragma map[string]string) error {
 	d.setNumConns()
 	err := d.applySettings(pragma)
 	if err != nil {
@@ -82,7 +56,7 @@ func (d *DB[T]) init(pragma map[string]string) error {
 }
 
 // setNumConns sets the number of connections.
-func (d *DB[T]) setNumConns() {
+func (d *DB) setNumConns() {
 	// For the read-only DB handle the number of open connections
 	// should be equal to the number of idle connections. Otherwise,
 	// the handle will keep opening and closing connections, severely
@@ -102,7 +76,7 @@ func (d *DB[T]) setNumConns() {
 }
 
 // applySettings applies the database settings.
-func (d *DB[T]) applySettings(pragma map[string]string) error {
+func (d *DB) applySettings(pragma map[string]string) error {
 	// Ideally, we'd only set the pragmas in the connection string
 	// (see [DataSource]), so we wouldn't need this function.
 	// But since the mattn driver does not support setting pragmas
@@ -140,32 +114,9 @@ func (d *DB[T]) applySettings(pragma map[string]string) error {
 }
 
 // createSchema creates the database schema.
-func (d *DB[T]) createSchema() error {
+func (d *DB) createSchema() error {
 	_, err := d.RW.Exec(sqlSchema)
 	return err
-}
-
-// execTx executes a function within a transaction.
-func (d *DB[T]) execTx(ctx context.Context, writable bool, f func(tx T) error) error {
-	var dtx *sql.Tx
-	var err error
-	if writable {
-		dtx, err = d.RW.BeginTx(ctx, nil)
-	} else {
-		dtx, err = d.RO.BeginTx(ctx, nil)
-	}
-
-	if err != nil {
-		return err
-	}
-	defer func() { _ = dtx.Rollback() }()
-
-	tx := d.newT(dtx)
-	err = f(tx)
-	if err != nil {
-		return err
-	}
-	return dtx.Commit()
 }
 
 // DataSource returns an SQLite connection string

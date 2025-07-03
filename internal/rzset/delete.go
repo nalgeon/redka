@@ -65,7 +65,7 @@ func (c DeleteCmd) ByScore(start, stop float64) DeleteCmd {
 func (c DeleteCmd) Run() (int, error) {
 	if c.db != nil {
 		var n int
-		err := c.db.Update(func(tx *Tx) error {
+		err := c.db.update(func(tx *Tx) error {
 			var err error
 			n, err = c.run(tx.tx)
 			return err

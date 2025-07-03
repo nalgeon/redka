@@ -83,7 +83,7 @@ func (c SetCmd) KeepTTL() SetCmd {
 func (c SetCmd) Run() (out SetOut, err error) {
 	if c.db != nil {
 		var out SetOut
-		err := c.db.Update(func(tx *Tx) error {
+		err := c.db.update(func(tx *Tx) error {
 			var err error
 			out, err = c.run(tx.tx)
 			return err

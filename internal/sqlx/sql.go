@@ -23,6 +23,7 @@ const (
 )
 
 // Tx is a database transaction (or a transaction-like object).
+// This is an abstraction over sql.Tx and sql.DB.
 type Tx interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
