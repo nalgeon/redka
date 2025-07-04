@@ -30,6 +30,8 @@ type Options struct {
 	Pragma map[string]string
 	// Timeout for database operations.
 	Timeout time.Duration
+	// Whether the database is read-only.
+	ReadOnly bool
 }
 
 // DB is a database handle.
@@ -43,30 +45,25 @@ type DB struct {
 // Open creates a new database handle.
 // Creates the database schema if necessary.
 func Open(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
-	d := New(rw, ro, opts.Timeout)
-	err := d.init(opts.Pragma)
+	d, err := New(rw, ro, opts)
+	if err != nil {
+		return nil, err
+	}
+	err = d.createSchema()
 	return d, err
 }
 
 // newSqlDB creates a new database handle.
 // Like openSQL, but does not create the database schema.
-func New(rw *sql.DB, ro *sql.DB, timeout time.Duration) *DB {
-	d := &DB{RW: rw, RO: ro, Timeout: timeout}
-	return d
-}
-
-// Init sets the connection properties and creates the necessary tables.
-func (d *DB) init(pragma map[string]string) error {
-	d.setNumConns()
-	err := d.applySettings(pragma)
-	if err != nil {
-		return err
-	}
-	return d.createSchema()
+func New(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
+	d := &DB{RW: rw, RO: ro, Timeout: opts.Timeout}
+	d.setNumConns(opts.ReadOnly)
+	err := d.applySettings(opts.Pragma)
+	return d, err
 }
 
 // setNumConns sets the number of connections.
-func (d *DB) setNumConns() {
+func (d *DB) setNumConns(readOnly bool) {
 	// For the read-only DB handle the number of open connections
 	// should be equal to the number of idle connections. Otherwise,
 	// the handle will keep opening and closing connections, severely
@@ -79,10 +76,12 @@ func (d *DB) setNumConns() {
 	d.RO.SetMaxOpenConns(nConns)
 	d.RO.SetMaxIdleConns(nConns)
 
-	// SQLite allows only one writer at a time. Setting the maximum
-	// number of DB connections to 1 for the read-write DB handle
-	// is the best and fastest way to enforce this.
-	d.RW.SetMaxOpenConns(1)
+	if !readOnly {
+		// SQLite allows only one writer at a time. Setting the maximum
+		// number of DB connections to 1 for the read-write DB handle
+		// is the best and fastest way to enforce this.
+		d.RW.SetMaxOpenConns(1)
+	}
 }
 
 // applySettings applies the database settings.
@@ -131,7 +130,7 @@ func (d *DB) createSchema() error {
 
 // DataSource returns an SQLite connection string
 // for a read-only or read-write mode.
-func DataSource(path string, writable bool, pragma map[string]string) string {
+func DataSource(path string, readOnly bool, pragma map[string]string) string {
 	var ds string
 
 	// Parse the parameters.
@@ -157,15 +156,17 @@ func DataSource(path string, writable bool, pragma map[string]string) string {
 	params.Set("_mutex", "no")
 
 	// Set the connection mode (writable or read-only).
-	if writable {
+	if readOnly {
+		if params.Get("mode") != "memory" {
+			// Enable read-only mode for read-only databases
+			// (except for in-memory databases, which are always writable).
+			// https://www.sqlite.org/c3ref/open.html
+			params.Set("mode", "ro")
+		}
+	} else {
 		// Enable IMMEDIATE transactions for writable databases.
 		// https://www.sqlite.org/lang_transaction.html
 		params.Set("_txlock", "immediate")
-	} else if params.Get("mode") != "memory" {
-		// Enable read-only mode for read-only databases
-		// (except for in-memory databases, which are always writable).
-		// https://www.sqlite.org/c3ref/open.html
-		params.Set("mode", "ro")
 	}
 
 	// Apply the pragma settings.

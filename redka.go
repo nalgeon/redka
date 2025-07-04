@@ -75,7 +75,7 @@ type Options struct {
 	Logger *slog.Logger
 
 	// If true, opens the database in read-only mode.
-	readonly bool
+	readOnly bool
 }
 
 var defaultOptions = Options{
@@ -116,14 +116,14 @@ func Open(path string, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 
 	// Open the read-write database handle.
-	dataSource := sqlx.DataSource(path, true, opts.Pragma)
+	dataSource := sqlx.DataSource(path, false, opts.Pragma)
 	rw, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Open the read-only database handle.
-	dataSource = sqlx.DataSource(path, false, opts.Pragma)
+	dataSource = sqlx.DataSource(path, true, opts.Pragma)
 	ro, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
@@ -143,17 +143,21 @@ func Open(path string, opts *Options) (*DB, error) {
 func OpenRead(path string, opts *Options) (*DB, error) {
 	// Apply the default options if necessary.
 	opts = applyOptions(defaultOptions, opts)
-	opts.readonly = true
+	opts.readOnly = true
 
 	// Open the read-only database handle.
-	dataSource := sqlx.DataSource(path, false, opts.Pragma)
+	dataSource := sqlx.DataSource(path, true, opts.Pragma)
 	db, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the database-backed repository.
-	sdb := sqlx.New(db, db, opts.Timeout)
+	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout, ReadOnly: true}
+	sdb, err := sqlx.New(db, db, sopts)
+	if err != nil {
+		return nil, err
+	}
 	return new(sdb, opts)
 }
 
@@ -173,8 +177,12 @@ func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 // OpenReadDB connects to an existing SQL database in read-only mode.
 func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
-	opts.readonly = true
-	sdb := sqlx.New(db, db, opts.Timeout)
+	opts.readOnly = true
+	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout, ReadOnly: true}
+	sdb, err := sqlx.New(db, db, sopts)
+	if err != nil {
+		return nil, err
+	}
 	return new(sdb, opts)
 }
 
@@ -191,7 +199,7 @@ func new(sdb *sqlx.DB, opts *Options) (*DB, error) {
 		zsetDB:   rzset.New(sdb),
 		log:      opts.Logger,
 	}
-	if !opts.readonly {
+	if !opts.readOnly {
 		rdb.bg = rdb.startBgManager()
 	}
 	return rdb, nil
