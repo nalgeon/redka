@@ -12,7 +12,6 @@ import (
 
 func TestCount(t *testing.T) {
 	db, kkey := getDB(t)
-	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
@@ -38,7 +37,6 @@ func TestCount(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -55,7 +53,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("some", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -72,7 +69,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("none", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -91,7 +87,6 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteAll(t *testing.T) {
 	db, kkey := getDB(t)
-	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
@@ -106,7 +101,6 @@ func TestDeleteAll(t *testing.T) {
 func TestDeleteExpired(t *testing.T) {
 	t.Run("delete all", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
 		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
@@ -121,7 +115,6 @@ func TestDeleteExpired(t *testing.T) {
 	})
 	t.Run("delete n", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
 		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
@@ -135,7 +128,6 @@ func TestDeleteExpired(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	db, kkey := getDB(t)
-	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
@@ -160,7 +152,6 @@ func TestExists(t *testing.T) {
 func TestExpire(t *testing.T) {
 	t.Run("expire", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -182,15 +173,13 @@ func TestExpire(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		err := kkey.Expire("name", 10*time.Second)
 		testx.AssertEqual(t, err, core.ErrNotFound)
 	})
 	t.Run("expire then set", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 
@@ -213,7 +202,6 @@ func TestExpire(t *testing.T) {
 func TestExpireAt(t *testing.T) {
 	t.Run("expire", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -235,8 +223,7 @@ func TestExpireAt(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		err := kkey.ExpireAt("name", time.Now().Add(10*time.Second))
 		testx.AssertEqual(t, err, core.ErrNotFound)
@@ -246,7 +233,6 @@ func TestExpireAt(t *testing.T) {
 func TestGet(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		now := time.Now().UnixMilli()
 		_ = db.Str().Set("name", "alice")
@@ -261,8 +247,7 @@ func TestGet(t *testing.T) {
 		testx.AssertEqual(t, key.MTime >= now, true)
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		key, err := kkey.Get("name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
@@ -272,7 +257,6 @@ func TestGet(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	db, kkey := getDB(t)
-	defer db.Close()
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
@@ -301,7 +285,6 @@ func TestKeys(t *testing.T) {
 func TestLen(t *testing.T) {
 	t.Run("len", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -311,8 +294,7 @@ func TestLen(t *testing.T) {
 		testx.AssertEqual(t, count, 2)
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		count, err := kkey.Len()
 		testx.AssertNoErr(t, err)
@@ -323,7 +305,6 @@ func TestLen(t *testing.T) {
 func TestPersist(t *testing.T) {
 	t.Run("persist", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -341,8 +322,7 @@ func TestPersist(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		err := kkey.Persist("name")
 		testx.AssertEqual(t, err, core.ErrNotFound)
@@ -352,7 +332,6 @@ func TestPersist(t *testing.T) {
 func TestRandom(t *testing.T) {
 	t.Run("random", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -364,8 +343,7 @@ func TestRandom(t *testing.T) {
 		}
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		key, err := kkey.Random()
 		testx.AssertEqual(t, err, core.ErrNotFound)
@@ -376,7 +354,6 @@ func TestRandom(t *testing.T) {
 func TestRename(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -395,7 +372,6 @@ func TestRename(t *testing.T) {
 	})
 	t.Run("rename", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -415,7 +391,6 @@ func TestRename(t *testing.T) {
 	})
 	t.Run("same", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -432,7 +407,6 @@ func TestRename(t *testing.T) {
 	})
 	t.Run("not found", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		err := kkey.Rename("key1", "name")
@@ -449,7 +423,6 @@ func TestRename(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("str", "str")
 		_, _ = db.Hash().Set("hash", "field", "value")
@@ -468,7 +441,6 @@ func TestRename(t *testing.T) {
 func TestRenameNotExists(t *testing.T) {
 	t.Run("rename", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		ok, err := kkey.RenameNotExists("name", "title")
@@ -483,7 +455,6 @@ func TestRenameNotExists(t *testing.T) {
 	})
 	t.Run("same name", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		ok, err := kkey.RenameNotExists("name", "name")
@@ -497,8 +468,7 @@ func TestRenameNotExists(t *testing.T) {
 		testx.AssertEqual(t, name.String(), "alice")
 	})
 	t.Run("old does not exist", func(t *testing.T) {
-		db, kkey := getDB(t)
-		defer db.Close()
+		_, kkey := getDB(t)
 
 		ok, err := kkey.RenameNotExists("key1", "key2")
 		testx.AssertEqual(t, err, core.ErrNotFound)
@@ -506,7 +476,6 @@ func TestRenameNotExists(t *testing.T) {
 	})
 	t.Run("new exists", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("name", "alice")
 		_ = db.Str().Set("age", 25)
@@ -525,7 +494,6 @@ func TestRenameNotExists(t *testing.T) {
 func TestScan(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("11", "11")
 		_ = db.Str().Set("12", "12")
@@ -565,7 +533,6 @@ func TestScan(t *testing.T) {
 	})
 	t.Run("type filter", func(t *testing.T) {
 		db, kkey := getDB(t)
-		defer db.Close()
 
 		_ = db.Str().Set("k11", "11")
 		_ = db.Str().Set("k12", "12")
@@ -584,7 +551,6 @@ func TestScan(t *testing.T) {
 
 func TestScanner(t *testing.T) {
 	db, _ := getDB(t)
-	defer db.Close()
 
 	_ = db.Str().Set("11", "11")
 	_ = db.Str().Set("12", "12")
@@ -610,9 +576,6 @@ func TestScanner(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rkey.DB) {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	db := testx.OpenDB(tb)
 	return db, db.Key()
 }
