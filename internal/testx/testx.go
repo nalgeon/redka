@@ -30,6 +30,6 @@ func AssertErr(tb testing.TB, got, want error) {
 func AssertNoErr(tb testing.TB, got error) {
 	tb.Helper()
 	if got != nil {
-		tb.Errorf("unexpected error %T (%v)", got, got)
+		tb.Fatalf("unexpected error %T (%v)", got, got)
 	}
 }

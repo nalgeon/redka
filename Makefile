@@ -29,6 +29,11 @@ vet:
 test:
 	@go test ./... -v
 
+test-sqlite:
+	@go test ./... -v -tags=sqlite3
+
+test-postgres:
+	@go test ./... -v -tags=postgres
 
 build:
 	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.version=$(build_ver) -X main.commit=$(build_rev) -X main.date=$(build_date)" -trimpath -o build/redka -v cmd/redka/main.go
@@ -38,3 +43,12 @@ build-cli:
 
 run:
 	@./build/redka
+
+postgres-start:
+	@docker run --rm --detach --name=redka-postgres --env=POSTGRES_USER=redka --env=POSTGRES_PASSWORD=redka --env=POSTGRES_DB=redka --publish=5432:5432 postgres:17-alpine
+
+postgres-stop:
+	@docker stop redka-postgres
+
+postgres-shell:
+	@docker exec -it redka-postgres psql --username=redka --dbname=redka
