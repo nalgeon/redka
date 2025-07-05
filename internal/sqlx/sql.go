@@ -5,6 +5,7 @@ package sqlx
 import (
 	"database/sql"
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/nalgeon/redka/internal/core"
@@ -20,6 +21,27 @@ const (
 )
 
 var ErrDialect = errors.New("unknown SQL dialect")
+
+// Enumerate replaces ? placeholders with $1, $2, ... $n.
+func (d Dialect) Enumerate(query string) string {
+	if d != DialectPostgres {
+		// Only Postgres uses enumerated placeholders.
+		return query
+	}
+	// Replace ? with $1, $2, ... $n placeholders.
+	var b strings.Builder
+	var phIdx int
+	for _, r := range query {
+		if r == '?' {
+			phIdx++
+			b.WriteByte('$')
+			b.WriteString(strconv.Itoa(phIdx))
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
 
 // Sorting direction.
 const (
