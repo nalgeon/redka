@@ -4,10 +4,22 @@ package sqlx
 
 import (
 	"database/sql"
+	"errors"
 	"strings"
 
 	"github.com/nalgeon/redka/internal/core"
 )
+
+// SQL dialect.
+type Dialect string
+
+const (
+	DialectPostgres Dialect = "postgres"
+	DialectSqlite   Dialect = "sqlite"
+	DialectUnknown  Dialect = "unknown"
+)
+
+var ErrDialect = errors.New("unknown SQL dialect")
 
 // Sorting direction.
 const (
@@ -33,6 +45,17 @@ type Tx interface {
 // rowScanner is an interface to scan rows.
 type RowScanner interface {
 	Scan(dest ...any) error
+}
+
+// InferDialect infers the SQL dialect from the driver name.
+func InferDialect(driverName string) Dialect {
+	if driverName == "postgres" || driverName == "pgx" {
+		return DialectPostgres
+	}
+	if strings.HasPrefix(driverName, "sqlite") {
+		return DialectSqlite
+	}
+	return DialectUnknown
 }
 
 // ExpandIn expands the IN clause in the query for a given parameter.
