@@ -97,7 +97,7 @@ type Tx struct {
 
 // NewTx creates a key repository transaction
 // from a generic database transaction.
-func NewTx(tx sqlx.Tx) *Tx {
+func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	return &Tx{tx}
 }
 

@@ -14,22 +14,23 @@ import (
 // A string is a slice of bytes associated with a key.
 // Use the string repository to work with individual strings.
 type DB struct {
-	ro     *sql.DB
-	rw     *sql.DB
-	update func(f func(tx *Tx) error) error
+	dialect sqlx.Dialect
+	ro      *sql.DB
+	rw      *sql.DB
+	update  func(f func(tx *Tx) error) error
 }
 
 // New connects to the string repository.
 // Does not create the database schema.
 func New(db *sqlx.DB) *DB {
 	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{ro: db.RO, rw: db.RW, update: actor.Update}
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
 }
 
 // Get returns the value of the key.
 // If the key does not exist or is not a string, returns ErrNotFound.
 func (d *DB) Get(key string) (core.Value, error) {
-	tx := NewTx(d.ro)
+	tx := NewTx(d.dialect, d.ro)
 	return tx.Get(key)
 }
 
@@ -37,7 +38,7 @@ func (d *DB) Get(key string) (core.Value, error) {
 // Ignores keys that do not exist or not strings,
 // and does not return them in the map.
 func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
-	tx := NewTx(d.ro)
+	tx := NewTx(d.dialect, d.ro)
 	return tx.GetMany(keys...)
 }
 

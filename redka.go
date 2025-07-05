@@ -342,14 +342,14 @@ type Tx struct {
 }
 
 // newTx creates a new database transaction.
-func newTx(tx sqlx.Tx) *Tx {
+func newTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	return &Tx{tx: tx,
-		hashTx: rhash.NewTx(tx),
-		keyTx:  rkey.NewTx(tx),
-		listTx: rlist.NewTx(tx),
-		setTx:  rset.NewTx(tx),
-		strTx:  rstring.NewTx(tx),
-		zsetTx: rzset.NewTx(tx),
+		hashTx: rhash.NewTx(dialect, tx),
+		keyTx:  rkey.NewTx(dialect, tx),
+		listTx: rlist.NewTx(dialect, tx),
+		setTx:  rset.NewTx(dialect, tx),
+		strTx:  rstring.NewTx(dialect, tx),
+		zsetTx: rzset.NewTx(dialect, tx),
 	}
 }
 
