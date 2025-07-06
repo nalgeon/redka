@@ -11,8 +11,7 @@ import (
 
 func TestDelete(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.Delete("key", "elem")
 		testx.AssertNoErr(t, err)
@@ -20,7 +19,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.Delete("key", "elem")
@@ -35,7 +33,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "two")
@@ -62,7 +59,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("delete duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
@@ -78,7 +74,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.Delete("key", "none")
@@ -93,7 +88,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.Delete("key", "elem")
@@ -107,8 +101,7 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteBack(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.DeleteBack("key", "elem", 1)
 		testx.AssertNoErr(t, err)
@@ -116,7 +109,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.DeleteBack("key", "elem", 1)
@@ -131,7 +123,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "two")
@@ -160,7 +151,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("large count", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -179,7 +169,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("delete duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
@@ -195,7 +184,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.DeleteBack("key", "none", 1)
@@ -210,7 +198,6 @@ func TestDeleteBack(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.DeleteBack("key", "elem", 1)
@@ -224,8 +211,7 @@ func TestDeleteBack(t *testing.T) {
 
 func TestDeleteFront(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.DeleteFront("key", "elem", 1)
 		testx.AssertNoErr(t, err)
@@ -233,7 +219,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("delete elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.DeleteFront("key", "elem", 1)
@@ -248,7 +233,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("delete multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "two")
@@ -277,7 +261,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("large count", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -296,7 +279,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("delete duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 
@@ -312,7 +294,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.DeleteFront("key", "none", 1)
@@ -327,7 +308,6 @@ func TestDeleteFront(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.DeleteFront("key", "elem", 1)
@@ -341,15 +321,13 @@ func TestDeleteFront(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		_, err := list.Get("key", 0)
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("single elem", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "elem")
 
 		elem, err := list.Get("key", 0)
@@ -357,8 +335,7 @@ func TestGet(t *testing.T) {
 		testx.AssertEqual(t, elem.String(), "elem")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -376,16 +353,14 @@ func TestGet(t *testing.T) {
 		testx.AssertEqual(t, elem.String(), "thr")
 	})
 	t.Run("index out of bounds", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "elem")
 
 		_, err := list.Get("key", 1)
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("negative index", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -396,7 +371,6 @@ func TestGet(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		_, err := list.Get("key", 0)
@@ -406,8 +380,7 @@ func TestGet(t *testing.T) {
 
 func TestInsertAfter(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.InsertAfter("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
@@ -415,7 +388,6 @@ func TestInsertAfter(t *testing.T) {
 	})
 	t.Run("insert after first", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "mark")
 
 		n, err := list.InsertAfter("key", "mark", "elem")
@@ -433,7 +405,6 @@ func TestInsertAfter(t *testing.T) {
 	})
 	t.Run("insert after middle", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "thr")
 
@@ -452,7 +423,6 @@ func TestInsertAfter(t *testing.T) {
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
@@ -468,7 +438,6 @@ func TestInsertAfter(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.InsertAfter("key", "mark", "elem")
@@ -482,8 +451,7 @@ func TestInsertAfter(t *testing.T) {
 
 func TestInsertBefore(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.InsertBefore("key", "mark", "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
@@ -491,7 +459,6 @@ func TestInsertBefore(t *testing.T) {
 	})
 	t.Run("insert before first", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "mark")
 
 		n, err := list.InsertBefore("key", "mark", "elem")
@@ -509,7 +476,6 @@ func TestInsertBefore(t *testing.T) {
 	})
 	t.Run("insert before middle", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "thr")
 
@@ -528,7 +494,6 @@ func TestInsertBefore(t *testing.T) {
 	})
 	t.Run("elem not found", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
@@ -544,7 +509,6 @@ func TestInsertBefore(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.InsertBefore("key", "mark", "elem")
@@ -558,16 +522,14 @@ func TestInsertBefore(t *testing.T) {
 
 func TestLen(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.Len("key")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 0)
 	})
 	t.Run("single elem", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.Len("key")
@@ -575,8 +537,7 @@ func TestLen(t *testing.T) {
 		testx.AssertEqual(t, n, 1)
 	})
 	t.Run("multiple elems", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "two")
@@ -588,7 +549,6 @@ func TestLen(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.Len("key")
@@ -600,7 +560,6 @@ func TestLen(t *testing.T) {
 func TestPushBack(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushBack("key", "elem")
 		testx.AssertNoErr(t, err)
@@ -614,7 +573,6 @@ func TestPushBack(t *testing.T) {
 	})
 	t.Run("add elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 
 		n, err := list.PushBack("key", "two")
@@ -629,7 +587,6 @@ func TestPushBack(t *testing.T) {
 	})
 	t.Run("add multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushBack("key", "one")
 		testx.AssertNoErr(t, err)
@@ -649,7 +606,6 @@ func TestPushBack(t *testing.T) {
 	})
 	t.Run("add duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushBack("key", "elem")
 		testx.AssertNoErr(t, err)
@@ -666,7 +622,6 @@ func TestPushBack(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.PushBack("key", 42)
@@ -684,7 +639,6 @@ func TestPushBack(t *testing.T) {
 func TestPushFront(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushFront("key", "elem")
 		testx.AssertNoErr(t, err)
@@ -698,7 +652,6 @@ func TestPushFront(t *testing.T) {
 	})
 	t.Run("add elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushFront("key", "one")
 
 		n, err := list.PushFront("key", "two")
@@ -713,7 +666,6 @@ func TestPushFront(t *testing.T) {
 	})
 	t.Run("add multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushFront("key", "one")
 		testx.AssertNoErr(t, err)
@@ -733,7 +685,6 @@ func TestPushFront(t *testing.T) {
 	})
 	t.Run("add duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 
 		n, err := list.PushFront("key", "elem")
 		testx.AssertNoErr(t, err)
@@ -750,7 +701,6 @@ func TestPushFront(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.PushFront("key", 42)
@@ -767,15 +717,13 @@ func TestPushFront(t *testing.T) {
 
 func TestPopBack(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		_, err := list.PopBack("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("pop elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 
 		elem, err := list.PopBack("key")
@@ -790,7 +738,6 @@ func TestPopBack(t *testing.T) {
 	})
 	t.Run("pop multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -815,7 +762,6 @@ func TestPopBack(t *testing.T) {
 	})
 	t.Run("pop duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
@@ -836,7 +782,6 @@ func TestPopBack(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		_, err := list.PopBack("key")
@@ -846,15 +791,13 @@ func TestPopBack(t *testing.T) {
 
 func TestPopBackPushFront(t *testing.T) {
 	t.Run("src not found", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		_, err := list.PopBackPushFront("src", "dest")
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("pop elem", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("src", "elem")
 
 		elem, err := list.PopBackPushFront("src", "dest")
@@ -868,8 +811,7 @@ func TestPopBackPushFront(t *testing.T) {
 		testx.AssertEqual(t, dstlen, 1)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("src", "one")
 		_, _ = list.PushBack("src", "two")
 		_, _ = list.PushBack("src", "thr")
@@ -899,7 +841,6 @@ func TestPopBackPushFront(t *testing.T) {
 	})
 	t.Run("push to self", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -925,7 +866,6 @@ func TestPopBackPushFront(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("src", "value")
 
 		_, err := list.PopBackPushFront("src", "dest")
@@ -935,15 +875,13 @@ func TestPopBackPushFront(t *testing.T) {
 
 func TestPopFront(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		_, err := list.PopFront("key")
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("pop elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 
 		elem, err := list.PopFront("key")
@@ -958,7 +896,6 @@ func TestPopFront(t *testing.T) {
 	})
 	t.Run("pop multiple", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -983,7 +920,6 @@ func TestPopFront(t *testing.T) {
 	})
 	t.Run("pop duplicate", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "elem")
 		_, _ = list.PushBack("key", "one")
@@ -1004,7 +940,6 @@ func TestPopFront(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		_, err := list.PopFront("key")
@@ -1014,16 +949,14 @@ func TestPopFront(t *testing.T) {
 
 func TestRange(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		elems, err := list.Range("key", 0, 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(elems), 0)
 	})
 	t.Run("single elem", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "elem")
 
 		elems, err := list.Range("key", 0, 0)
@@ -1032,8 +965,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, elems[0].String(), "elem")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1045,8 +977,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, elems[1].String(), "two")
 	})
 	t.Run("start >= len", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
@@ -1055,8 +986,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, len(elems), 0)
 	})
 	t.Run("start > stop > 0", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 
@@ -1065,8 +995,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, len(elems), 0)
 	})
 	t.Run("0 > start > stop", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1076,8 +1005,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, len(elems), 0)
 	})
 	t.Run("stop > len", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1089,8 +1017,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, elems[1].String(), "thr")
 	})
 	t.Run("start < 0", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1102,8 +1029,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, elems[1].String(), "thr")
 	})
 	t.Run("stop < 0", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1115,8 +1041,7 @@ func TestRange(t *testing.T) {
 		testx.AssertEqual(t, elems[1].String(), "thr")
 	})
 	t.Run("start < 0 and stop < 0", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1129,7 +1054,6 @@ func TestRange(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		elems, err := list.Range("key", 0, 0)
@@ -1140,15 +1064,13 @@ func TestRange(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		err := list.Set("key", 0, "elem")
 		testx.AssertErr(t, err, core.ErrNotFound)
 	})
 	t.Run("single elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 
 		err := list.Set("key", 0, "two")
@@ -1165,7 +1087,6 @@ func TestSet(t *testing.T) {
 	})
 	t.Run("multiple elems", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "two")
@@ -1191,7 +1112,6 @@ func TestSet(t *testing.T) {
 	})
 	t.Run("index out of bounds", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		err := list.Set("key", 1, "new")
@@ -1208,7 +1128,6 @@ func TestSet(t *testing.T) {
 	})
 	t.Run("negative index", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1229,7 +1148,6 @@ func TestSet(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		err := list.Set("key", 0, "elem")
@@ -1239,8 +1157,7 @@ func TestSet(t *testing.T) {
 
 func TestTrim(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, list := getDB(t)
-		defer db.Close()
+		_, list := getDB(t)
 
 		n, err := list.Trim("key", 0, 0)
 		testx.AssertNoErr(t, err)
@@ -1248,7 +1165,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("keep single elem", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "elem")
 
 		n, err := list.Trim("key", 0, 0)
@@ -1263,7 +1179,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("keep multiple elems", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1286,7 +1201,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("keep all elems", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1304,7 +1218,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("start >= len", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1321,7 +1234,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("start > stop > 0", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1338,7 +1250,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("0 > start > stop", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1355,7 +1266,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("stop > len", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1377,7 +1287,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("start < 0", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1399,7 +1308,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("stop < 0", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1421,7 +1329,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("start < 0 and stop < 0", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_, _ = list.PushBack("key", "one")
 		_, _ = list.PushBack("key", "two")
 		_, _ = list.PushBack("key", "thr")
@@ -1443,7 +1350,6 @@ func TestTrim(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, list := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "value")
 
 		n, err := list.Trim("key", 0, 0)
@@ -1454,9 +1360,6 @@ func TestTrim(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rlist.DB) {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	db := testx.OpenDB(tb)
 	return db, db.List()
 }
