@@ -20,15 +20,16 @@ type queries struct {
 
 // Tx is a string repository transaction.
 type Tx struct {
-	tx  sqlx.Tx
-	sql queries
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     queries
 }
 
 // NewTx creates a string repository transaction
 // from a generic database transaction.
 func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	sql := getSQL(dialect)
-	return &Tx{tx: tx, sql: sql}
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Get returns the value of the key.
@@ -44,6 +45,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(tx.sql.getMany, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 
 	var rows *sql.Rows
@@ -234,7 +236,7 @@ func getSQL(dialect sqlx.Dialect) queries {
 	case sqlx.DialectSqlite:
 		return sqlite
 	case sqlx.DialectPostgres:
-		return queries{}
+		return postgres
 	default:
 		return queries{}
 	}
