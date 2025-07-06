@@ -33,3 +33,10 @@ func AssertNoErr(tb testing.TB, got error) {
 		tb.Fatalf("unexpected error %T (%v)", got, got)
 	}
 }
+
+func AssertTrue(tb testing.TB, got bool) {
+	tb.Helper()
+	if !got {
+		tb.Error("want true, got false")
+	}
+}
