@@ -8,91 +8,38 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlCount = `
-	select count(field)
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?) and field in (:fields)`
-
-	sqlDelete1 = `
-	delete from rhash
-	where kid = (
-			select id from rkey
-			where key = ? and type = 4 and (etime is null or etime > ?)
-		) and field in (:fields)`
-
-	sqlDelete2 = `
-	update rkey set
-		version = version + 1,
-		mtime = ?,
-		len = len - ?
-	where key = ? and type = 4 and (etime is null or etime > ?)`
-
-	sqlFields = `
-	select field
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlGet = `
-	select value
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?) and field = ?`
-
-	sqlGetMany = `
-	select field, value
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?) and field in (:fields)`
-
-	sqlItems = `
-	select field, value
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlLen = `
-	select len from rkey
-	where key = ? and type = 4 and (etime is null or etime > ?)`
-
-	sqlScan = `
-	select rhash.rowid, field, value
-	from rhash join rkey on kid = rkey.id and type = 4
-	where
-		key = ? and (etime is null or etime > ?)
-		and rhash.rowid > ? and field glob ?
-	limit ?`
-
-	sqlSet1 = `
-	insert into
-	rkey   (key, type, version, mtime, len)
-	values (  ?,    4,       1,     ?,   0)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
-
-	sqlSet2 = `
-	insert into rhash (kid, field, value)
-	values (?, ?, ?)
-	on conflict (kid, field) do update
-	set value = excluded.value`
-
-	sqlValues = `
-	select value
-	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`
-)
-
+// scanPageSize is the default number
+// of hash items per page when scanning.
 const scanPageSize = 10
+
+// SQL queries for the hash repository.
+type queries struct {
+	count   string
+	delete1 string
+	delete2 string
+	fields  string
+	get     string
+	getMany string
+	items   string
+	len     string
+	scan    string
+	set1    string
+	set2    string
+	values  string
+}
 
 // Tx is a hash repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     queries
 }
 
 // NewTx creates a hash repository transaction
 // from a generic database transaction.
 func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Delete deletes one or more items from a hash.
@@ -102,7 +49,8 @@ func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 	// Delete hash fields.
 	now := time.Now().UnixMilli()
-	query, fieldArgs := sqlx.ExpandIn(sqlDelete1, ":fields", fields)
+	query, fieldArgs := sqlx.ExpandIn(tx.sql.delete1, ":fields", fields)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, now}, fieldArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -115,7 +63,7 @@ func (tx *Tx) Delete(key string, fields ...string) (int, error) {
 
 	// Update the key.
 	args = []any{now, n, key, now}
-	_, err = tx.tx.Exec(sqlDelete2, args...)
+	_, err = tx.tx.Exec(tx.sql.delete2, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -136,7 +84,7 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 	// Select hash fields.
 	var rows *sql.Rows
 	args := []any{key, time.Now().UnixMilli()}
-	rows, err := tx.tx.Query(sqlFields, args...)
+	rows, err := tx.tx.Query(tx.sql.fields, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +113,7 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 func (tx *Tx) Get(key, field string) (core.Value, error) {
 	var val []byte
 	args := []any{key, time.Now().UnixMilli(), field}
-	err := tx.tx.QueryRow(sqlGet, args...).Scan(&val)
+	err := tx.tx.QueryRow(tx.sql.get, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return core.Value(nil), core.ErrNotFound
 	}
@@ -180,7 +128,8 @@ func (tx *Tx) Get(key, field string) (core.Value, error) {
 // If the key does not exist or is not a hash, returns an empty map.
 func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, error) {
 	// Get the values of the requested fields.
-	query, fieldArgs := sqlx.ExpandIn(sqlGetMany, ":fields", fields)
+	query, fieldArgs := sqlx.ExpandIn(tx.sql.getMany, ":fields", fields)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
 	var rows *sql.Rows
 	rows, err := tx.tx.Query(query, args...)
@@ -269,7 +218,7 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 	// Select hash rows.
 	var rows *sql.Rows
 	args := []any{key, time.Now().UnixMilli()}
-	rows, err := tx.tx.Query(sqlItems, args...)
+	rows, err := tx.tx.Query(tx.sql.items, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +245,7 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 func (tx *Tx) Len(key string) (int, error) {
 	var n int
 	args := []any{key, time.Now().UnixMilli()}
-	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	err := tx.tx.QueryRow(tx.sql.len, args...).Scan(&n)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
@@ -310,6 +259,7 @@ func (tx *Tx) Len(key string) (int, error) {
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
+	pattern = tx.dialect.GlobToLike(pattern)
 	if count == 0 {
 		count = scanPageSize
 	}
@@ -327,7 +277,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 		it.Value = core.Value(val)
 		return it, err
 	}
-	items, err := sqlx.Select(tx.tx, sqlScan, args, scan)
+	items, err := sqlx.Select(tx.tx, tx.sql.scan, args, scan)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -431,7 +381,7 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 	// Select hash values.
 	var rows *sql.Rows
 	args := []any{key, time.Now().UnixMilli()}
-	rows, err := tx.tx.Query(sqlValues, args...)
+	rows, err := tx.tx.Query(tx.sql.values, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +406,8 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 
 // count returns the number of existing fields in a hash.
 func (tx *Tx) count(key string, fields ...string) (int, error) {
-	query, fieldArgs := sqlx.ExpandIn(sqlCount, ":fields", fields)
+	query, fieldArgs := sqlx.ExpandIn(tx.sql.count, ":fields", fields)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, time.Now().UnixMilli()}, fieldArgs...)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
@@ -471,11 +422,11 @@ func (tx *Tx) set(key string, field string, value any) error {
 	}
 	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
-	err = tx.tx.QueryRow(sqlSet1, args...).Scan(&keyID)
+	err = tx.tx.QueryRow(tx.sql.set1, args...).Scan(&keyID)
 	if err != nil {
 		return sqlx.TypedError(err)
 	}
-	_, err = tx.tx.Exec(sqlSet2, keyID, field, valueb)
+	_, err = tx.tx.Exec(tx.sql.set2, keyID, field, valueb)
 	return err
 }
 
@@ -500,4 +451,16 @@ type HashItem struct {
 type ScanResult struct {
 	Cursor int
 	Items  []HashItem
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return sqlite
+	case sqlx.DialectPostgres:
+		return queries{}
+	default:
+		return queries{}
+	}
 }
