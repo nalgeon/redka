@@ -25,28 +25,30 @@ type queries struct {
 	len              string
 	persist          string
 	random           string
-	rename           string
+	rename1          string
+	rename2          string
 	scan             string
 }
 
 // Tx is a key repository transaction.
 type Tx struct {
-	sqlx.Dialect
-	tx  sqlx.Tx
-	sql queries
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     queries
 }
 
 // NewTx creates a key repository transaction
 // from a generic database transaction.
 func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	sql := getSQL(dialect)
-	return &Tx{Dialect: dialect, tx: tx, sql: sql}
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Count returns the number of existing keys among specified.
 func (tx *Tx) Count(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(tx.sql.count, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
@@ -58,6 +60,7 @@ func (tx *Tx) Count(keys ...string) (int, error) {
 func (tx *Tx) Delete(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(tx.sql.delete, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -126,6 +129,7 @@ func (tx *Tx) Get(key string) (core.Key, error) {
 // Use this method only if you are sure that the number of keys is
 // limited. Otherwise, use the [Tx.Scan] or [Tx.Scanner] methods.
 func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
+	pattern = tx.dialect.GlobToLike(pattern)
 	args := []any{pattern, time.Now().UnixMilli()}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
@@ -204,14 +208,18 @@ func (tx *Tx) Rename(key, newKey string) error {
 		return core.ErrKeyType
 	}
 
+	// Delete the new key if it exists.
+	if newK.Exists() {
+		_, err := tx.tx.Exec(tx.sql.rename1, newK.ID)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
-	args := []any{
-		newKey, now,
-		key, now,
-		key, now,
-	}
-	_, err = tx.tx.Exec(tx.sql.rename, args...)
+	args := []any{newKey, now, key, now}
+	_, err = tx.tx.Exec(tx.sql.rename2, args...)
 	return err
 }
 
@@ -244,12 +252,8 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
-	args := []any{
-		newKey, now,
-		key, now,
-		key, now,
-	}
-	_, err = tx.tx.Exec(tx.sql.rename, args...)
+	args := []any{newKey, now, key, now}
+	_, err = tx.tx.Exec(tx.sql.rename2, args...)
 	return err == nil, err
 }
 
@@ -271,6 +275,7 @@ func (tx *Tx) Scan(cursor int, pattern string, ktype core.TypeID, count int) (Sc
 	if ktype == core.TypeAny {
 		ktypeGuard = true
 	}
+	pattern = tx.dialect.GlobToLike(pattern)
 	args := []any{
 		cursor,
 		pattern,
@@ -342,7 +347,7 @@ func getSQL(dialect sqlx.Dialect) queries {
 	case sqlx.DialectSqlite:
 		return sqlite
 	case sqlx.DialectPostgres:
-		return queries{}
+		return postgres
 	default:
 		return queries{}
 	}

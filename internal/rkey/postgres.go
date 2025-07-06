@@ -1,7 +1,7 @@
 package rkey
 
-// SQLite queries for the key repository.
-var sqlite = queries{
+// Postgres queries for the key repository.
+var postgres = queries{
 	count: `
 	select count(id) from rkey
 	where key in (:keys) and (etime is null or etime > ?)`,
@@ -11,36 +11,34 @@ var sqlite = queries{
 	where key in (:keys) and (etime is null or etime > ?)`,
 
 	deleteAll: `
-	delete from rkey;
-	vacuum;
-	pragma integrity_check;`,
+	truncate table rkey cascade`,
 
 	deleteAllExpired: `
 	delete from rkey
-	where etime <= ?`,
+	where etime <= $1`,
 
 	deleteNExpired: `
 	delete from rkey
-	where rowid in (
-		select rowid from rkey
-		where etime <= ?
-		limit ?
+	where ctid in (
+		select ctid from rkey
+		where etime <= $1
+		limit $2
 	)`,
 
 	expire: `
 	update rkey set
 		version = version + 1,
-		etime = ?
-	where key = ? and (etime is null or etime > ?)`,
+		etime = $1
+	where key = $2 and (etime is null or etime > $3)`,
 
 	get: `
 	select id, key, type, version, etime, mtime
 	from rkey
-	where key = ? and (etime is null or etime > ?)`,
+	where key = $1 and (etime is null or etime > $2)`,
 
 	keys: `
 	select id, key, type, version, etime, mtime from rkey
-	where key glob ? and (etime is null or etime > ?)`,
+	where key like $1 and (etime is null or etime > $2)`,
 
 	len: `
 	select count(*) from rkey`,
@@ -49,29 +47,29 @@ var sqlite = queries{
 	update rkey set
 		version = version + 1,
 		etime = null
-	where key = ? and (etime is null or etime > ?)`,
+	where key = $1 and (etime is null or etime > $2)`,
 
 	random: `
 	select id, key, type, version, etime, mtime from rkey
-	where etime is null or etime > ?
+	where etime is null or etime > $1
 	order by random() limit 1`,
 
 	rename1: `
-	delete from rkey where id = ?`,
+	delete from rkey where id = $1`,
 
 	rename2: `
 	update rkey
 	set
-		key = ?,
+		key = $1,
 		version = version + 1,
-		mtime = ?
-	where key = ? and (etime is null or etime > ?)`,
+		mtime = $2
+	where key = $3 and (etime is null or etime > $4)`,
 
 	scan: `
 	select id, key, type, version, etime, mtime from rkey
 	where
-		id > ? and key glob ? and (type = ? or ?)
-		and (etime is null or etime > ?)
+		id > $1 and key like $2 and (type = $3 or $4)
+		and (etime is null or etime > $5)
 	order by id asc
-	limit ?`,
+	limit $6`,
 }

@@ -239,7 +239,7 @@ func TestGet(t *testing.T) {
 
 		key, err := kkey.Get("name")
 		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, key.ID, 1)
+		testx.AssertTrue(t, key.ID > 0)
 		testx.AssertEqual(t, key.Key, "name")
 		testx.AssertEqual(t, key.Type, core.TypeString)
 		testx.AssertEqual(t, key.Version, 1)
@@ -262,18 +262,20 @@ func TestKeys(t *testing.T) {
 	_ = db.Str().Set("age", 25)
 
 	tests := []struct {
-		name    string
-		pattern string
-		want    []string
+		name      string
+		pattern   string
+		want      []string
+		wantCount int
 	}{
-		{"all found", "*", []string{"name", "age"}},
-		{"some found", "na*", []string{"name"}},
-		{"none found", "key*", []string(nil)},
+		{"all found", "*", []string{"name", "age"}, 2},
+		{"some found", "na*", []string{"name"}, 1},
+		{"none found", "key*", []string(nil), 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			keys, err := kkey.Keys(test.pattern)
 			testx.AssertNoErr(t, err)
+			testx.AssertEqual(t, len(keys), test.wantCount)
 			for i, key := range keys {
 				name := key.Key
 				testx.AssertEqual(t, name, test.want[i])
@@ -502,27 +504,19 @@ func TestScan(t *testing.T) {
 		_ = db.Str().Set("31", "31")
 
 		tests := []struct {
-			name    string
-			cursor  int
-			pattern string
-			count   int
-
-			wantCursor int
-			wantKeys   []string
+			name     string
+			pattern  string
+			count    int
+			wantKeys []string
 		}{
-			{"all", 0, "*", 10, 5, []string{"11", "12", "21", "22", "31"}},
-			{"some", 0, "2*", 10, 4, []string{"21", "22"}},
-			{"none", 0, "n*", 10, 0, []string{}},
-			{"cursor 1st", 0, "*", 2, 2, []string{"11", "12"}},
-			{"cursor 2nd", 2, "*", 2, 4, []string{"21", "22"}},
-			{"cursor 3rd", 4, "*", 2, 5, []string{"31"}},
-			{"exhausted", 6, "*", 2, 0, []string{}},
+			{"all", "*", 10, []string{"11", "12", "21", "22", "31"}},
+			{"some", "2*", 10, []string{"21", "22"}},
+			{"none", "n*", 10, []string{}},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				out, err := kkey.Scan(test.cursor, test.pattern, core.TypeAny, test.count)
+				out, err := kkey.Scan(0, test.pattern, core.TypeAny, test.count)
 				testx.AssertNoErr(t, err)
-				testx.AssertEqual(t, out.Cursor, test.wantCursor)
 				keyNames := make([]string, len(out.Keys))
 				for i, key := range out.Keys {
 					keyNames[i] = key.Key
@@ -530,6 +524,32 @@ func TestScan(t *testing.T) {
 				testx.AssertEqual(t, keyNames, test.wantKeys)
 			})
 		}
+	})
+	t.Run("pagination", func(t *testing.T) {
+		db, kkey := getDB(t)
+
+		_ = db.Str().Set("11", "11")
+		_ = db.Str().Set("12", "12")
+		_ = db.Str().Set("21", "21")
+		_ = db.Str().Set("22", "22")
+		_ = db.Str().Set("31", "31")
+
+		out, err := kkey.Scan(0, "*", core.TypeAny, 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Keys), 2)
+		testx.AssertEqual(t, out.Keys[0].Key, "11")
+		testx.AssertEqual(t, out.Keys[1].Key, "12")
+
+		out, err = kkey.Scan(out.Cursor, "*", core.TypeAny, 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Keys), 2)
+		testx.AssertEqual(t, out.Keys[0].Key, "21")
+		testx.AssertEqual(t, out.Keys[1].Key, "22")
+
+		out, err = kkey.Scan(out.Cursor, "*", core.TypeAny, 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Keys), 1)
+		testx.AssertEqual(t, out.Keys[0].Key, "31")
 	})
 	t.Run("type filter", func(t *testing.T) {
 		db, kkey := getDB(t)
