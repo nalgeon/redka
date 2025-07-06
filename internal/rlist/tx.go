@@ -523,7 +523,7 @@ func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
 	args = []any{keyID, pivotb, keyID, keyID, elemb, keyID}
 	_, err = tx.tx.Exec(query, args...)
 	if err != nil {
-		if sqlx.ConstraintFailed(err, "NOT NULL", "rlist", "pos") {
+		if sqlx.ConstraintFailed(err, "not null", "rlist", "pos") {
 			return -1, core.ErrNotFound
 		}
 		return 0, err
