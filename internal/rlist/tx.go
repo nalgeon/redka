@@ -9,240 +9,38 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlDelete = `
-	delete from rlist
-	where kid = (
-			select id from rkey
-			where key = ? and type = 2 and (etime is null or etime > ?)
-		) and elem = ?`
-
-	sqlDeleteBack = `
-	with ids as (
-		select rlist.rowid
-		from rlist join rkey on kid = rkey.id and type = 2
-		where key = ? and (etime is null or etime > ?) and elem = ?
-		order by pos desc
-		limit ?
-	)
-	delete from rlist
-	where rowid in (select rowid from ids)`
-
-	sqlDeleteFront = `
-	with ids as (
-		select rlist.rowid
-		from rlist join rkey on kid = rkey.id and type = 2
-		where key = ? and (etime is null or etime > ?) and elem = ?
-		order by pos
-		limit ?
-	)
-	delete from rlist
-	where rowid in (select rowid from ids)`
-
-	sqlGet = `
-	with elems as (
-		select elem, row_number() over (order by pos asc) as rownum
-		from rlist join rkey on kid = rkey.id and type = 2
-		where key = ? and (etime is null or etime > ?)
-	)
-	select elem
-	from elems
-	where rownum = ? + 1`
-
-	sqlInsert = `
-	update rkey set
-		version = version + 1,
-		mtime = ?,
-		len = len + 1
-	where key = ? and type = 2 and (etime is null or etime > ?)
-	returning id, len`
-
-	sqlInsertAfter = `
-	with elprev as (
-		select min(pos) as pos from rlist
-		where kid = ? and elem = ?
-	),
-	elnext as (
-		select min(pos) as pos from rlist
-		where kid = ? and pos > (select pos from elprev)
-	),
-	newpos as (
-		select
-			case
-				when elnext.pos is null then elprev.pos + 1
-				else (elprev.pos + elnext.pos) / 2
-			end as pos
-		from elprev, elnext
-	)
-	insert into rlist (kid, pos, elem)
-	select ?, (select pos from newpos), ?
-	from rlist
-	where kid = ?
-	limit 1`
-
-	sqlInsertBefore = `
-	with elnext as (
-		select min(pos) as pos from rlist
-		where kid = ? and elem = ?
-	),
-	elprev as (
-		select max(pos) as pos from rlist
-		where kid = ? and pos < (select pos from elnext)
-	),
-	newpos as (
-		select
-			case
-				when elprev.pos is null then elnext.pos - 1
-				else (elprev.pos + elnext.pos) / 2
-			end as pos
-		from elprev, elnext
-	)
-	insert into rlist (kid, pos, elem)
-	select ?, (select pos from newpos), ?
-	from rlist
-	where kid = ?
-	limit 1`
-
-	sqlLen = `
-	select len from rkey
-	where key = ? and type = 2 and (etime is null or etime > ?)`
-
-	sqlPopBack = `
-	with curkey as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	)
-	delete from rlist
-	where
-		kid = (select id from curkey)
-		and pos = (
-			select max(pos) from rlist
-			where kid = (select id from curkey)
-		)
-	returning elem`
-
-	sqlPopFront = `
-	with curkey as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	)
-	delete from rlist
-	where
-		kid = (select id from curkey)
-		and pos = (
-			select min(pos) from rlist
-			where kid = (select id from curkey)
-		)
-	returning elem`
-
-	sqlPush = `
-	insert into
-	rkey   (key, type, version, mtime, len)
-	values (  ?,    2,       1,     ?,   1)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version + 1,
-		mtime = excluded.mtime,
-		len = len + 1
-	returning id, len`
-
-	sqlPushBack = `
-	insert into rlist (kid, pos, elem)
-	select ?, coalesce(max(pos)+1, 0), ?
-	from rlist
-	where kid = ?`
-
-	sqlPushFront = `
-	insert into rlist (kid, pos, elem)
-	select ?, coalesce(min(pos)-1, 0), ?
-	from rlist
-	where kid = ?`
-
-	sqlRange = `
-	with curkey as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	),
-	counts as (
-		select len from rkey
-		where id = (select id from curkey)
-	),
-	bounds as (
-		select
-			case when ? < 0
-				then (select len from counts) + ?
-				else ?
-			end as start,
-			case when ? < 0
-				then (select len from counts) + ?
-				else ?
-			end as stop
-	)
-	select elem
-	from rlist
-	where kid = (select id from curkey)
-	order by pos
-	limit
-		(select start from bounds),
-		((select stop from bounds) - (select start from bounds) + 1)`
-
-	sqlSet = `
-	with curkey as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-    ),
-    elems as (
-		select pos, row_number() over (order by pos asc) as rownum
-		from rlist
-		where kid = (select id from curkey)
-    )
-    update rlist set elem = ?
-    where kid = (select id from curkey)
-		and pos = (select pos from elems where rownum = ? + 1)`
-
-	sqlTrim = `
-	with curkey as (
-		select id from rkey
-		where key = ? and type = 2 and (etime is null or etime > ?)
-	),
-	counts as (
-		select len from rkey
-		where id = (select id from curkey)
-	),
-	bounds as (
-		select
-			case when ? < 0
-				then (select len from counts) + ?
-				else ?
-			end as start,
-			case when ? < 0
-				then (select len from counts) + ?
-				else ?
-			end as stop
-	),
-	remain as (
-		select rowid from rlist
-		where kid = (select id from curkey)
-		order by pos
-		limit
-			(select start from bounds),
-			((select stop from bounds) - (select start from bounds) + 1)
-	)
-	delete from rlist
-	where
-		kid = (select id from curkey)
-		and rowid not in (select rowid from remain)`
-)
+// SQL queries for the list repository.
+type queries struct {
+	delete       string
+	deleteBack   string
+	deleteFront  string
+	get          string
+	insert       string
+	insertAfter  string
+	insertBefore string
+	len          string
+	popBack      string
+	popFront     string
+	push         string
+	pushBack     string
+	pushFront    string
+	lrange       string
+	set          string
+	trim         string
+}
 
 // Tx is a list repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     queries
 }
 
 // NewTx creates a list repository transaction
 // from a generic database transaction.
 func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Delete deletes all occurrences of an element from a list.
@@ -254,7 +52,7 @@ func (tx *Tx) Delete(key string, elem any) (int, error) {
 		return 0, err
 	}
 	args := []any{key, time.Now().UnixMilli(), elemb}
-	res, err := tx.tx.Exec(sqlDelete, args...)
+	res, err := tx.tx.Exec(tx.sql.delete, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -267,7 +65,7 @@ func (tx *Tx) Delete(key string, elem any) (int, error) {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (tx *Tx) DeleteBack(key string, elem any, count int) (int, error) {
-	return tx.delete(key, elem, count, sqlDeleteBack)
+	return tx.delete(key, elem, count, tx.sql.deleteBack)
 }
 
 // DeleteFront deletes the first count occurrences of an element
@@ -275,7 +73,7 @@ func (tx *Tx) DeleteBack(key string, elem any, count int) (int, error) {
 // Returns the number of elements deleted.
 // Does nothing if the key does not exist or is not a list.
 func (tx *Tx) DeleteFront(key string, elem any, count int) (int, error) {
-	return tx.delete(key, elem, count, sqlDeleteFront)
+	return tx.delete(key, elem, count, tx.sql.deleteFront)
 }
 
 // Get returns an element from a list by index (0-based).
@@ -284,7 +82,7 @@ func (tx *Tx) DeleteFront(key string, elem any, count int) (int, error) {
 // If the index is out of bounds, returns ErrNotFound.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (tx *Tx) Get(key string, idx int) (core.Value, error) {
-	var query = sqlGet
+	var query = tx.sql.get
 	if idx < 0 {
 		// Reverse the query ordering and index, e.g.:
 		//  - [11 12 13 14], idx = -1 <-> [14 13 12 11], idx = 0 (14)
@@ -312,7 +110,7 @@ func (tx *Tx) Get(key string, idx int) (core.Value, error) {
 // If the pivot does not exist, returns (-1, ErrNotFound).
 // If the key does not exist or is not a list, returns (0, ErrNotFound).
 func (tx *Tx) InsertAfter(key string, pivot, elem any) (int, error) {
-	return tx.insert(key, pivot, elem, sqlInsertAfter)
+	return tx.insert(key, pivot, elem, tx.sql.insertAfter)
 }
 
 // InsertBefore inserts an element before another element (pivot).
@@ -320,7 +118,7 @@ func (tx *Tx) InsertAfter(key string, pivot, elem any) (int, error) {
 // If the pivot does not exist, returns (-1, ErrNotFound).
 // If the key does not exist or is not a list, returns (0, ErrNotFound).
 func (tx *Tx) InsertBefore(key string, pivot, elem any) (int, error) {
-	return tx.insert(key, pivot, elem, sqlInsertBefore)
+	return tx.insert(key, pivot, elem, tx.sql.insertBefore)
 }
 
 // Len returns the number of elements in a list.
@@ -328,7 +126,7 @@ func (tx *Tx) InsertBefore(key string, pivot, elem any) (int, error) {
 func (tx *Tx) Len(key string) (int, error) {
 	var count int
 	args := []any{key, time.Now().UnixMilli()}
-	err := tx.tx.QueryRow(sqlLen, args...).Scan(&count)
+	err := tx.tx.QueryRow(tx.sql.len, args...).Scan(&count)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
@@ -341,7 +139,7 @@ func (tx *Tx) Len(key string) (int, error) {
 // PopBack removes and returns the last element of a list.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (tx *Tx) PopBack(key string) (core.Value, error) {
-	return tx.pop(key, sqlPopBack)
+	return tx.pop(key, tx.sql.popBack)
 }
 
 // PopBackPushFront removes the last element of a list
@@ -365,7 +163,7 @@ func (tx *Tx) PopBackPushFront(src, dest string) (core.Value, error) {
 // PopFront removes and returns the first element of a list.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (tx *Tx) PopFront(key string) (core.Value, error) {
-	return tx.pop(key, sqlPopFront)
+	return tx.pop(key, tx.sql.popFront)
 }
 
 // PushBack appends an element to a list.
@@ -373,7 +171,7 @@ func (tx *Tx) PopFront(key string) (core.Value, error) {
 // If the key does not exist, creates it.
 // If the key exists but is not a list, returns ErrKeyType.
 func (tx *Tx) PushBack(key string, elem any) (int, error) {
-	return tx.push(key, elem, sqlPushBack)
+	return tx.push(key, elem, tx.sql.pushBack)
 }
 
 // PushFront prepends an element to a list.
@@ -381,7 +179,7 @@ func (tx *Tx) PushBack(key string, elem any) (int, error) {
 // If the key does not exist, creates it.
 // If the key exists but is not a list, returns ErrKeyType.
 func (tx *Tx) PushFront(key string, elem any) (int, error) {
-	return tx.push(key, elem, sqlPushFront)
+	return tx.push(key, elem, tx.sql.pushFront)
 }
 
 // Range returns a range of elements from a list.
@@ -399,7 +197,7 @@ func (tx *Tx) Range(key string, start, stop int) ([]core.Value, error) {
 		start, start, start,
 		stop, stop, stop,
 	}
-	rows, err := tx.tx.Query(sqlRange, args...)
+	rows, err := tx.tx.Query(tx.sql.lrange, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +229,7 @@ func (tx *Tx) Set(key string, idx int, elem any) error {
 		return err
 	}
 
-	var query = sqlSet
+	var query = tx.sql.set
 	if idx < 0 {
 		// Reverse the query ordering and index.
 		query = strings.Replace(query, sqlx.Asc, sqlx.Desc, 1)
@@ -465,7 +263,7 @@ func (tx *Tx) Trim(key string, start, stop int) (int, error) {
 		start, start, start,
 		stop, stop, stop,
 	}
-	out, err := tx.tx.Exec(sqlTrim, args...)
+	out, err := tx.tx.Exec(tx.sql.trim, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -511,7 +309,7 @@ func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
 	// Update the key.
 	var keyID, n int
 	args := []any{now, key, now}
-	err = tx.tx.QueryRow(sqlInsert, args...).Scan(&keyID, &n)
+	err = tx.tx.QueryRow(tx.sql.insert, args...).Scan(&keyID, &n)
 	if err == sql.ErrNoRows {
 		return 0, core.ErrNotFound
 	}
@@ -556,7 +354,7 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	// Create or update the key.
 	args := []any{key, time.Now().UnixMilli()}
 	var keyID, n int
-	err = tx.tx.QueryRow(sqlPush, args...).Scan(&keyID, &n)
+	err = tx.tx.QueryRow(tx.sql.push, args...).Scan(&keyID, &n)
 	if err != nil {
 		return 0, sqlx.TypedError(err)
 	}
@@ -569,4 +367,16 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	}
 
 	return n, nil
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return sqlite
+	case sqlx.DialectPostgres:
+		return queries{}
+	default:
+		return queries{}
+	}
 }
