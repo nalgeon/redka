@@ -87,7 +87,7 @@ func TypedError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if ConstraintFailed(err, "NOT NULL", "rkey.type") {
+	if ConstraintFailed(err, "not null", "rkey", "type") {
 		return core.ErrKeyType
 	}
 	return err
@@ -95,7 +95,13 @@ func TypedError(err error) error {
 
 // ConstraintFailed checks if the error is due to
 // a constraint violation on a column.
-func ConstraintFailed(err error, constraint, column string) bool {
-	msg := constraint + " constraint failed: " + column
-	return strings.Contains(err.Error(), msg)
+// Error examples:
+//   - sqlite3.Error (NOT NULL constraint failed: rkey.type)
+//   - *pq.Error (pq: null value in column "type" of relation "rkey" violates not-null constraint)
+func ConstraintFailed(err error, constraint, table string, column string) bool {
+	sqliteMsg := constraint + " constraint failed: " + table + "." + column
+	postgresMsg := `"` + column + `" of relation "` + table +
+		`" violates ` + strings.ReplaceAll(constraint, " ", "-") + ` constraint`
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, sqliteMsg) || strings.Contains(errStr, postgresMsg)
 }

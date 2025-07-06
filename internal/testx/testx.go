@@ -2,6 +2,7 @@
 package testx
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -21,7 +22,7 @@ func AssertErr(tb testing.TB, got, want error) {
 		tb.Errorf("want %T (%v) error, got nil", want, want)
 		return
 	}
-	if got != want {
+	if !errors.Is(got, want) {
 		tb.Errorf("want %T (%v) error, got %T (%v)", want, want, got, got)
 		return
 	}

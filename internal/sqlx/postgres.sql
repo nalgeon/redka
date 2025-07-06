@@ -156,11 +156,14 @@ where rkey.etime is null or rkey.etime > (extract(epoch from now()) * 1000);
 -- └───────────────┘
 create table if not exists
 rhash (
+    rowid serial primary key,
     kid   integer not null references rkey(id) on delete cascade,
     field text not null,
-    value bytea not null,
-    primary key (kid, field)
+    value bytea not null
 );
+
+create unique index if not exists
+rhash_uniq_idx on rhash (kid, field);
 
 create or replace function
 rhash_on_insert_func()

@@ -84,10 +84,20 @@ func TestDelete(t *testing.T) {
 		city, _ := hash.Get("person", "city")
 		testx.AssertEqual(t, city.String(), "paris")
 	})
-	t.Run("key not found", func(t *testing.T) {
+	t.Run("no fields", func(t *testing.T) {
 		db, hash := getDB(t)
 
 		n, err := hash.Delete("person")
+		testx.AssertErr(t, err, core.ErrArgument)
+		testx.AssertEqual(t, n, 0)
+
+		exist, _ := db.Key().Exists("person")
+		testx.AssertEqual(t, exist, false)
+	})
+	t.Run("key not found", func(t *testing.T) {
+		db, hash := getDB(t)
+
+		n, err := hash.Delete("person", "name")
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, n, 0)
 
@@ -426,72 +436,87 @@ func TestLen(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	db, hash := getDB(t)
+	t.Run("scan", func(t *testing.T) {
+		db, hash := getDB(t)
 
-	_, _ = hash.Set("key", "f11", "11")
-	_, _ = hash.Set("key", "f12", "12")
-	_, _ = hash.Set("key", "f21", "21")
-	_, _ = hash.Set("key", "f22", "22")
-	_, _ = hash.Set("key", "f31", "31")
-	_ = db.Str().Set("str", "str")
+		_, _ = hash.Set("key", "f11", "11")
+		_, _ = hash.Set("key", "f12", "12")
+		_, _ = hash.Set("key", "f21", "21")
+		_, _ = hash.Set("key", "f22", "22")
+		_, _ = hash.Set("key", "f31", "31")
+		_ = db.Str().Set("str", "str")
 
-	tests := []struct {
-		name    string
-		cursor  int
-		pattern string
-		count   int
+		tests := []struct {
+			name    string
+			pattern string
+			count   int
+			want    []rhash.HashItem
+		}{
+			{"all", "*", 0,
+				[]rhash.HashItem{
+					{Field: "f11", Value: core.Value("11")},
+					{Field: "f12", Value: core.Value("12")},
+					{Field: "f21", Value: core.Value("21")},
+					{Field: "f22", Value: core.Value("22")},
+					{Field: "f31", Value: core.Value("31")},
+				},
+			},
+			{"some", "f2*", 10,
+				[]rhash.HashItem{
+					{Field: "f21", Value: core.Value("21")},
+					{Field: "f22", Value: core.Value("22")},
+				},
+			},
+			{"none", "n*", 10, []rhash.HashItem(nil)},
+		}
 
-		wantCursor int
-		wantItems  []rhash.HashItem
-	}{
-		{"all", 0, "*", 0, 5,
-			[]rhash.HashItem{
-				{Field: "f11", Value: core.Value("11")},
-				{Field: "f12", Value: core.Value("12")},
-				{Field: "f21", Value: core.Value("21")},
-				{Field: "f22", Value: core.Value("22")},
-				{Field: "f31", Value: core.Value("31")},
-			},
-		},
-		{"some", 0, "f2*", 10, 4,
-			[]rhash.HashItem{
-				{Field: "f21", Value: core.Value("21")},
-				{Field: "f22", Value: core.Value("22")},
-			},
-		},
-		{"none", 0, "n*", 10, 0, []rhash.HashItem(nil)},
-		{"cursor 1st", 0, "*", 2, 2,
-			[]rhash.HashItem{
-				{Field: "f11", Value: core.Value("11")},
-				{Field: "f12", Value: core.Value("12")},
-			},
-		},
-		{"cursor 2nd", 2, "*", 2, 4,
-			[]rhash.HashItem{
-				{Field: "f21", Value: core.Value("21")},
-				{Field: "f22", Value: core.Value("22")},
-			},
-		},
-		{"cursor 3rd", 4, "*", 2, 5,
-			[]rhash.HashItem{
-				{Field: "f31", Value: core.Value("31")},
-			},
-		},
-		{"exhausted", 6, "*", 2, 0, []rhash.HashItem(nil)},
-	}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				out, err := hash.Scan("key", 0, test.pattern, test.count)
+				testx.AssertNoErr(t, err)
+				for i, item := range out.Items {
+					testx.AssertEqual(t, item.Field, test.want[i].Field)
+					testx.AssertEqual(t, item.Value, test.want[i].Value)
+				}
+			})
+		}
+	})
+	t.Run("pagination", func(t *testing.T) {
+		db, hash := getDB(t)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			out, err := hash.Scan("key", test.cursor, test.pattern, test.count)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, out.Cursor, test.wantCursor)
-			for i, item := range out.Items {
-				testx.AssertEqual(t, item.Field, test.wantItems[i].Field)
-				testx.AssertEqual(t, item.Value, test.wantItems[i].Value)
-			}
-		})
-	}
+		_, _ = hash.Set("key", "f11", "11")
+		_, _ = hash.Set("key", "f12", "12")
+		_, _ = hash.Set("key", "f21", "21")
+		_, _ = hash.Set("key", "f22", "22")
+		_, _ = hash.Set("key", "f31", "31")
+		_ = db.Str().Set("str", "str")
+
+		out, err := hash.Scan("key", 0, "*", 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 2)
+		testx.AssertEqual(t, out.Items[0].Field, "f11")
+		testx.AssertEqual(t, out.Items[0].Value, core.Value("11"))
+
+		out, err = hash.Scan("key", out.Cursor, "*", 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 2)
+		testx.AssertEqual(t, out.Items[0].Field, "f21")
+		testx.AssertEqual(t, out.Items[0].Value, core.Value("21"))
+		testx.AssertEqual(t, out.Items[1].Field, "f22")
+		testx.AssertEqual(t, out.Items[1].Value, core.Value("22"))
+
+		out, err = hash.Scan("key", out.Cursor, "*", 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 1)
+		testx.AssertEqual(t, out.Items[0].Field, "f31")
+		testx.AssertEqual(t, out.Items[0].Value, core.Value("31"))
+
+		out, err = hash.Scan("key", out.Cursor, "*", 2)
+		testx.AssertNoErr(t, err)
+		testx.AssertEqual(t, len(out.Items), 0)
+	})
 	t.Run("ignore other keys", func(t *testing.T) {
+		_, hash := getDB(t)
 		_, _ = hash.Set("person", "name", "alice")
 		_, _ = hash.Set("pet", "name", "doggo")
 
@@ -502,11 +527,13 @@ func TestScan(t *testing.T) {
 		testx.AssertEqual(t, out.Items[0].Value.String(), "alice")
 	})
 	t.Run("key not found", func(t *testing.T) {
+		_, hash := getDB(t)
 		out, err := hash.Scan("not", 0, "*", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Items), 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
+		_, hash := getDB(t)
 		out, err := hash.Scan("str", 0, "*", 0)
 		testx.AssertNoErr(t, err)
 		testx.AssertEqual(t, len(out.Items), 0)

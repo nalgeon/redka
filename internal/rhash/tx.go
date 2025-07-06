@@ -47,6 +47,10 @@ func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 // Ignores non-existing fields.
 // Does nothing if the key does not exist or is not a hash.
 func (tx *Tx) Delete(key string, fields ...string) (int, error) {
+	if len(fields) == 0 {
+		return 0, core.ErrArgument
+	}
+
 	// Delete hash fields.
 	now := time.Now().UnixMilli()
 	query, fieldArgs := sqlx.ExpandIn(tx.sql.delete1, ":fields", fields)
@@ -459,7 +463,7 @@ func getSQL(dialect sqlx.Dialect) queries {
 	case sqlx.DialectSqlite:
 		return sqlite
 	case sqlx.DialectPostgres:
-		return queries{}
+		return postgres
 	default:
 		return queries{}
 	}
