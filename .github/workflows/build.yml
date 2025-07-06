@@ -29,7 +29,7 @@ jobs:
                   go get .
 
             - name: Test and build
-              run: make test build
+              run: make test-sqlite build
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4
