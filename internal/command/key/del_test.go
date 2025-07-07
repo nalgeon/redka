@@ -3,9 +3,9 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestDelParse(t *testing.T) {
@@ -34,11 +34,11 @@ func TestDelParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseDel, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.keys, test.want)
+				be.Equal(t, cmd.keys, test.want)
 			} else {
-				testx.AssertEqual(t, cmd, Del{})
+				be.Equal(t, cmd, Del{})
 			}
 		})
 	}
@@ -79,14 +79,14 @@ func TestDelExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseDel, test.cmd)
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Err(t, err, nil)
+			be.Equal(t, res, test.res)
+			be.Equal(t, conn.Out(), test.out)
 
 			_, err = db.Str().Get("name")
-			testx.AssertErr(t, err, core.ErrNotFound)
+			be.Err(t, err, core.ErrNotFound)
 			city, _ := db.Str().Get("city")
-			testx.AssertEqual(t, city.String(), "paris")
+			be.Equal(t, city.String(), "paris")
 		})
 	}
 }

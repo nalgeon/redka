@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSetEXParse(t *testing.T) {
@@ -48,13 +48,13 @@ func TestSetEXParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(parse, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.value, test.want.value)
-				testx.AssertEqual(t, cmd.ttl, test.want.ttl)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.value, test.want.value)
+				be.Equal(t, cmd.ttl, test.want.ttl)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -72,16 +72,16 @@ func TestSetEXExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "setex name 60 alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(60 * time.Second)
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
+		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
 		name, _ := db.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("update", func(t *testing.T) {
@@ -93,16 +93,16 @@ func TestSetEXExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "setex name 60 bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(60 * time.Second)
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
+		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
 		name, _ := db.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "bob")
+		be.Equal(t, name.String(), "bob")
 	})
 
 	t.Run("change ttl", func(t *testing.T) {
@@ -114,16 +114,16 @@ func TestSetEXExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "setex name 10 bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(10 * time.Second)
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
+		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
 		name, _ := db.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "bob")
+		be.Equal(t, name.String(), "bob")
 	})
 
 }

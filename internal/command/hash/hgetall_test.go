@@ -3,9 +3,9 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHGetAllParse(t *testing.T) {
@@ -34,11 +34,11 @@ func TestHGetAllParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHGetAll, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
+				be.Equal(t, cmd.key, test.key)
 			} else {
-				testx.AssertEqual(t, cmd, HGetAll{})
+				be.Equal(t, cmd, HGetAll{})
 			}
 		})
 	}
@@ -56,11 +56,11 @@ func TestHGetAllExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, map[string]core.Value{
+		be.Err(t, err, nil)
+		be.Equal(t, res.(map[string]core.Value), map[string]core.Value{
 			"name": core.Value("alice"), "age": core.Value("25"),
 		})
-		testx.AssertEqual(t,
+		be.Equal(t,
 			conn.Out() == "4,name,alice,age,25" || conn.Out() == "4,age,25,name,alice",
 			true)
 	})
@@ -72,8 +72,8 @@ func TestHGetAllExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, map[string]core.Value{})
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(map[string]core.Value), map[string]core.Value{})
+		be.Equal(t, conn.Out(), "0")
 	})
 }

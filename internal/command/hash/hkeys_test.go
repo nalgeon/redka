@@ -3,8 +3,8 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHKeysParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestHKeysParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHKeys, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
+				be.Equal(t, cmd.key, test.key)
 			} else {
-				testx.AssertEqual(t, cmd, HKeys{})
+				be.Equal(t, cmd, HKeys{})
 			}
 		})
 	}
@@ -55,9 +55,9 @@ func TestHKeysExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, []string{"age", "name"})
-		testx.AssertEqual(t,
+		be.Err(t, err, nil)
+		be.Equal(t, res.([]string), []string{"age", "name"})
+		be.Equal(t,
 			conn.Out() == "2,age,name" || conn.Out() == "2,name,age",
 			true)
 	})
@@ -69,8 +69,8 @@ func TestHKeysExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, []string{})
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res.([]string), []string{})
+		be.Equal(t, conn.Out(), "0")
 	})
 }

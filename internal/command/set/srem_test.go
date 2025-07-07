@@ -3,9 +3,9 @@ package set
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSRemParse(t *testing.T) {
@@ -44,12 +44,12 @@ func TestSRemParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSRem, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.members, test.want.members)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.members, test.want.members)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -64,12 +64,12 @@ func TestSRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSRem, "srem key one thr")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
 		items, _ := db.Set().Items("key")
-		testx.AssertEqual(t, items, []core.Value{core.Value("two")})
+		be.Equal(t, items, []core.Value{core.Value("two")})
 	})
 	t.Run("none", func(t *testing.T) {
 		db, red := getDB(t)
@@ -79,12 +79,12 @@ func TestSRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSRem, "srem key fou fiv")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		slen, _ := db.Set().Len("key")
-		testx.AssertEqual(t, slen, 3)
+		be.Equal(t, slen, 3)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -93,9 +93,9 @@ func TestSRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSRem, "srem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -105,8 +105,8 @@ func TestSRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSRem, "srem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

@@ -3,10 +3,10 @@ package set
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rset"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSScanParse(t *testing.T) {
@@ -103,14 +103,14 @@ func TestSScanParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSScan, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.cursor, test.cursor)
-				testx.AssertEqual(t, cmd.match, test.match)
-				testx.AssertEqual(t, cmd.count, test.count)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.cursor, test.cursor)
+				be.Equal(t, cmd.match, test.match)
+				be.Equal(t, cmd.count, test.count)
 			} else {
-				testx.AssertEqual(t, cmd, SScan{})
+				be.Equal(t, cmd, SScan{})
 			}
 		})
 	}
@@ -127,26 +127,26 @@ func TestSScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 5)
-			testx.AssertEqual(t, sres.Items[0], core.Value("m11"))
-			testx.AssertEqual(t, sres.Items[4], core.Value("m31"))
-			testx.AssertEqual(t, conn.Out(), "2,5,5,m11,m12,m21,m22,m31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 5)
+			be.Equal(t, sres.Items[0], core.Value("m11"))
+			be.Equal(t, sres.Items[4], core.Value("m31"))
+			be.Equal(t, conn.Out(), "2,5,5,m11,m12,m21,m22,m31")
 		}
 		{
 			cmd := redis.MustParse(ParseSScan, "sscan key 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 	t.Run("sscan pattern", func(t *testing.T) {
@@ -154,14 +154,14 @@ func TestSScanExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 
 		sres := res.(rset.ScanResult)
-		testx.AssertEqual(t, sres.Cursor, 4)
-		testx.AssertEqual(t, len(sres.Items), 2)
-		testx.AssertEqual(t, sres.Items[0].String(), "m21")
-		testx.AssertEqual(t, sres.Items[1].String(), "m22")
-		testx.AssertEqual(t, conn.Out(), "2,4,2,m21,m22")
+		be.Equal(t, sres.Cursor, 4)
+		be.Equal(t, len(sres.Items), 2)
+		be.Equal(t, sres.Items[0].String(), "m21")
+		be.Equal(t, sres.Items[1].String(), "m22")
+		be.Equal(t, conn.Out(), "2,4,2,m21,m22")
 	})
 	t.Run("sscan count", func(t *testing.T) {
 		{
@@ -170,14 +170,14 @@ func TestSScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 2)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].String(), "m11")
-			testx.AssertEqual(t, sres.Items[1].String(), "m12")
-			testx.AssertEqual(t, conn.Out(), "2,2,2,m11,m12")
+			be.Equal(t, sres.Cursor, 2)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].String(), "m11")
+			be.Equal(t, sres.Items[1].String(), "m12")
+			be.Equal(t, conn.Out(), "2,2,2,m11,m12")
 		}
 		{
 			// page 2
@@ -185,14 +185,14 @@ func TestSScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 4)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].String(), "m21")
-			testx.AssertEqual(t, sres.Items[1].String(), "m22")
-			testx.AssertEqual(t, conn.Out(), "2,4,2,m21,m22")
+			be.Equal(t, sres.Cursor, 4)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].String(), "m21")
+			be.Equal(t, sres.Items[1].String(), "m22")
+			be.Equal(t, conn.Out(), "2,4,2,m21,m22")
 		}
 		{
 			// page 3
@@ -200,13 +200,13 @@ func TestSScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 1)
-			testx.AssertEqual(t, sres.Items[0].String(), "m31")
-			testx.AssertEqual(t, conn.Out(), "2,5,1,m31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 1)
+			be.Equal(t, sres.Items[0].String(), "m31")
+			be.Equal(t, conn.Out(), "2,5,1,m31")
 		}
 		{
 			// no more pages
@@ -214,12 +214,12 @@ func TestSScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 }

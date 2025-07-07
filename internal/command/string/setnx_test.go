@@ -3,8 +3,8 @@ package string
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSetNXParse(t *testing.T) {
@@ -38,12 +38,12 @@ func TestSetNXParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSetNX, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.value, test.want.value)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.value, test.want.value)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -57,12 +57,12 @@ func TestSetNXExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSetNX, "setnx name alice")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 
 		name, _ := db.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("update", func(t *testing.T) {
@@ -74,11 +74,11 @@ func TestSetNXExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSetNX, "setnx name bob")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, false)
+		be.Equal(t, conn.Out(), "0")
 
 		name, _ := db.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Equal(t, name.String(), "alice")
 	})
 }

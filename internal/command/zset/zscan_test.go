@@ -3,10 +3,10 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZScanParse(t *testing.T) {
@@ -103,14 +103,14 @@ func TestZScanParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZScan, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.cursor, test.cursor)
-				testx.AssertEqual(t, cmd.match, test.match)
-				testx.AssertEqual(t, cmd.count, test.count)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.cursor, test.cursor)
+				be.Equal(t, cmd.match, test.match)
+				be.Equal(t, cmd.count, test.count)
 			} else {
-				testx.AssertEqual(t, cmd, ZScan{})
+				be.Equal(t, cmd, ZScan{})
 			}
 		})
 	}
@@ -132,28 +132,28 @@ func TestZScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 5)
-			testx.AssertEqual(t, sres.Items[0].Elem, core.Value("m11"))
-			testx.AssertEqual(t, sres.Items[0].Score, 11.0)
-			testx.AssertEqual(t, sres.Items[4].Elem, core.Value("m31"))
-			testx.AssertEqual(t, sres.Items[4].Score, 31.0)
-			testx.AssertEqual(t, conn.Out(), "2,5,10,m11,11,m12,12,m21,21,m22,22,m31,31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 5)
+			be.Equal(t, sres.Items[0].Elem, core.Value("m11"))
+			be.Equal(t, sres.Items[0].Score, 11.0)
+			be.Equal(t, sres.Items[4].Elem, core.Value("m31"))
+			be.Equal(t, sres.Items[4].Score, 31.0)
+			be.Equal(t, conn.Out(), "2,5,10,m11,11,m12,12,m21,21,m22,22,m31,31")
 		}
 		{
 			cmd := redis.MustParse(ParseZScan, "zscan key 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 	t.Run("zscan pattern", func(t *testing.T) {
@@ -161,16 +161,16 @@ func TestZScanExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 
 		sres := res.(rzset.ScanResult)
-		testx.AssertEqual(t, sres.Cursor, 4)
-		testx.AssertEqual(t, len(sres.Items), 2)
-		testx.AssertEqual(t, sres.Items[0].Elem.String(), "m21")
-		testx.AssertEqual(t, sres.Items[0].Score, 21.0)
-		testx.AssertEqual(t, sres.Items[1].Elem.String(), "m22")
-		testx.AssertEqual(t, sres.Items[1].Score, 22.0)
-		testx.AssertEqual(t, conn.Out(), "2,4,4,m21,21,m22,22")
+		be.Equal(t, sres.Cursor, 4)
+		be.Equal(t, len(sres.Items), 2)
+		be.Equal(t, sres.Items[0].Elem.String(), "m21")
+		be.Equal(t, sres.Items[0].Score, 21.0)
+		be.Equal(t, sres.Items[1].Elem.String(), "m22")
+		be.Equal(t, sres.Items[1].Score, 22.0)
+		be.Equal(t, conn.Out(), "2,4,4,m21,21,m22,22")
 	})
 	t.Run("zscan count", func(t *testing.T) {
 		{
@@ -179,16 +179,16 @@ func TestZScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 2)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m11")
-			testx.AssertEqual(t, sres.Items[0].Score, 11.0)
-			testx.AssertEqual(t, sres.Items[1].Elem.String(), "m12")
-			testx.AssertEqual(t, sres.Items[1].Score, 12.0)
-			testx.AssertEqual(t, conn.Out(), "2,2,4,m11,11,m12,12")
+			be.Equal(t, sres.Cursor, 2)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Elem.String(), "m11")
+			be.Equal(t, sres.Items[0].Score, 11.0)
+			be.Equal(t, sres.Items[1].Elem.String(), "m12")
+			be.Equal(t, sres.Items[1].Score, 12.0)
+			be.Equal(t, conn.Out(), "2,2,4,m11,11,m12,12")
 		}
 		{
 			// page 2
@@ -196,16 +196,16 @@ func TestZScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 4)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m21")
-			testx.AssertEqual(t, sres.Items[0].Score, 21.0)
-			testx.AssertEqual(t, sres.Items[1].Elem.String(), "m22")
-			testx.AssertEqual(t, sres.Items[1].Score, 22.0)
-			testx.AssertEqual(t, conn.Out(), "2,4,4,m21,21,m22,22")
+			be.Equal(t, sres.Cursor, 4)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Elem.String(), "m21")
+			be.Equal(t, sres.Items[0].Score, 21.0)
+			be.Equal(t, sres.Items[1].Elem.String(), "m22")
+			be.Equal(t, sres.Items[1].Score, 22.0)
+			be.Equal(t, conn.Out(), "2,4,4,m21,21,m22,22")
 		}
 		{
 			// page 3
@@ -213,14 +213,14 @@ func TestZScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 1)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m31")
-			testx.AssertEqual(t, sres.Items[0].Score, 31.0)
-			testx.AssertEqual(t, conn.Out(), "2,5,2,m31,31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 1)
+			be.Equal(t, sres.Items[0].Elem.String(), "m31")
+			be.Equal(t, sres.Items[0].Score, 31.0)
+			be.Equal(t, conn.Out(), "2,5,2,m31,31")
 		}
 		{
 			// no more pages
@@ -228,12 +228,12 @@ func TestZScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 }

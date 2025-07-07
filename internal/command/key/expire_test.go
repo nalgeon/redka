@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestExpireParse(t *testing.T) {
@@ -54,12 +54,12 @@ func TestExpireParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(parse, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.ttl, test.ttl)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.ttl, test.ttl)
 			} else {
-				testx.AssertEqual(t, cmd, Expire{})
+				be.Equal(t, cmd, Expire{})
 			}
 		})
 	}
@@ -78,13 +78,13 @@ func TestExpireExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "expire name 60")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 
 		expireAt := time.Now().Add(60 * time.Second)
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
+		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 	})
 
 	t.Run("update expire", func(t *testing.T) {
@@ -96,13 +96,13 @@ func TestExpireExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "expire name 30")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 
 		expireAt := time.Now().Add(30 * time.Second)
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
+		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 	})
 
 	t.Run("set to zero", func(t *testing.T) {
@@ -114,12 +114,12 @@ func TestExpireExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "expire name 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, key.Exists(), false)
+		be.Equal(t, key.Exists(), false)
 	})
 
 	t.Run("negative", func(t *testing.T) {
@@ -131,12 +131,12 @@ func TestExpireExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "expire name -10")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 
 		key, _ := db.Key().Get("name")
-		testx.AssertEqual(t, key.Exists(), false)
+		be.Equal(t, key.Exists(), false)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -148,11 +148,11 @@ func TestExpireExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "expire age 60")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, false)
+		be.Equal(t, conn.Out(), "0")
 
 		key, _ := db.Key().Get("age")
-		testx.AssertEqual(t, key.Exists(), false)
+		be.Equal(t, key.Exists(), false)
 	})
 }

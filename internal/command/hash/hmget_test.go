@@ -3,9 +3,9 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHMGetParse(t *testing.T) {
@@ -44,12 +44,12 @@ func TestHMGetParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHMGet, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.fields, test.fields)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.fields, test.fields)
 			} else {
-				testx.AssertEqual(t, cmd, HMGet{})
+				be.Equal(t, cmd, HMGet{})
 			}
 		})
 	}
@@ -67,11 +67,11 @@ func TestHMGetExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, conn.Out(), "1,alice")
+		be.Err(t, err, nil)
+		be.Equal(t, conn.Out(), "1,alice")
 		items := res.([]core.Value)
-		testx.AssertEqual(t, len(items), 1)
-		testx.AssertEqual(t, items[0], core.Value("alice"))
+		be.Equal(t, len(items), 1)
+		be.Equal(t, items[0], core.Value("alice"))
 	})
 	t.Run("some fields", func(t *testing.T) {
 		db, red := getDB(t)
@@ -85,13 +85,13 @@ func TestHMGetExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, conn.Out(), "3,alice,1,(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, conn.Out(), "3,alice,1,(nil)")
 		items := res.([]core.Value)
-		testx.AssertEqual(t, len(items), 3)
-		testx.AssertEqual(t, items[0], core.Value("alice"))
-		testx.AssertEqual(t, items[1], core.Value("1"))
-		testx.AssertEqual(t, items[2], core.Value(nil))
+		be.Equal(t, len(items), 3)
+		be.Equal(t, items[0], core.Value("alice"))
+		be.Equal(t, items[1], core.Value("1"))
+		be.Equal(t, items[2], core.Value(nil))
 	})
 	t.Run("all fields", func(t *testing.T) {
 		db, red := getDB(t)
@@ -104,11 +104,11 @@ func TestHMGetExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, conn.Out(), "2,alice,25")
+		be.Err(t, err, nil)
+		be.Equal(t, conn.Out(), "2,alice,25")
 		items := res.([]core.Value)
-		testx.AssertEqual(t, len(items), 2)
-		testx.AssertEqual(t, items[0], core.Value("alice"))
-		testx.AssertEqual(t, items[1], core.Value("25"))
+		be.Equal(t, len(items), 2)
+		be.Equal(t, items[0], core.Value("alice"))
+		be.Equal(t, items[1], core.Value("25"))
 	})
 }

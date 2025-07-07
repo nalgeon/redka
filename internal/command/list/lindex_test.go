@@ -3,9 +3,9 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestLIndexParse(t *testing.T) {
@@ -39,12 +39,12 @@ func TestLIndexParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseLIndex, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.index, test.want.index)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.index, test.want.index)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -58,9 +58,9 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("single elem", func(t *testing.T) {
 		db, red := getDB(t)
@@ -70,9 +70,9 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value("elem"))
-		testx.AssertEqual(t, conn.Out(), "elem")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value("elem"))
+		be.Equal(t, conn.Out(), "elem")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
 		db, red := getDB(t)
@@ -84,9 +84,9 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key 1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value("two"))
-		testx.AssertEqual(t, conn.Out(), "two")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value("two"))
+		be.Equal(t, conn.Out(), "two")
 	})
 	t.Run("list index out of bounds", func(t *testing.T) {
 		db, red := getDB(t)
@@ -96,9 +96,9 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key 1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("negative index", func(t *testing.T) {
 		db, red := getDB(t)
@@ -110,9 +110,9 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key -2")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value("two"))
-		testx.AssertEqual(t, conn.Out(), "two")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value("two"))
+		be.Equal(t, conn.Out(), "two")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -122,8 +122,8 @@ func TestLIndexExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 }

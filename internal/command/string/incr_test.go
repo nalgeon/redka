@@ -3,8 +3,8 @@ package string
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestIncrParse(t *testing.T) {
@@ -37,12 +37,12 @@ func TestIncrParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(parse, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.delta, test.want.delta)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.delta, test.want.delta)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -60,12 +60,12 @@ func TestIncrExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "incr age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 
 		age, _ := db.Str().Get("age")
-		testx.AssertEqual(t, age.MustInt(), 1)
+		be.Equal(t, age.MustInt(), 1)
 	})
 
 	t.Run("incr", func(t *testing.T) {
@@ -76,11 +76,11 @@ func TestIncrExec(t *testing.T) {
 		cmd := redis.MustParse(parse, "incr age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 26)
-		testx.AssertEqual(t, conn.Out(), "26")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 26)
+		be.Equal(t, conn.Out(), "26")
 
 		age, _ := db.Str().Get("age")
-		testx.AssertEqual(t, age.MustInt(), 26)
+		be.Equal(t, age.MustInt(), 26)
 	})
 }

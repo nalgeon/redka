@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func ExampleOpen() {
@@ -229,15 +229,15 @@ func ExampleDB_View() {
 
 func TestOpenDB(t *testing.T) {
 	sdb, err := sql.Open("sqlite3", "file:/data.db?vfs=memdb")
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 
 	db, err := redka.OpenDB(sdb, sdb, nil)
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 	defer db.Close()
 
 	n, err := db.Key().Len()
-	testx.AssertNoErr(t, err)
-	testx.AssertEqual(t, n, 0)
+	be.Err(t, err, nil)
+	be.Equal(t, n, 0)
 }
 
 func TestDB_View(t *testing.T) {
@@ -249,19 +249,19 @@ func TestDB_View(t *testing.T) {
 
 	err := db.View(func(tx *redka.Tx) error {
 		count, err := tx.Key().Count("name", "age")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 2)
 
 		name, err := tx.Str().Get("name")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Err(t, err, nil)
+		be.Equal(t, name.String(), "alice")
 
 		age, err := tx.Str().Get("age")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, age.MustInt(), 25)
+		be.Err(t, err, nil)
+		be.Equal(t, age.MustInt(), 25)
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 }
 
 func TestDB_Update(t *testing.T) {
@@ -280,20 +280,20 @@ func TestDB_Update(t *testing.T) {
 		}
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 
 	err = db.View(func(tx *redka.Tx) error {
 		count, _ := tx.Key().Count("name", "age")
-		testx.AssertEqual(t, count, 2)
+		be.Equal(t, count, 2)
 
 		name, _ := tx.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Equal(t, name.String(), "alice")
 
 		age, _ := tx.Str().Get("age")
-		testx.AssertEqual(t, age.MustInt(), 25)
+		be.Equal(t, age.MustInt(), 25)
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 }
 
 func TestRollback(t *testing.T) {
@@ -310,19 +310,19 @@ func TestRollback(t *testing.T) {
 		_ = tx.Str().Set("age", 50)
 		return errRollback
 	})
-	testx.AssertEqual(t, err, errRollback)
+	be.Equal(t, err, errRollback)
 
 	name, _ := db.Str().Get("name")
-	testx.AssertEqual(t, name.String(), "alice")
+	be.Equal(t, name.String(), "alice")
 	age, _ := db.Str().Get("age")
-	testx.AssertEqual(t, age.MustInt(), 25)
+	be.Equal(t, age.MustInt(), 25)
 }
 
 func TestTimeout(t *testing.T) {
 	db := getDB(t, &redka.Options{Timeout: time.Nanosecond})
 	defer db.Close()
 	err := db.Str().Set("name", "alice")
-	testx.AssertErr(t, err, context.DeadlineExceeded)
+	be.Err(t, err, context.DeadlineExceeded)
 }
 
 func getDB(tb testing.TB, opts *redka.Options) *redka.DB {

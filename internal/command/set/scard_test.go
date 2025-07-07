@@ -3,8 +3,8 @@ package set
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSCardParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestSCardParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSCard, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.key, test.want.key)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -52,9 +52,9 @@ func TestSCardExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, red := getDB(t)
@@ -65,9 +65,9 @@ func TestSCardExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -76,9 +76,9 @@ func TestSCardExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -88,8 +88,8 @@ func TestSCardExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

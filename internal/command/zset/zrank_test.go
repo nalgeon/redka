@@ -3,8 +3,8 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZRankParse(t *testing.T) {
@@ -38,13 +38,13 @@ func TestZRankParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZRank, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.member, test.want.member)
-				testx.AssertEqual(t, cmd.withScore, test.want.withScore)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.member, test.want.member)
+				be.Equal(t, cmd.withScore, test.want.withScore)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -60,9 +60,9 @@ func TestZRankExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("with score", func(t *testing.T) {
 		db, red := getDB(t)
@@ -73,9 +73,9 @@ func TestZRankExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRank, "zrank key two withscore")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "2,1,22")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "2,1,22")
 	})
 	t.Run("member not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -85,9 +85,9 @@ func TestZRankExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -96,9 +96,9 @@ func TestZRankExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -108,8 +108,8 @@ func TestZRankExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRank, "zrank key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 }

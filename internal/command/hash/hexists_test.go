@@ -3,8 +3,8 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHExistsParse(t *testing.T) {
@@ -43,12 +43,12 @@ func TestHExistsParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHExists, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.field, test.field)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.field, test.field)
 			} else {
-				testx.AssertEqual(t, cmd, HExists{})
+				be.Equal(t, cmd, HExists{})
 			}
 		})
 	}
@@ -65,9 +65,9 @@ func TestHExistsExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("field not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -79,9 +79,9 @@ func TestHExistsExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, false)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -91,8 +91,8 @@ func TestHExistsExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, false)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, false)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

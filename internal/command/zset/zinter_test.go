@@ -3,9 +3,9 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZInterParse(t *testing.T) {
@@ -69,13 +69,13 @@ func TestZInterParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZInter, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.keys, test.want.keys)
-				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
-				testx.AssertEqual(t, cmd.withScores, test.want.withScores)
+				be.Equal(t, cmd.keys, test.want.keys)
+				be.Equal(t, cmd.aggregate, test.want.aggregate)
+				be.Equal(t, cmd.withScores, test.want.withScores)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -105,9 +105,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 2)
-		testx.AssertEqual(t, conn.Out(), "2,thr,two")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 2)
+		be.Equal(t, conn.Out(), "2,thr,two")
 	})
 	t.Run("withscores", func(t *testing.T) {
 		db, red := getDB(t)
@@ -132,9 +132,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3 withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 2)
-		testx.AssertEqual(t, conn.Out(), "4,thr,9,two,222")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 2)
+		be.Equal(t, conn.Out(), "4,thr,9,two,222")
 	})
 	t.Run("aggregate", func(t *testing.T) {
 		db, red := getDB(t)
@@ -159,9 +159,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3 aggregate min withscores")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 2)
-		testx.AssertEqual(t, conn.Out(), "4,two,2,thr,3")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 2)
+		be.Equal(t, conn.Out(), "4,two,2,thr,3")
 	})
 	t.Run("single key", func(t *testing.T) {
 		db, red := getDB(t)
@@ -175,9 +175,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 1 key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 3)
-		testx.AssertEqual(t, conn.Out(), "3,one,two,thr")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 3)
+		be.Equal(t, conn.Out(), "3,one,two,thr")
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, red := getDB(t)
@@ -189,9 +189,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -200,9 +200,9 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -212,8 +212,8 @@ func TestZInterExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInter, "zinter 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(res.([]rzset.SetItem)), 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, len(res.([]rzset.SetItem)), 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

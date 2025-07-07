@@ -3,8 +3,8 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestLLenParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestLLenParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseLLen, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.key, test.want.key)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -51,9 +51,9 @@ func TestLLenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("single elem", func(t *testing.T) {
 		db, red := getDB(t)
@@ -63,9 +63,9 @@ func TestLLenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
 		db, red := getDB(t)
@@ -77,9 +77,9 @@ func TestLLenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 3)
-		testx.AssertEqual(t, conn.Out(), "3")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 3)
+		be.Equal(t, conn.Out(), "3")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -89,8 +89,8 @@ func TestLLenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

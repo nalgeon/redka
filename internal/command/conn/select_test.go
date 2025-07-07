@@ -3,8 +3,8 @@ package conn
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSelectParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestSelectParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSelect, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.index, test.want.index)
+				be.Equal(t, cmd.index, test.want.index)
 			} else {
-				testx.AssertEqual(t, cmd, Select{})
+				be.Equal(t, cmd, Select{})
 			}
 		})
 	}
@@ -64,9 +64,9 @@ func TestSelectExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseSelect, test.cmd)
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Err(t, err, nil)
+			be.Equal(t, res, test.res)
+			be.Equal(t, conn.Out(), test.out)
 		})
 	}
 }

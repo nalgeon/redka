@@ -3,9 +3,9 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZInterStoreParse(t *testing.T) {
@@ -64,13 +64,13 @@ func TestZInterStoreParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZInterStore, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.dest, test.want.dest)
-				testx.AssertEqual(t, cmd.keys, test.want.keys)
-				testx.AssertEqual(t, cmd.aggregate, test.want.aggregate)
+				be.Equal(t, cmd.dest, test.want.dest)
+				be.Equal(t, cmd.keys, test.want.keys)
+				be.Equal(t, cmd.aggregate, test.want.aggregate)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -100,12 +100,12 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 2)
+		be.Equal(t, count, 2)
 	})
 	t.Run("overwrite", func(t *testing.T) {
 		db, red := getDB(t)
@@ -131,14 +131,14 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 2)
+		be.Equal(t, count, 2)
 		_, err = db.ZSet().GetScore("dest", "one")
-		testx.AssertEqual(t, err, core.ErrNotFound)
+		be.Equal(t, err, core.ErrNotFound)
 	})
 	t.Run("aggregate", func(t *testing.T) {
 		db, red := getDB(t)
@@ -163,14 +163,14 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3 aggregate min")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
 		two, _ := db.ZSet().GetScore("dest", "two")
-		testx.AssertEqual(t, two, 2.0)
+		be.Equal(t, two, 2.0)
 		thr, _ := db.ZSet().GetScore("dest", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 	})
 	t.Run("single key", func(t *testing.T) {
 		db, red := getDB(t)
@@ -184,12 +184,12 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 3)
-		testx.AssertEqual(t, conn.Out(), "3")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 3)
+		be.Equal(t, conn.Out(), "3")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 3)
+		be.Equal(t, count, 3)
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, red := getDB(t)
@@ -201,12 +201,12 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 0)
+		be.Equal(t, count, 0)
 	})
 	t.Run("source key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -217,12 +217,12 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 2 key1 key2")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 0)
+		be.Equal(t, count, 0)
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -233,12 +233,12 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		count, _ := db.ZSet().Len("dest")
-		testx.AssertEqual(t, count, 0)
+		be.Equal(t, count, 0)
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -249,8 +249,8 @@ func TestZInterStoreExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (zinterstore)")
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), core.ErrKeyType.Error()+" (zinterstore)")
 	})
 }

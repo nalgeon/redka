@@ -3,8 +3,8 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestExistsParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestExistsParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseExists, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.keys, test.want)
+				be.Equal(t, cmd.keys, test.want)
 			} else {
-				testx.AssertEqual(t, cmd, Exists{})
+				be.Equal(t, cmd, Exists{})
 			}
 		})
 	}
@@ -78,9 +78,9 @@ func TestExistsExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseExists, test.cmd)
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Err(t, err, nil)
+			be.Equal(t, res, test.res)
+			be.Equal(t, conn.Out(), test.out)
 		})
 	}
 }

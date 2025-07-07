@@ -3,9 +3,9 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHIncrByParse(t *testing.T) {
@@ -46,13 +46,13 @@ func TestHIncrByParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHIncrBy, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.field, test.field)
-				testx.AssertEqual(t, cmd.delta, test.delta)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.field, test.field)
+				be.Equal(t, cmd.delta, test.delta)
 			} else {
-				testx.AssertEqual(t, cmd, HIncrBy{})
+				be.Equal(t, cmd, HIncrBy{})
 			}
 		})
 	}
@@ -69,12 +69,12 @@ func TestHIncrByExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 35)
-		testx.AssertEqual(t, conn.Out(), "35")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 35)
+		be.Equal(t, conn.Out(), "35")
 
 		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age, core.Value("35"))
+		be.Equal(t, age, core.Value("35"))
 	})
 	t.Run("decr field", func(t *testing.T) {
 		db, red := getDB(t)
@@ -86,12 +86,12 @@ func TestHIncrByExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 15)
-		testx.AssertEqual(t, conn.Out(), "15")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 15)
+		be.Equal(t, conn.Out(), "15")
 
 		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age, core.Value("15"))
+		be.Equal(t, age, core.Value("15"))
 	})
 	t.Run("create field", func(t *testing.T) {
 		db, red := getDB(t)
@@ -103,12 +103,12 @@ func TestHIncrByExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 10)
-		testx.AssertEqual(t, conn.Out(), "10")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 10)
+		be.Equal(t, conn.Out(), "10")
 
 		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age, core.Value("10"))
+		be.Equal(t, age, core.Value("10"))
 	})
 	t.Run("create key", func(t *testing.T) {
 		db, red := getDB(t)
@@ -118,11 +118,11 @@ func TestHIncrByExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 10)
-		testx.AssertEqual(t, conn.Out(), "10")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 10)
+		be.Equal(t, conn.Out(), "10")
 
 		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age, core.Value("10"))
+		be.Equal(t, age, core.Value("10"))
 	})
 }

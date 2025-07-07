@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSetParse(t *testing.T) {
@@ -123,15 +123,15 @@ func TestSetParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSet, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.value, test.want.value)
-				testx.AssertEqual(t, cmd.ifNX, test.want.ifNX)
-				testx.AssertEqual(t, cmd.ifXX, test.want.ifXX)
-				testx.AssertEqual(t, cmd.ttl, test.want.ttl)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.value, test.want.value)
+				be.Equal(t, cmd.ifNX, test.want.ifNX)
+				be.Equal(t, cmd.ifXX, test.want.ifXX)
+				be.Equal(t, cmd.ttl, test.want.ttl)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -203,9 +203,9 @@ func TestSetExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseSet, test.cmd)
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Err(t, err, nil)
+			be.Equal(t, res, test.res)
+			be.Equal(t, conn.Out(), test.out)
 		})
 	}
 }

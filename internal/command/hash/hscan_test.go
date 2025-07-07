@@ -3,10 +3,10 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rhash"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHScanParse(t *testing.T) {
@@ -103,14 +103,14 @@ func TestHScanParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHScan, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.cursor, test.cursor)
-				testx.AssertEqual(t, cmd.match, test.match)
-				testx.AssertEqual(t, cmd.count, test.count)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.cursor, test.cursor)
+				be.Equal(t, cmd.match, test.match)
+				be.Equal(t, cmd.count, test.count)
 			} else {
-				testx.AssertEqual(t, cmd, HScan{})
+				be.Equal(t, cmd, HScan{})
 			}
 		})
 	}
@@ -132,28 +132,28 @@ func TestHScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 5)
-			testx.AssertEqual(t, sres.Items[0].Field, "f11")
-			testx.AssertEqual(t, sres.Items[0].Value, core.Value("11"))
-			testx.AssertEqual(t, sres.Items[4].Field, "f31")
-			testx.AssertEqual(t, sres.Items[4].Value, core.Value("31"))
-			testx.AssertEqual(t, conn.Out(), "2,5,10,f11,11,f12,12,f21,21,f22,22,f31,31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 5)
+			be.Equal(t, sres.Items[0].Field, "f11")
+			be.Equal(t, sres.Items[0].Value, core.Value("11"))
+			be.Equal(t, sres.Items[4].Field, "f31")
+			be.Equal(t, sres.Items[4].Value, core.Value("31"))
+			be.Equal(t, conn.Out(), "2,5,10,f11,11,f12,12,f21,21,f22,22,f31,31")
 		}
 		{
 			cmd := redis.MustParse(ParseHScan, "hscan key 5")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 
@@ -162,16 +162,16 @@ func TestHScanExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 
 		sres := res.(rhash.ScanResult)
-		testx.AssertEqual(t, sres.Cursor, 4)
-		testx.AssertEqual(t, len(sres.Items), 2)
-		testx.AssertEqual(t, sres.Items[0].Field, "f21")
-		testx.AssertEqual(t, sres.Items[0].Value, core.Value("21"))
-		testx.AssertEqual(t, sres.Items[1].Field, "f22")
-		testx.AssertEqual(t, sres.Items[1].Value, core.Value("22"))
-		testx.AssertEqual(t, conn.Out(), "2,4,4,f21,21,f22,22")
+		be.Equal(t, sres.Cursor, 4)
+		be.Equal(t, len(sres.Items), 2)
+		be.Equal(t, sres.Items[0].Field, "f21")
+		be.Equal(t, sres.Items[0].Value, core.Value("21"))
+		be.Equal(t, sres.Items[1].Field, "f22")
+		be.Equal(t, sres.Items[1].Value, core.Value("22"))
+		be.Equal(t, conn.Out(), "2,4,4,f21,21,f22,22")
 	})
 
 	t.Run("hscan count", func(t *testing.T) {
@@ -181,16 +181,16 @@ func TestHScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 2)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Field, "f11")
-			testx.AssertEqual(t, sres.Items[0].Value, core.Value("11"))
-			testx.AssertEqual(t, sres.Items[1].Field, "f12")
-			testx.AssertEqual(t, sres.Items[1].Value, core.Value("12"))
-			testx.AssertEqual(t, conn.Out(), "2,2,4,f11,11,f12,12")
+			be.Equal(t, sres.Cursor, 2)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Field, "f11")
+			be.Equal(t, sres.Items[0].Value, core.Value("11"))
+			be.Equal(t, sres.Items[1].Field, "f12")
+			be.Equal(t, sres.Items[1].Value, core.Value("12"))
+			be.Equal(t, conn.Out(), "2,2,4,f11,11,f12,12")
 		}
 		{
 			// page 2
@@ -198,16 +198,16 @@ func TestHScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 4)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Field, "f21")
-			testx.AssertEqual(t, sres.Items[0].Value, core.Value("21"))
-			testx.AssertEqual(t, sres.Items[1].Field, "f22")
-			testx.AssertEqual(t, sres.Items[1].Value, core.Value("22"))
-			testx.AssertEqual(t, conn.Out(), "2,4,4,f21,21,f22,22")
+			be.Equal(t, sres.Cursor, 4)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Field, "f21")
+			be.Equal(t, sres.Items[0].Value, core.Value("21"))
+			be.Equal(t, sres.Items[1].Field, "f22")
+			be.Equal(t, sres.Items[1].Value, core.Value("22"))
+			be.Equal(t, conn.Out(), "2,4,4,f21,21,f22,22")
 		}
 		{
 			// page 3
@@ -215,14 +215,14 @@ func TestHScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 1)
-			testx.AssertEqual(t, sres.Items[0].Field, "f31")
-			testx.AssertEqual(t, sres.Items[0].Value, core.Value("31"))
-			testx.AssertEqual(t, conn.Out(), "2,5,2,f31,31")
+			be.Equal(t, sres.Cursor, 5)
+			be.Equal(t, len(sres.Items), 1)
+			be.Equal(t, sres.Items[0].Field, "f31")
+			be.Equal(t, sres.Items[0].Value, core.Value("31"))
+			be.Equal(t, conn.Out(), "2,5,2,f31,31")
 		}
 		{
 			// no more pages
@@ -230,12 +230,12 @@ func TestHScanExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 }

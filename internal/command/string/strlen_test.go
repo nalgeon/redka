@@ -3,8 +3,8 @@ package string
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestStrlenParse(t *testing.T) {
@@ -33,11 +33,11 @@ func TestStrlenParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseStrlen, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.key, test.want.key)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -52,9 +52,9 @@ func TestStrlenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseStrlen, "strlen name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 5)
-		testx.AssertEqual(t, conn.Out(), "5")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 5)
+		be.Equal(t, conn.Out(), "5")
 	})
 
 	t.Run("key not found", func(t *testing.T) {
@@ -64,8 +64,8 @@ func TestStrlenExec(t *testing.T) {
 		cmd := redis.MustParse(ParseStrlen, "strlen name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 }

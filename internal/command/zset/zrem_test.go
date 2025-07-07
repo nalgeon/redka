@@ -3,9 +3,9 @@ package zset
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZRemParse(t *testing.T) {
@@ -39,12 +39,12 @@ func TestZRemParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZRem, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.members, test.want.members)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.members, test.want.members)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -61,17 +61,17 @@ func TestZRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
 		count, _ := db.ZSet().Len("key")
-		testx.AssertEqual(t, count, 1)
+		be.Equal(t, count, 1)
 
 		_, err = db.ZSet().GetScore("key", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 		_, err = db.ZSet().GetScore("key", "two")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("all", func(t *testing.T) {
 		db, red := getDB(t)
@@ -83,12 +83,12 @@ func TestZRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRem, "zrem key one two thr")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 3)
-		testx.AssertEqual(t, conn.Out(), "3")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 3)
+		be.Equal(t, conn.Out(), "3")
 
 		count, _ := db.ZSet().Len("key")
-		testx.AssertEqual(t, count, 0)
+		be.Equal(t, count, 0)
 	})
 	t.Run("none", func(t *testing.T) {
 		db, red := getDB(t)
@@ -100,12 +100,12 @@ func TestZRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		count, _ := db.ZSet().Len("key")
-		testx.AssertEqual(t, count, 3)
+		be.Equal(t, count, 3)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -114,9 +114,9 @@ func TestZRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -126,11 +126,11 @@ func TestZRemExec(t *testing.T) {
 		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		val, _ := red.Str().Get("key")
-		testx.AssertEqual(t, val.String(), "str")
+		be.Equal(t, val.String(), "str")
 	})
 }

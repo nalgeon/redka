@@ -3,9 +3,9 @@ package set
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSMoveParse(t *testing.T) {
@@ -39,13 +39,13 @@ func TestSMoveParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSMove, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.src, test.want.src)
-				testx.AssertEqual(t, cmd.dest, test.want.dest)
-				testx.AssertEqual(t, cmd.member, test.want.member)
+				be.Equal(t, cmd.src, test.want.src)
+				be.Equal(t, cmd.dest, test.want.dest)
+				be.Equal(t, cmd.member, test.want.member)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -61,14 +61,14 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, false)
+		be.Equal(t, sone, false)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, true)
+		be.Equal(t, done, true)
 	})
 	t.Run("dest not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -78,14 +78,14 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, false)
+		be.Equal(t, sone, false)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, true)
+		be.Equal(t, done, true)
 	})
 	t.Run("src elem not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -96,14 +96,14 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, false)
+		be.Equal(t, sone, false)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, false)
+		be.Equal(t, done, false)
 	})
 	t.Run("src key not found", func(t *testing.T) {
 		db, red := getDB(t)
@@ -113,14 +113,14 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, false)
+		be.Equal(t, sone, false)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, false)
+		be.Equal(t, done, false)
 	})
 	t.Run("dest type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -131,14 +131,14 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (smove)")
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), core.ErrKeyType.Error()+" (smove)")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, true)
+		be.Equal(t, sone, true)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, false)
+		be.Equal(t, done, false)
 	})
 	t.Run("src type mismatch", func(t *testing.T) {
 		db, red := getDB(t)
@@ -149,13 +149,13 @@ func TestSMoveExec(t *testing.T) {
 		cmd := redis.MustParse(ParseSMove, "smove src dest one")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 0)
-		testx.AssertEqual(t, conn.Out(), "0")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 0)
+		be.Equal(t, conn.Out(), "0")
 
 		sone, _ := db.Set().Exists("src", "one")
-		testx.AssertEqual(t, sone, false)
+		be.Equal(t, sone, false)
 		done, _ := db.Set().Exists("dest", "one")
-		testx.AssertEqual(t, done, false)
+		be.Equal(t, done, false)
 	})
 }
