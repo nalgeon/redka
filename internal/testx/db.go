@@ -1,7 +1,6 @@
 package testx
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/nalgeon/redka"
@@ -35,16 +34,12 @@ func OpenDBOpts(tb testing.TB, opts *redka.Options) *redka.DB {
 	}
 
 	// Open the database.
-	sdb, err := sql.Open(driver, connStr)
-	if err != nil {
-		tb.Fatal(err)
-	}
 	if opts == nil {
 		opts = &redka.Options{DriverName: driver}
 	} else {
 		opts.DriverName = driver
 	}
-	db, err := redka.OpenDB(sdb, sdb, opts)
+	db, err := redka.Open(connStr, opts)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -52,8 +47,8 @@ func OpenDBOpts(tb testing.TB, opts *redka.Options) *redka.DB {
 		db.Close()
 	})
 
-	// Clear all tables.
-	_, err = sdb.Exec("delete from rkey")
+	// Clear the database.
+	err = db.Key().DeleteAll()
 	if err != nil {
 		tb.Fatal(err)
 	}

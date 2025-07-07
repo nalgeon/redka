@@ -1025,7 +1025,6 @@ func TestScan(t *testing.T) {
 
 func TestScanner(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
-		t.Skip("FIXME: unexpected error: no such table: rset")
 		db, set := getDB(t)
 		defer db.Close()
 
