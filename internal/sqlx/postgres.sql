@@ -59,11 +59,14 @@ where rkey.etime is null or rkey.etime > (extract(epoch from now()) * 1000);
 -- └───────────────┘
 create table if not exists
 rlist (
+    rowid serial primary key,
     kid    integer not null references rkey(id) on delete cascade,
     pos    double precision not null,
-    elem   bytea not null,
-    primary key (kid, pos)
+    elem   bytea not null
 );
+
+create unique index if not exists
+rlist_uniq_idx on rlist (kid, pos);
 
 create or replace function
 rlist_on_update_func()
