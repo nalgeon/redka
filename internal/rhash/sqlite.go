@@ -17,19 +17,19 @@ var sqlite = queries{
 	delete2: `
 	update rkey set
 		version = version + 1,
-		mtime = ?,
-		len = len - ?
-	where key = ? and type = 4 and (etime is null or etime > ?)`,
+		mtime = $1,
+		len = len - $2
+	where key = $3 and type = 4 and (etime is null or etime > $4)`,
 
 	fields: `
 	select field
 	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`,
+	where key = $1 and (etime is null or etime > $2)`,
 
 	get: `
 	select value
 	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?) and field = ?`,
+	where key = $1 and (etime is null or etime > $2) and field = $3`,
 
 	getMany: `
 	select field, value
@@ -39,38 +39,39 @@ var sqlite = queries{
 	items: `
 	select field, value
 	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`,
+	where key = $1 and (etime is null or etime > $2)`,
 
 	len: `
 	select len from rkey
-	where key = ? and type = 4 and (etime is null or etime > ?)`,
+	where key = $1 and type = 4 and (etime is null or etime > $2)`,
 
 	scan: `
 	select rhash.rowid, field, value
 	from rhash join rkey on kid = rkey.id and type = 4
 	where
-		key = ? and (etime is null or etime > ?)
-		and rhash.rowid > ? and field glob ?
-	limit ?`,
+		key = $1 and (etime is null or etime > $2)
+		and rhash.rowid > $3 and field glob $4
+	order by rhash.rowid asc
+	limit $5`,
 
 	set1: `
 	insert into
 	rkey   (key, type, version, mtime, len)
-	values (  ?,    4,       1,     ?,   0)
+	values ( $1,    4,       1,    $2,   0)
 	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
+		type = case when rkey.type = excluded.type then rkey.type else null end,
+		version = rkey.version + 1,
 		mtime = excluded.mtime
 	returning id`,
 
 	set2: `
 	insert into rhash (kid, field, value)
-	values (?, ?, ?)
+	values ($1, $2, $3)
 	on conflict (kid, field) do update
 	set value = excluded.value`,
 
 	values: `
 	select value
 	from rhash join rkey on kid = rkey.id and type = 4
-	where key = ? and (etime is null or etime > ?)`,
+	where key = $1 and (etime is null or etime > $2)`,
 }
