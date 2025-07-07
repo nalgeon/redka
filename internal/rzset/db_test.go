@@ -8,6 +8,7 @@ import (
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rzset"
+	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestAdd(t *testing.T) {
@@ -1584,9 +1585,6 @@ func TestUnionStore(t *testing.T) {
 
 func getDB(tb testing.TB) (*redka.DB, *rzset.DB) {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	db := testx.OpenDB(tb)
 	return db, db.ZSet()
 }

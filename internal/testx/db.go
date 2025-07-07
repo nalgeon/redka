@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/nalgeon/redka"
 )
 
@@ -21,6 +20,13 @@ var connStrings = map[string]string{
 // Uses the driver specified in the build tag.
 func OpenDB(tb testing.TB) *redka.DB {
 	tb.Helper()
+	return OpenDBOpts(tb, nil)
+}
+
+// OpenDBOpts returns a database handle for testing.
+// Uses the driver specified in the build tag.
+func OpenDBOpts(tb testing.TB, opts *redka.Options) *redka.DB {
+	tb.Helper()
 
 	// Get the database connection string.
 	connStr := connStrings[driver]
@@ -33,7 +39,12 @@ func OpenDB(tb testing.TB) *redka.DB {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	db, err := redka.OpenDB(sdb, sdb, &redka.Options{DriverName: driver})
+	if opts == nil {
+		opts = &redka.Options{DriverName: driver}
+	} else {
+		opts.DriverName = driver
+	}
+	db, err := redka.OpenDB(sdb, sdb, opts)
 	if err != nil {
 		tb.Fatal(err)
 	}

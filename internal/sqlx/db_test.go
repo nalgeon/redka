@@ -70,9 +70,10 @@ func TestDataSource_Sqlite(t *testing.T) {
 			"synchronous":  "normal",
 		}
 		ds := DataSource(path, false, &Options{Dialect: DialectSqlite, Pragma: pragma})
-		want := "file:redka.db?_mutex=no&_pragma=journal_mode%3Dwal&_pragma=synchronous%3Dnormal&_txlock=immediate"
-		if ds != want {
-			t.Errorf("expected %s, got %s", want, ds)
+		want1 := "file:redka.db?_mutex=no&_pragma=journal_mode%3Dwal&_pragma=synchronous%3Dnormal&_txlock=immediate"
+		want2 := "file:redka.db?_mutex=no&_pragma=synchronous%3Dnormal&_pragma=journal_mode%3Dwal&_txlock=immediate"
+		if ds != want1 && ds != want2 {
+			t.Errorf("expected %s, got %s", want1, ds)
 		}
 	})
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/testx"
 )
 
 func ExampleOpen() {
@@ -327,9 +328,6 @@ func TestTimeout(t *testing.T) {
 
 func getDB(tb testing.TB, opts *redka.Options) *redka.DB {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", opts)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	db := testx.OpenDBOpts(tb, opts)
 	return db
 }
