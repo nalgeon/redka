@@ -20,7 +20,7 @@ var ErrDialect = errors.New("unknown SQL dialect")
 // Enumerate replaces ? placeholders with $1, $2, ... $n.
 func (d Dialect) Enumerate(query string) string {
 	if d == DialectSqlite {
-		// SQLite uses ? placeholders.
+		// SQLite supports ? placeholders.
 		return query
 	}
 	// Replace ? with $1, $2, ... $n placeholders.

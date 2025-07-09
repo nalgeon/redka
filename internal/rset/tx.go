@@ -9,167 +9,45 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlAdd1 = `
-	insert into
-	rkey   (key, type, version, mtime, len)
-	values (  ?,    3,       1,     ?,   0)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
-
-	sqlAdd2 = `
-	insert into rset (kid, elem)
-	values (?, ?)
-	on conflict (kid, elem) do nothing
-	returning 1`
-
-	sqlDelete1 = `
-	delete from rset
-	where kid = (
-			select id from rkey
-			where key = ? and type = 3 and (etime is null or etime > ?)
-		) and elem in (:elems)`
-
-	sqlDelete2 = `
-	update rkey set
-		version = version + 1,
-		mtime = ?,
-		len = len - ?
-	where key = ? and type = 3 and (etime is null or etime > ?)`
-
-	sqlDeleteKey1 = `
-	delete from rset
-	where kid = (
-		select id from rkey
-		where key = ? and type = 3 and (etime is null or etime > ?)
-	)`
-
-	sqlDeleteKey2 = `
-	update rkey set
-		version = 0,
-		mtime = 0,
-		len = 0
-	where key = ? and type = 3 and (etime is null or etime > ?)`
-
-	sqlDiff = `
-	with others as (
-		select elem
-		from rset
-		where kid in (
-			select id from rkey
-			where key in (:keys) and type = 3 and (etime is null or etime > ?)
-		)
-	)
-	select elem
-	from rset
-	where kid = (
-		select id from rkey
-		where key = ? and type = 3 and (etime is null or etime > ?)
-	)
-	and elem not in (select elem from others)`
-
-	sqlDiffStore = `
-	with others as (
-		select elem
-		from rset
-		where kid in (
-			select id from rkey
-			where key in (:keys) and type = 3 and (etime is null or etime > ?)
-		)
-	)
-	insert into rset (kid, elem)
-	select ?, elem
-	from rset
-	where kid = (
-		select id from rkey
-		where key = ? and type = 3 and (etime is null or etime > ?)
-	)
-	and elem not in (select elem from others)`
-
-	sqlExists = `
-	select count(*)
-	from rset join rkey on kid = rkey.id and type = 3
-	where key = ? and (etime is null or etime > ?) and elem = ?`
-
-	sqlInter = `
-	select elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key in (:keys) and (etime is null or etime > ?)
-	group by elem
-	having count(distinct kid) = ?`
-
-	sqlInterStore = `
-	insert into rset (kid, elem)
-	select ?, elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key in (:keys) and (etime is null or etime > ?)
-	group by elem
-	having count(distinct kid) = ?`
-
-	sqlItems = `
-	select elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlLen = `
-	select len from rkey
-	where key = ? and type = 3 and (etime is null or etime > ?)`
-
-	sqlPop1 = `
-	with chosen as (
-		select rset.rowid
-		from rset join rkey on kid = rkey.id and type = 3
-		where key = ? and (etime is null or etime > ?)
-		order by random() limit 1
-	)
-	delete from rset
-	where rowid in (select rowid from chosen)
-	returning elem`
-
-	sqlPop2 = sqlDelete2
-
-	sqlRandom = `
-	select elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key = ? and (etime is null or etime > ?)
-	order by random() limit 1`
-
-	sqlScan = `
-	select rset.rowid, elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where
-		key = ? and (etime is null or etime > ?)
-		and rset.rowid > ? and elem glob ?
-	limit ?`
-
-	sqlUnion = `
-	select elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key in (:keys) and (etime is null or etime > ?)
-	group by elem`
-
-	sqlUnionStore = `
-	insert into rset (kid, elem)
-	select ?, elem
-	from rset join rkey on kid = rkey.id and type = 3
-	where key in (:keys) and (etime is null or etime > ?)
-	group by elem`
-)
-
+// scanPageSize is the default number
+// of set items per page when scanning.
 const scanPageSize = 10
+
+// SQL queries for the set repository.
+type queries struct {
+	add1       string
+	add2       string
+	delete1    string
+	delete2    string
+	deleteKey1 string
+	deleteKey2 string
+	diff       string
+	diffStore  string
+	exists     string
+	inter      string
+	interStore string
+	items      string
+	len        string
+	pop1       string
+	pop2       string
+	random     string
+	scan       string
+	union      string
+	unionStore string
+}
 
 // Tx is a set repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     queries
 }
 
 // NewTx creates a set repository transaction
 // from a generic database transaction.
 func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Add adds or updates elements in a set.
@@ -185,7 +63,7 @@ func (tx *Tx) Add(key string, elems ...any) (int, error) {
 
 	// Create or update the key.
 	var keyID int
-	err = tx.tx.QueryRow(sqlAdd1, key, time.Now().UnixMilli()).Scan(&keyID)
+	err = tx.tx.QueryRow(tx.sql.add1, key, time.Now().UnixMilli()).Scan(&keyID)
 	if err != nil {
 		return 0, sqlx.TypedError(err)
 	}
@@ -194,7 +72,7 @@ func (tx *Tx) Add(key string, elems ...any) (int, error) {
 	var n int
 	for _, elemb := range elembs {
 		var created bool
-		err = tx.tx.QueryRow(sqlAdd2, keyID, elemb).Scan(&created)
+		err = tx.tx.QueryRow(tx.sql.add2, keyID, elemb).Scan(&created)
 		if err == sql.ErrNoRows {
 			continue
 		}
@@ -220,7 +98,8 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 
 	// Remove the elements.
 	now := time.Now().UnixMilli()
-	query, elemArgs := sqlx.ExpandIn(sqlDelete1, ":elems", elembs)
+	query, elemArgs := sqlx.ExpandIn(tx.sql.delete1, ":elems", elembs)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, now}, elemArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -233,7 +112,7 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 
 	// Update the key.
 	args = []any{now, n, key, now}
-	_, err = tx.tx.Exec(sqlDelete2, args...)
+	_, err = tx.tx.Exec(tx.sql.delete2, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -252,7 +131,8 @@ func (tx *Tx) Diff(keys ...string) ([]core.Value, error) {
 	}
 	others := keys[1:]
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlDiff, ":keys", others)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.diff, ":keys", others)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now, keys[0], now)
 	return tx.selectElems(query, args)
 }
@@ -286,7 +166,8 @@ func (tx *Tx) DiffStore(dest string, keys ...string) (int, error) {
 
 	// Diff the source sets and store the result.
 	others := keys[1:]
-	query, keyArgs := sqlx.ExpandIn(sqlDiffStore, ":keys", others)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.diffStore, ":keys", others)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now, destID, keys[0], now)
 	return tx.store(query, args)
 }
@@ -301,7 +182,7 @@ func (tx *Tx) Exists(key, elem any) (bool, error) {
 
 	var exists bool
 	args := []any{key, time.Now().UnixMilli(), elemb}
-	err = tx.tx.QueryRow(sqlExists, args...).Scan(&exists)
+	err = tx.tx.QueryRow(tx.sql.exists, args...).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -316,7 +197,8 @@ func (tx *Tx) Inter(keys ...string) ([]core.Value, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
-	query, keyArgs := sqlx.ExpandIn(sqlInter, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.inter, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, time.Now().UnixMilli(), len(keys))
 	return tx.selectElems(query, args)
 }
@@ -347,7 +229,8 @@ func (tx *Tx) InterStore(dest string, keys ...string) (int, error) {
 	}
 
 	// Intersect the source sets and store the result.
-	query, keyArgs := sqlx.ExpandIn(sqlInterStore, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.interStore, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := slices.Concat([]any{destID}, keyArgs, []any{now, len(keys)})
 	return tx.store(query, args)
 }
@@ -356,7 +239,7 @@ func (tx *Tx) InterStore(dest string, keys ...string) (int, error) {
 // If the key does not exist or is not a set, returns an empty slice.
 func (tx *Tx) Items(key string) ([]core.Value, error) {
 	args := []any{key, time.Now().UnixMilli()}
-	return tx.selectElems(sqlItems, args)
+	return tx.selectElems(tx.sql.items, args)
 }
 
 // Len returns the number of elements in a set.
@@ -364,7 +247,7 @@ func (tx *Tx) Items(key string) ([]core.Value, error) {
 func (tx *Tx) Len(key string) (int, error) {
 	var n int
 	args := []any{key, time.Now().UnixMilli()}
-	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	err := tx.tx.QueryRow(tx.sql.len, args...).Scan(&n)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
@@ -404,7 +287,7 @@ func (tx *Tx) Pop(key string) (core.Value, error) {
 	now := time.Now().UnixMilli()
 	args := []any{key, now}
 	var val []byte
-	err := tx.tx.QueryRow(sqlPop1, args...).Scan(&val)
+	err := tx.tx.QueryRow(tx.sql.pop1, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return nil, core.ErrNotFound
 	}
@@ -414,7 +297,7 @@ func (tx *Tx) Pop(key string) (core.Value, error) {
 
 	// Update the key.
 	args = []any{now, 1, key, now}
-	_, err = tx.tx.Exec(sqlPop2, args...)
+	_, err = tx.tx.Exec(tx.sql.pop2, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +310,7 @@ func (tx *Tx) Pop(key string) (core.Value, error) {
 func (tx *Tx) Random(key string) (core.Value, error) {
 	args := []any{key, time.Now().UnixMilli()}
 	var val []byte
-	err := tx.tx.QueryRow(sqlRandom, args...).Scan(&val)
+	err := tx.tx.QueryRow(tx.sql.random, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return nil, core.ErrNotFound
 	}
@@ -443,6 +326,7 @@ func (tx *Tx) Random(key string) (core.Value, error) {
 // If the key does not exist or is not a set, returns an empty slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
+	pattern = tx.dialect.GlobToLike(pattern)
 	if count == 0 {
 		count = scanPageSize
 	}
@@ -453,7 +337,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 		cursor, pattern, count,
 	}
 	var rows *sql.Rows
-	rows, err := tx.tx.Query(sqlScan, args...)
+	rows, err := tx.tx.Query(tx.sql.scan, args...)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -498,7 +382,8 @@ func (tx *Tx) Union(keys ...string) ([]core.Value, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
-	query, keyArgs := sqlx.ExpandIn(sqlUnion, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.union, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, time.Now().UnixMilli())
 	return tx.selectElems(query, args)
 }
@@ -530,25 +415,26 @@ func (tx *Tx) UnionStore(dest string, keys ...string) (int, error) {
 	}
 
 	// Union the source sets and store the result.
-	query, keyArgs := sqlx.ExpandIn(sqlUnionStore, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.unionStore, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := slices.Concat([]any{destID}, keyArgs, []any{now})
 	return tx.store(query, args)
 }
 
 // deleteKey deletes set elements and resets the key metadata.
 func (tx *Tx) deleteKey(key string, now int64) error {
-	_, err := tx.tx.Exec(sqlDeleteKey1, key, now)
+	_, err := tx.tx.Exec(tx.sql.deleteKey1, key, now)
 	if err != nil {
 		return err
 	}
-	_, err = tx.tx.Exec(sqlDeleteKey2, key, now)
+	_, err = tx.tx.Exec(tx.sql.deleteKey2, key, now)
 	return err
 }
 
 // createKey creates a new set key if it does not exist.
 func (tx *Tx) createKey(key string, now int64) (int, error) {
 	var keyID int
-	err := tx.tx.QueryRow(sqlAdd1, key, now).Scan(&keyID)
+	err := tx.tx.QueryRow(tx.sql.add1, key, now).Scan(&keyID)
 	if err != nil {
 		return 0, sqlx.TypedError(err)
 	}
@@ -597,4 +483,16 @@ func (tx *Tx) selectElems(query string, args []any) ([]core.Value, error) {
 type ScanResult struct {
 	Cursor int
 	Items  []core.Value
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return sqlite
+	case sqlx.DialectPostgres:
+		return queries{}
+	default:
+		return queries{}
+	}
 }
