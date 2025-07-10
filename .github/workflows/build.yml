@@ -29,7 +29,9 @@ jobs:
                   go get .
 
             - name: Test and build
-              run: make test-sqlite build
+              run: |
+                  make test driver=sqlite
+                  make build
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4
