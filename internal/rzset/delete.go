@@ -2,33 +2,6 @@ package rzset
 
 import (
 	"time"
-
-	"github.com/nalgeon/redka/internal/sqlx"
-)
-
-const (
-	sqlDeleteRank = `
-	with ranked as (
-		select rowid, elem, score
-		from rzset
-		where kid = (
-			select id from rkey
-			where key = ? and type = 5 and (etime is null or etime > ?)
-		)
-		order by score, elem
-		limit ?, ?
-	)
-	delete from rzset
-	where rowid in (select rowid from ranked)`
-
-	sqlDeleteScore = `
-	delete from rzset
-	where kid = (
-			select id from rkey
-			where key = ? and type = 5 and (etime is null or etime > ?)
-		) and score between ? and ?`
-
-	sqlUpdateKey = sqlDelete2
 )
 
 // DeleteCmd removes elements from a set.
@@ -67,18 +40,18 @@ func (c DeleteCmd) Run() (int, error) {
 		var n int
 		err := c.db.update(func(tx *Tx) error {
 			var err error
-			n, err = c.run(tx.tx)
+			n, err = c.run(tx)
 			return err
 		})
 		return n, err
 	}
 	if c.tx != nil {
-		return c.run(c.tx.tx)
+		return c.run(c.tx)
 	}
 	return 0, nil
 }
 
-func (c DeleteCmd) run(tx sqlx.Tx) (n int, err error) {
+func (c DeleteCmd) run(tx *Tx) (n int, err error) {
 	now := time.Now().UnixMilli()
 
 	if c.byRank != nil {
@@ -98,7 +71,7 @@ func (c DeleteCmd) run(tx sqlx.Tx) (n int, err error) {
 
 // deleteRank removes elements from a set by rank.
 // Returns the number of elements removed.
-func (c DeleteCmd) deleteRank(tx sqlx.Tx, now int64) (int, error) {
+func (c DeleteCmd) deleteRank(tx *Tx, now int64) (int, error) {
 	// Check start and stop values.
 	if c.byRank.start < 0 || c.byRank.stop < 0 {
 		return 0, nil
@@ -108,10 +81,10 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx, now int64) (int, error) {
 	args := []any{
 		c.key,                              // key
 		now,                                // now
-		c.byRank.start,                     // start
-		c.byRank.stop - c.byRank.start + 1, // count
+		c.byRank.stop - c.byRank.start + 1, // count (limit)
+		c.byRank.start,                     // start (offset)
 	}
-	res, err := tx.Exec(sqlDeleteRank, args...)
+	res, err := tx.tx.Exec(tx.sql.deleteRank, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -121,14 +94,14 @@ func (c DeleteCmd) deleteRank(tx sqlx.Tx, now int64) (int, error) {
 
 // deleteScore removes elements from a set by score.
 // Returns the number of elements removed.
-func (c DeleteCmd) deleteScore(tx sqlx.Tx, now int64) (int, error) {
+func (c DeleteCmd) deleteScore(tx *Tx, now int64) (int, error) {
 	args := []any{
 		c.key,
 		now,
 		c.byScore.start,
 		c.byScore.stop,
 	}
-	res, err := tx.Exec(sqlDeleteScore, args...)
+	res, err := tx.tx.Exec(tx.sql.deleteScore, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -137,8 +110,8 @@ func (c DeleteCmd) deleteScore(tx sqlx.Tx, now int64) (int, error) {
 }
 
 // updateKey updates the key after deleting the elements.
-func (c DeleteCmd) updateKey(tx sqlx.Tx, now int64, n int) error {
+func (c DeleteCmd) updateKey(tx *Tx, now int64, n int) error {
 	args := []any{now, n, c.key, now}
-	_, err := tx.Exec(sqlUpdateKey, args...)
+	_, err := tx.tx.Exec(tx.sql.delete2, args...)
 	return err
 }

@@ -14,7 +14,6 @@ import (
 func TestAdd(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		created, err := zset.Add("key", "one", 1)
 		be.Err(t, err, nil)
@@ -43,7 +42,6 @@ func TestAdd(t *testing.T) {
 	})
 	t.Run("update", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		created, err := zset.Add("key", "one", 1)
 		be.Err(t, err, nil)
@@ -70,7 +68,6 @@ func TestAdd(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "string")
 
 		created, err := zset.Add("key", "one", 1)
@@ -88,7 +85,6 @@ func TestAdd(t *testing.T) {
 func TestAddMany(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		items := map[any]float64{
 			"one": 1,
@@ -114,7 +110,6 @@ func TestAddMany(t *testing.T) {
 	})
 	t.Run("update", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
@@ -148,7 +143,6 @@ func TestAddMany(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items := map[any]float64{
@@ -174,8 +168,7 @@ func TestAddMany(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	t.Run("count", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -205,8 +198,7 @@ func TestCount(t *testing.T) {
 		}
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		count, err := zset.Count("key", 1, 2)
 		be.Err(t, err, nil)
@@ -214,7 +206,6 @@ func TestCount(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		count, err := zset.Count("key", 1, 2)
@@ -226,7 +217,6 @@ func TestCount(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
@@ -246,7 +236,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("all", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
@@ -266,7 +255,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("none", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
@@ -285,8 +273,7 @@ func TestDelete(t *testing.T) {
 		be.Equal(t, one, 1.0)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		n, err := zset.Delete("key", "one", "two")
 		be.Err(t, err, nil)
@@ -294,7 +281,6 @@ func TestDelete(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		n, err := zset.Delete("key", "one", "two")
@@ -306,7 +292,6 @@ func TestDelete(t *testing.T) {
 func TestDeleteRank(t *testing.T) {
 	t.Run("delete", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "2nd", 2)
@@ -328,8 +313,7 @@ func TestDeleteRank(t *testing.T) {
 		be.Equal(t, thr, 3.0)
 	})
 	t.Run("negative indexes", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 
@@ -341,7 +325,6 @@ func TestDeleteRank(t *testing.T) {
 
 func TestDeleteScore(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
 	_, _ = zset.Add("key", "2nd", 2)
@@ -363,7 +346,6 @@ func TestDeleteScore(t *testing.T) {
 
 func TestGetRank(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -405,7 +387,6 @@ func TestGetRank(t *testing.T) {
 
 func TestGetRankRev(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -447,7 +428,6 @@ func TestGetRankRev(t *testing.T) {
 
 func TestGetScore(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -483,7 +463,6 @@ func TestGetScore(t *testing.T) {
 func TestIncr(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		val, err := zset.Incr("key", "one", 25.5)
 		be.Err(t, err, nil)
@@ -497,7 +476,6 @@ func TestIncr(t *testing.T) {
 	})
 	t.Run("create field", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "one", 10)
 		val, err := zset.Incr("key", "two", 25.5)
@@ -512,7 +490,6 @@ func TestIncr(t *testing.T) {
 	})
 	t.Run("update field", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "one", 25.5)
 		val, err := zset.Incr("key", "one", 10.5)
@@ -526,8 +503,7 @@ func TestIncr(t *testing.T) {
 		be.Equal(t, zlen, 1)
 	})
 	t.Run("decrement", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 25.5)
 		val, err := zset.Incr("key", "one", -10.5)
@@ -536,7 +512,6 @@ func TestIncr(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "one")
 
 		val, err := zset.Incr("key", "one", 25.0)
@@ -550,8 +525,7 @@ func TestIncr(t *testing.T) {
 
 func TestInter(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -577,8 +551,7 @@ func TestInter(t *testing.T) {
 		})
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -594,8 +567,7 @@ func TestInter(t *testing.T) {
 		})
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 1)
 		_, _ = zset.Add("key3", "thr", 1)
@@ -605,8 +577,7 @@ func TestInter(t *testing.T) {
 		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 
@@ -615,15 +586,13 @@ func TestInter(t *testing.T) {
 		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		items, err := zset.Inter("key1", "key2", "key3")
 		be.Err(t, err, nil)
 		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key1", "str")
 		_, _ = zset.Add("key2", "two", 2)
 		_, _ = zset.Add("key3", "two", 2)
@@ -636,8 +605,7 @@ func TestInter(t *testing.T) {
 
 func TestInterWith(t *testing.T) {
 	t.Run("sum", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -663,8 +631,7 @@ func TestInterWith(t *testing.T) {
 		})
 	})
 	t.Run("min", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -690,8 +657,7 @@ func TestInterWith(t *testing.T) {
 		})
 	})
 	t.Run("max", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -721,7 +687,6 @@ func TestInterWith(t *testing.T) {
 func TestInterStore(t *testing.T) {
 	t.Run("store", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
@@ -757,7 +722,6 @@ func TestInterStore(t *testing.T) {
 	})
 	t.Run("rewrite dest", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -780,7 +744,6 @@ func TestInterStore(t *testing.T) {
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 2)
@@ -804,8 +767,7 @@ func TestInterStore(t *testing.T) {
 		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("source key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -819,7 +781,6 @@ func TestInterStore(t *testing.T) {
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -834,7 +795,6 @@ func TestInterStore(t *testing.T) {
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -854,7 +814,6 @@ func TestInterStore(t *testing.T) {
 
 func TestLen(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -881,8 +840,7 @@ func TestLen(t *testing.T) {
 
 func TestRangeRank(t *testing.T) {
 	t.Run("range", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -918,8 +876,7 @@ func TestRangeRank(t *testing.T) {
 		}
 	})
 	t.Run("desc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -955,8 +912,7 @@ func TestRangeRank(t *testing.T) {
 		}
 	})
 	t.Run("negative indexes", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -966,8 +922,7 @@ func TestRangeRank(t *testing.T) {
 		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		items, err := zset.Range("key", 0, 1)
 		be.Err(t, err, nil)
@@ -975,7 +930,6 @@ func TestRangeRank(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items, err := zset.Range("key", 0, 1)
@@ -986,8 +940,7 @@ func TestRangeRank(t *testing.T) {
 
 func TestRangeScore(t *testing.T) {
 	t.Run("asc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1028,8 +981,7 @@ func TestRangeScore(t *testing.T) {
 		}
 	})
 	t.Run("desc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1070,8 +1022,7 @@ func TestRangeScore(t *testing.T) {
 		}
 	})
 	t.Run("offset/count", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1114,8 +1065,7 @@ func TestRangeScore(t *testing.T) {
 		}
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		items, err := zset.RangeWith("key").ByScore(0, 10).Run()
 		be.Err(t, err, nil)
@@ -1123,7 +1073,6 @@ func TestRangeScore(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items, err := zset.RangeWith("key").ByScore(0, 10).Run()
@@ -1133,74 +1082,90 @@ func TestRangeScore(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	db, zset := getDB(t)
-	defer db.Close()
+	t.Run("scan", func(t *testing.T) {
+		db, zset := getDB(t)
 
-	_, _ = zset.Add("key", "f11", 11)
-	_, _ = zset.Add("key", "f12", 12)
-	_, _ = zset.Add("key", "f21", 21)
-	_, _ = zset.Add("key", "f22", 22)
-	_, _ = zset.Add("key", "f31", 31)
-	_ = db.Str().Set("str", "str")
+		_, _ = zset.Add("key", "f11", 11)
+		_, _ = zset.Add("key", "f12", 12)
+		_, _ = zset.Add("key", "f21", 21)
+		_, _ = zset.Add("key", "f22", 22)
+		_, _ = zset.Add("key", "f31", 31)
+		_ = db.Str().Set("str", "str")
 
-	tests := []struct {
-		name    string
-		cursor  int
-		pattern string
-		count   int
+		tests := []struct {
+			name    string
+			pattern string
+			count   int
+			want    []rzset.SetItem
+		}{
+			{"all", "*", 5,
+				[]rzset.SetItem{
+					{Elem: core.Value("f11"), Score: 11},
+					{Elem: core.Value("f12"), Score: 12},
+					{Elem: core.Value("f21"), Score: 21},
+					{Elem: core.Value("f22"), Score: 22},
+					{Elem: core.Value("f31"), Score: 31},
+				},
+			},
+			{"some", "f2*", 4,
+				[]rzset.SetItem{
+					{Elem: core.Value("f21"), Score: 21},
+					{Elem: core.Value("f22"), Score: 22},
+				},
+			},
+			{"none", "n*", 0, []rzset.SetItem(nil)},
+		}
 
-		wantCursor int
-		wantItems  []rzset.SetItem
-	}{
-		{"all", 0, "*", 0, 5,
-			[]rzset.SetItem{
-				{Elem: core.Value("f11"), Score: 11},
-				{Elem: core.Value("f12"), Score: 12},
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-				{Elem: core.Value("f31"), Score: 31},
-			},
-		},
-		{"some", 0, "f2*", 10, 4,
-			[]rzset.SetItem{
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-			},
-		},
-		{"none", 0, "n*", 10, 0, []rzset.SetItem(nil)},
-		{"cursor 1st", 0, "*", 2, 2,
-			[]rzset.SetItem{
-				{Elem: core.Value("f11"), Score: 11},
-				{Elem: core.Value("f12"), Score: 12},
-			},
-		},
-		{"cursor 2nd", 2, "*", 2, 4,
-			[]rzset.SetItem{
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-			},
-		},
-		{"cursor 3rd", 4, "*", 2, 5,
-			[]rzset.SetItem{
-				{Elem: core.Value("f31"), Score: 31},
-			},
-		},
-		{"exhausted", 6, "*", 2, 0, []rzset.SetItem(nil)},
-	}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				out, err := zset.Scan("key", 0, test.pattern, test.count)
+				be.Err(t, err, nil)
+				be.Equal(t, len(out.Items), len(test.want))
+				for i, item := range out.Items {
+					be.Equal(t, item.Elem, test.want[i].Elem)
+					be.Equal(t, item.Score, test.want[i].Score)
+				}
+			})
+		}
+	})
+	t.Run("pagination", func(t *testing.T) {
+		db, zset := getDB(t)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			out, err := zset.Scan("key", test.cursor, test.pattern, test.count)
-			be.Err(t, err, nil)
-			be.Equal(t, out.Cursor, test.wantCursor)
-			for i, item := range out.Items {
-				be.Equal(t, item.Elem, test.wantItems[i].Elem)
-				be.Equal(t, item.Score, test.wantItems[i].Score)
-			}
-		})
-	}
+		_, _ = zset.Add("key", "f11", 11)
+		_, _ = zset.Add("key", "f12", 12)
+		_, _ = zset.Add("key", "f21", 21)
+		_, _ = zset.Add("key", "f22", 22)
+		_, _ = zset.Add("key", "f31", 31)
+		_ = db.Str().Set("str", "str")
 
+		out, err := zset.Scan("key", 0, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 2)
+		be.Equal(t, out.Items[0].Elem, core.Value("f11"))
+		be.Equal(t, out.Items[0].Score, 11)
+		be.Equal(t, out.Items[1].Elem, core.Value("f12"))
+		be.Equal(t, out.Items[1].Score, 12)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 2)
+		be.Equal(t, out.Items[0].Elem, core.Value("f21"))
+		be.Equal(t, out.Items[0].Score, 21)
+		be.Equal(t, out.Items[1].Elem, core.Value("f22"))
+		be.Equal(t, out.Items[1].Score, 22)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 1)
+		be.Equal(t, out.Items[0].Elem, core.Value("f31"))
+		be.Equal(t, out.Items[0].Score, 31)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 0)
+	})
 	t.Run("ignore other keys", func(t *testing.T) {
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "elem", 10)
 		_, _ = zset.Add("key2", "elem", 20)
 
@@ -1211,11 +1176,14 @@ func TestScan(t *testing.T) {
 		be.Equal(t, out.Items[0].Score, 10.0)
 	})
 	t.Run("key not found", func(t *testing.T) {
+		_, zset := getDB(t)
 		out, err := zset.Scan("not", 0, "*", 0)
 		be.Err(t, err, nil)
 		be.Equal(t, len(out.Items), 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
+		db, zset := getDB(t)
+		_ = db.Str().Set("str", "str")
 		out, err := zset.Scan("str", 0, "*", 0)
 		be.Err(t, err, nil)
 		be.Equal(t, len(out.Items), 0)
@@ -1225,7 +1193,6 @@ func TestScan(t *testing.T) {
 func TestScanner(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "f11", 11)
 		_, _ = zset.Add("key", "f12", 12)
@@ -1254,8 +1221,7 @@ func TestScanner(t *testing.T) {
 		be.Equal(t, scores, []int{11, 12, 21, 22, 31})
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		sc := zset.Scanner("not", "*", 2)
 		var items []rzset.SetItem
@@ -1268,7 +1234,6 @@ func TestScanner(t *testing.T) {
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		sc := zset.Scanner("key", "*", 2)
@@ -1284,8 +1249,7 @@ func TestScanner(t *testing.T) {
 
 func TestUnion(t *testing.T) {
 	t.Run("intersecting", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1313,8 +1277,7 @@ func TestUnion(t *testing.T) {
 		})
 	})
 	t.Run("distinct", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 1)
 		_, _ = zset.Add("key3", "thr", 1)
@@ -1328,8 +1291,7 @@ func TestUnion(t *testing.T) {
 		})
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 2)
 
@@ -1341,15 +1303,13 @@ func TestUnion(t *testing.T) {
 		})
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		items, err := zset.Union("key1", "key2", "key3")
 		be.Err(t, err, nil)
 		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key1", "str")
 		_, _ = zset.Add("key2", "two", 2)
 		_, _ = zset.Add("key3", "two", 2)
@@ -1364,8 +1324,7 @@ func TestUnion(t *testing.T) {
 
 func TestUnionWith(t *testing.T) {
 	t.Run("sum", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1393,8 +1352,7 @@ func TestUnionWith(t *testing.T) {
 		})
 	})
 	t.Run("min", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1422,8 +1380,7 @@ func TestUnionWith(t *testing.T) {
 		})
 	})
 	t.Run("max", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1455,7 +1412,6 @@ func TestUnionWith(t *testing.T) {
 func TestUnionStore(t *testing.T) {
 	t.Run("store", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1494,7 +1450,6 @@ func TestUnionStore(t *testing.T) {
 	})
 	t.Run("rewrite dest", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -1517,8 +1472,6 @@ func TestUnionStore(t *testing.T) {
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
-
 		_, _ = zset.Add("dest", "old", 10)
 
 		n, err := zset.UnionWith("key1", "key2").Dest("dest").Store()
@@ -1535,8 +1488,7 @@ func TestUnionStore(t *testing.T) {
 		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("source key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -1550,7 +1502,6 @@ func TestUnionStore(t *testing.T) {
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
@@ -1565,7 +1516,6 @@ func TestUnionStore(t *testing.T) {
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
