@@ -165,10 +165,10 @@ func TestDiff(t *testing.T) {
 		_, _ = set.Add("key1", "one", "two", "thr")
 
 		items, err := set.Diff("key1")
+		be.Err(t, err, nil)
 		sort.Slice(items, func(i, j int) bool {
 			return slices.Compare(items[i], items[j]) < 0
 		})
-		be.Err(t, err, nil)
 		be.Equal(t, items, []core.Value{
 			core.Value("one"), core.Value("thr"), core.Value("two"),
 		})

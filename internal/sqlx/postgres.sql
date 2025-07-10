@@ -122,10 +122,13 @@ window w as (partition by rlist.kid order by rlist.pos);
 -- └───────────────┘
 create table if not exists
 rset (
+    rowid serial primary key,
     kid    integer not null references rkey(id) on delete cascade,
-    elem   bytea not null,
-    primary key (kid, elem)
+    elem   bytea not null
 );
+
+create unique index if not exists
+rset_uniq_idx on rset (kid, elem);
 
 create or replace function
 rset_on_insert_func()

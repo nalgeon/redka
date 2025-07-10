@@ -1,5 +1,6 @@
 package rset
 
+// SQLite queries for the set repository.
 var sqlite = queries{
 	add1: `
 	insert into
@@ -17,6 +18,12 @@ var sqlite = queries{
 	values ( $1,   $2)
 	on conflict (kid, elem) do nothing
 	returning 1`,
+
+	clone: `
+	insert into rset (kid, elem)
+	select $1, elem
+	from rset join rkey on kid = rkey.id and type = 3
+	where key = $2 and (etime is null or etime > $3)`,
 
 	delete1: `
 	delete from rset
@@ -141,7 +148,7 @@ var sqlite = queries{
 	where
 		key = $1 and (etime is null or etime > $2)
 		and rset.rowid > $3 and elem glob $4
-	limit ?`,
+	limit $5`,
 
 	union: `
 	select elem

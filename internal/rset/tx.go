@@ -17,6 +17,7 @@ const scanPageSize = 10
 type queries struct {
 	add1       string
 	add2       string
+	clone      string
 	delete1    string
 	delete2    string
 	deleteKey1 string
@@ -130,6 +131,10 @@ func (tx *Tx) Diff(keys ...string) ([]core.Value, error) {
 		return nil, nil
 	}
 	others := keys[1:]
+	if len(others) == 0 {
+		// No sets to diff, just return the first set.
+		return tx.Items(keys[0])
+	}
 	now := time.Now().UnixMilli()
 	query, keyArgs := sqlx.ExpandIn(tx.sql.diff, ":keys", others)
 	query = tx.dialect.Enumerate(query)
@@ -164,8 +169,15 @@ func (tx *Tx) DiffStore(dest string, keys ...string) (int, error) {
 		return 0, err
 	}
 
-	// Diff the source sets and store the result.
+	// Act according to the number of source keys.
 	others := keys[1:]
+	if len(others) == 0 {
+		// No sets to diff, just clone the first set.
+		args := []any{destID, keys[0], now}
+		return tx.store(tx.sql.clone, args)
+	}
+
+	// Diff the source sets and store the result.
 	query, keyArgs := sqlx.ExpandIn(tx.sql.diffStore, ":keys", others)
 	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now, destID, keys[0], now)
@@ -341,7 +353,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 	if err != nil {
 		return ScanResult{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build the resulting slice.
 	maxID := 0
@@ -460,7 +472,7 @@ func (tx *Tx) selectElems(query string, args []any) ([]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build the resulting slice.
 	var elems []core.Value
@@ -491,7 +503,7 @@ func getSQL(dialect sqlx.Dialect) queries {
 	case sqlx.DialectSqlite:
 		return sqlite
 	case sqlx.DialectPostgres:
-		return queries{}
+		return postgres
 	default:
 		return queries{}
 	}
