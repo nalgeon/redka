@@ -27,13 +27,7 @@ vet:
 	@go vet ./...
 
 test:
-	@go test ./... -v
-
-test-sqlite:
-	@go test ./... -v -tags=sqlite3
-
-test-postgres:
-	@go test ./... -v -tags=postgres
+	@go test ./... -tags=$(driver)
 
 build:
 	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.version=$(build_ver) -X main.commit=$(build_rev) -X main.date=$(build_date)" -trimpath -o build/redka -v cmd/redka/main.go
