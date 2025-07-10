@@ -150,13 +150,13 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 
 	// Add offset and count if necessary.
 	if c.offset > 0 && c.count > 0 {
-		query += " limit ?, ?"
-		args = append(args, c.offset, c.count)
+		query += " limit $5 offset $6"
+		args = append(args, c.count, c.offset)
 	} else if c.count > 0 {
-		query += " limit ?"
+		query += " limit $5"
 		args = append(args, c.count)
 	} else if c.offset > 0 {
-		query += " limit ?, -1"
+		query += " " + c.tx.dialect.LimitAll() + " offset $5"
 		args = append(args, c.offset)
 	}
 

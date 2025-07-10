@@ -207,11 +207,14 @@ where rkey.etime is null or rkey.etime > (extract(epoch from now()) * 1000);
 -- │ Sorted sets   │
 -- └───────────────┘
 create table if not exists rzset (
+    rowid serial primary key,
     kid    integer not null references rkey(id) on delete cascade,
     elem   bytea not null,
-    score  double precision not null,
-    primary key (kid, elem)
+    score  double precision not null
 );
+
+create unique index if not exists
+rzset_uniq_idx on rzset (kid, elem);
 
 create index if not exists
 rzset_score_idx on rzset (kid, score, elem);

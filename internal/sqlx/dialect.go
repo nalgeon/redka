@@ -62,3 +62,11 @@ func (d Dialect) GlobToLike(pattern string) string {
 	}
 	return b.String()
 }
+
+// LimitAll returns a SQL query fragment to limit the result to all rows.
+func (d Dialect) LimitAll() string {
+	if d == DialectSqlite {
+		return "limit -1"
+	}
+	return "limit all"
+}

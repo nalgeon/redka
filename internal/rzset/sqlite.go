@@ -54,7 +54,7 @@ var sqlite = queries{
 		version = 0,
 		mtime = 0,
 		len = 0
-	where key = $1 and type = 5 and (etime is null or etime > $1)`,
+	where key = $1 and type = 5 and (etime is null or etime > $2)`,
 
 	deleteRank: `
 	with ranked as (
@@ -76,7 +76,7 @@ var sqlite = queries{
 	where kid = (
 			select id from rkey
 			where key = $1 and type = 5 and (etime is null or etime > $2)
-		) and score between ? and ?`,
+		) and score between $3 and $4`,
 
 	getRank: `
 	with ranked as (
@@ -98,7 +98,7 @@ var sqlite = queries{
 	insert into rzset (kid, elem, score)
 	values ($1, $2, $3)
 	on conflict (kid, elem) do update
-	set score = score + excluded.score
+	set score = rzset.score + excluded.score
 	returning score`,
 
 	inter: `

@@ -406,7 +406,7 @@ func getSQL(dialect sqlx.Dialect) queries {
 	case sqlx.DialectSqlite:
 		return sqlite
 	case sqlx.DialectPostgres:
-		return queries{}
+		return postgres
 	default:
 		return queries{}
 	}
