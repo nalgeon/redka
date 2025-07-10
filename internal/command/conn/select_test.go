@@ -44,8 +44,7 @@ func TestSelectParse(t *testing.T) {
 }
 
 func TestSelectExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
 	tests := []struct {
 		cmd string

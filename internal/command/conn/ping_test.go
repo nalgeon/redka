@@ -44,8 +44,7 @@ func TestPingParse(t *testing.T) {
 }
 
 func TestPingExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
 	tests := []struct {
 		cmd string
