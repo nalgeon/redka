@@ -192,7 +192,7 @@ func TestHScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.True(t, sres.Cursor > 0)
+			be.True(t, sres.Cursor > cursor)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].Field, "f11")
 			be.Equal(t, sres.Items[0].Value, core.Value("11"))
@@ -212,7 +212,7 @@ func TestHScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.True(t, sres.Cursor > 0)
+			be.True(t, sres.Cursor > cursor)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].Field, "f21")
 			be.Equal(t, sres.Items[0].Value, core.Value("21"))
@@ -232,7 +232,7 @@ func TestHScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.True(t, sres.Cursor > 0)
+			be.True(t, sres.Cursor > cursor)
 			be.Equal(t, len(sres.Items), 1)
 			be.Equal(t, sres.Items[0].Field, "f31")
 			be.Equal(t, sres.Items[0].Value, core.Value("31"))
