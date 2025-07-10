@@ -60,10 +60,8 @@ func TestHIncrByFloatParse(t *testing.T) {
 
 func TestHIncrByFloatExec(t *testing.T) {
 	t.Run("incr field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
@@ -73,14 +71,12 @@ func TestHIncrByFloatExec(t *testing.T) {
 		be.Equal(t, res, 35.5)
 		be.Equal(t, conn.Out(), "35.5")
 
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age, core.Value("35.5"))
 	})
 	t.Run("decr field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age -10.5")
 		conn := redis.NewFakeConn()
@@ -90,14 +86,12 @@ func TestHIncrByFloatExec(t *testing.T) {
 		be.Equal(t, res, 14.5)
 		be.Equal(t, conn.Out(), "14.5")
 
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age, core.Value("14.5"))
 	})
 	t.Run("create field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
 
 		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
@@ -107,12 +101,11 @@ func TestHIncrByFloatExec(t *testing.T) {
 		be.Equal(t, res, 10.5)
 		be.Equal(t, conn.Out(), "10.5")
 
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age, core.Value("10.5"))
 	})
 	t.Run("create key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHIncrByFloat, "hincrbyfloat person age 10.5")
 		conn := redis.NewFakeConn()
@@ -122,7 +115,7 @@ func TestHIncrByFloatExec(t *testing.T) {
 		be.Equal(t, res, 10.5)
 		be.Equal(t, conn.Out(), "10.5")
 
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age, core.Value("10.5"))
 	})
 }

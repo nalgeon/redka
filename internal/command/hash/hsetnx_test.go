@@ -56,8 +56,7 @@ func TestHSetNXParse(t *testing.T) {
 
 func TestHSetNXExec(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHSetNX, "hsetnx person name alice")
 		conn := redis.NewFakeConn()
@@ -66,15 +65,13 @@ func TestHSetNXExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
 
 		cmd := redis.MustParse(ParseHSetNX, "hsetnx person name bob")
 		conn := redis.NewFakeConn()
@@ -83,7 +80,7 @@ func TestHSetNXExec(t *testing.T) {
 		be.Equal(t, res, false)
 		be.Equal(t, conn.Out(), "0")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "alice")
 	})
 }

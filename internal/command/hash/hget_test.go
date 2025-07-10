@@ -57,10 +57,8 @@ func TestHGetParse(t *testing.T) {
 
 func TestHGetExec(t *testing.T) {
 	t.Run("field found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
 
 		cmd := redis.MustParse(ParseHGet, "hget person name")
 		conn := redis.NewFakeConn()
@@ -71,10 +69,8 @@ func TestHGetExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "alice")
 	})
 	t.Run("field not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
 
 		cmd := redis.MustParse(ParseHGet, "hget person age")
 		conn := redis.NewFakeConn()
@@ -85,8 +81,7 @@ func TestHGetExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHGet, "hget person name")
 		conn := redis.NewFakeConn()

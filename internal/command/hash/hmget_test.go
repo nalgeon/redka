@@ -57,11 +57,9 @@ func TestHMGetParse(t *testing.T) {
 
 func TestHMGetExec(t *testing.T) {
 	t.Run("one field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHMGet, "hmget person name")
 		conn := redis.NewFakeConn()
@@ -74,12 +72,10 @@ func TestHMGetExec(t *testing.T) {
 		be.Equal(t, items[0], core.Value("alice"))
 	})
 	t.Run("some fields", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
-		_, _ = db.Hash().Set("person", "happy", true)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
+		_, _ = red.Hash().Set("person", "happy", true)
 
 		cmd := redis.MustParse(ParseHMGet, "hmget person name happy city")
 		conn := redis.NewFakeConn()
@@ -94,11 +90,9 @@ func TestHMGetExec(t *testing.T) {
 		be.Equal(t, items[2], core.Value(nil))
 	})
 	t.Run("all fields", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHMGet, "hmget person name age")
 		conn := redis.NewFakeConn()

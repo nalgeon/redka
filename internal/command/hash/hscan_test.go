@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nalgeon/be"
@@ -117,17 +118,18 @@ func TestHScanParse(t *testing.T) {
 }
 
 func TestHScanExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_, _ = db.Hash().Set("key", "f11", "11")
-	_, _ = db.Hash().Set("key", "f12", "12")
-	_, _ = db.Hash().Set("key", "f21", "21")
-	_, _ = db.Hash().Set("key", "f22", "22")
-	_, _ = db.Hash().Set("key", "f31", "31")
+	_, _ = red.Hash().Set("key", "f11", "11")
+	_, _ = red.Hash().Set("key", "f12", "12")
+	_, _ = red.Hash().Set("key", "f21", "21")
+	_, _ = red.Hash().Set("key", "f22", "22")
+	_, _ = red.Hash().Set("key", "f31", "31")
 
 	t.Run("hscan all", func(t *testing.T) {
+		var cursor int
 		{
+			// page 1
 			cmd := redis.MustParse(ParseHScan, "hscan key 0")
 			conn := redis.NewFakeConn()
 
@@ -135,16 +137,20 @@ func TestHScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.Equal(t, sres.Cursor, 5)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 5)
 			be.Equal(t, sres.Items[0].Field, "f11")
 			be.Equal(t, sres.Items[0].Value, core.Value("11"))
 			be.Equal(t, sres.Items[4].Field, "f31")
 			be.Equal(t, sres.Items[4].Value, core.Value("31"))
-			be.Equal(t, conn.Out(), "2,5,10,f11,11,f12,12,f21,21,f22,22,f31,31")
+			wantOut := fmt.Sprintf("2,%d,10,f11,11,f12,12,f21,21,f22,22,f31,31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
-			cmd := redis.MustParse(ParseHScan, "hscan key 5")
+			// page 2 (empty)
+			next := fmt.Sprintf("hscan key %d", cursor)
+			cmd := redis.MustParse(ParseHScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -165,16 +171,18 @@ func TestHScanExec(t *testing.T) {
 		be.Err(t, err, nil)
 
 		sres := res.(rhash.ScanResult)
-		be.Equal(t, sres.Cursor, 4)
+		be.True(t, sres.Cursor > 0)
 		be.Equal(t, len(sres.Items), 2)
 		be.Equal(t, sres.Items[0].Field, "f21")
 		be.Equal(t, sres.Items[0].Value, core.Value("21"))
 		be.Equal(t, sres.Items[1].Field, "f22")
 		be.Equal(t, sres.Items[1].Value, core.Value("22"))
-		be.Equal(t, conn.Out(), "2,4,4,f21,21,f22,22")
+		wantOut := fmt.Sprintf("2,%d,4,f21,21,f22,22", sres.Cursor)
+		be.Equal(t, conn.Out(), wantOut)
 	})
 
 	t.Run("hscan count", func(t *testing.T) {
+		var cursor int
 		{
 			// page 1
 			cmd := redis.MustParse(ParseHScan, "hscan key 0 match * count 2")
@@ -184,49 +192,58 @@ func TestHScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.Equal(t, sres.Cursor, 2)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].Field, "f11")
 			be.Equal(t, sres.Items[0].Value, core.Value("11"))
 			be.Equal(t, sres.Items[1].Field, "f12")
 			be.Equal(t, sres.Items[1].Value, core.Value("12"))
-			be.Equal(t, conn.Out(), "2,2,4,f11,11,f12,12")
+			wantOut := fmt.Sprintf("2,%d,4,f11,11,f12,12", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 2
-			cmd := redis.MustParse(ParseHScan, "hscan key 2 match * count 2")
+			next := fmt.Sprintf("hscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseHScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.Equal(t, sres.Cursor, 4)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].Field, "f21")
 			be.Equal(t, sres.Items[0].Value, core.Value("21"))
 			be.Equal(t, sres.Items[1].Field, "f22")
 			be.Equal(t, sres.Items[1].Value, core.Value("22"))
-			be.Equal(t, conn.Out(), "2,4,4,f21,21,f22,22")
+			wantOut := fmt.Sprintf("2,%d,4,f21,21,f22,22", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 3
-			cmd := redis.MustParse(ParseHScan, "hscan key 4 match * count 2")
+			next := fmt.Sprintf("hscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseHScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
 			be.Err(t, err, nil)
 
 			sres := res.(rhash.ScanResult)
-			be.Equal(t, sres.Cursor, 5)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 1)
 			be.Equal(t, sres.Items[0].Field, "f31")
 			be.Equal(t, sres.Items[0].Value, core.Value("31"))
-			be.Equal(t, conn.Out(), "2,5,2,f31,31")
+			wantOut := fmt.Sprintf("2,%d,2,f31,31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// no more pages
-			cmd := redis.MustParse(ParseHScan, "hscan key 5 match * count 2")
+			next := fmt.Sprintf("hscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseHScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)

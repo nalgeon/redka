@@ -46,11 +46,9 @@ func TestHGetAllParse(t *testing.T) {
 
 func TestHGetAllExec(t *testing.T) {
 	t.Run("key found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHGetAll, "hgetall person")
 		conn := redis.NewFakeConn()
@@ -65,8 +63,7 @@ func TestHGetAllExec(t *testing.T) {
 			true)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHGetAll, "hgetall person")
 		conn := redis.NewFakeConn()

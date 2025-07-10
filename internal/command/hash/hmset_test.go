@@ -64,8 +64,7 @@ func TestHMSetParse(t *testing.T) {
 
 func TestHMSetExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHMSet, "hmset person name alice")
 		conn := redis.NewFakeConn()
@@ -74,13 +73,12 @@ func TestHMSetExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("create multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseHMSet, "hmset person name alice age 25")
 		conn := redis.NewFakeConn()
@@ -89,17 +87,15 @@ func TestHMSetExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "alice")
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age.String(), "25")
 	})
 
 	t.Run("create/update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
 
 		cmd := redis.MustParse(ParseHMSet, "hmset person name bob age 50")
 		conn := redis.NewFakeConn()
@@ -108,18 +104,16 @@ func TestHMSetExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "bob")
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age.String(), "50")
 	})
 
 	t.Run("update multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		red := getRedka(t)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHMSet, "hmset person name bob age 50")
 		conn := redis.NewFakeConn()
@@ -128,9 +122,9 @@ func TestHMSetExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Hash().Get("person", "name")
+		name, _ := red.Hash().Get("person", "name")
 		be.Equal(t, name.String(), "bob")
-		age, _ := db.Hash().Get("person", "age")
+		age, _ := red.Hash().Get("person", "age")
 		be.Equal(t, age.String(), "50")
 	})
 }
