@@ -19,13 +19,6 @@ var connStrings = map[string]string{
 // Uses the driver specified in the build tag.
 func OpenDB(tb testing.TB) *redka.DB {
 	tb.Helper()
-	return OpenDBOpts(tb, nil)
-}
-
-// OpenDBOpts returns a database handle for testing.
-// Uses the driver specified in the build tag.
-func OpenDBOpts(tb testing.TB, opts *redka.Options) *redka.DB {
-	tb.Helper()
 
 	// Get the database connection string.
 	connStr := connStrings[driver]
@@ -34,17 +27,13 @@ func OpenDBOpts(tb testing.TB, opts *redka.Options) *redka.DB {
 	}
 
 	// Open the database.
-	if opts == nil {
-		opts = &redka.Options{DriverName: driver}
-	} else {
-		opts.DriverName = driver
-	}
+	opts := &redka.Options{DriverName: driver}
 	db, err := redka.Open(connStr, opts)
 	if err != nil {
 		tb.Fatal(err)
 	}
 	tb.Cleanup(func() {
-		db.Close()
+		_ = db.Close()
 	})
 
 	// Clear the database.
