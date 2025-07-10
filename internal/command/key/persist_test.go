@@ -46,10 +46,8 @@ func TestPersistParse(t *testing.T) {
 
 func TestPersistExec(t *testing.T) {
 	t.Run("persist to persist", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParsePersist, "persist name")
 		conn := redis.NewFakeConn()
@@ -58,15 +56,13 @@ func TestPersistExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.ETime, (*int64)(nil))
 	})
 
 	t.Run("volatile to persist", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+		red := getRedka(t)
+		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(ParsePersist, "persist name")
 		conn := redis.NewFakeConn()
@@ -75,15 +71,13 @@ func TestPersistExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.ETime, (*int64)(nil))
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParsePersist, "persist age")
 		conn := redis.NewFakeConn()
@@ -92,7 +86,7 @@ func TestPersistExec(t *testing.T) {
 		be.Equal(t, res, false)
 		be.Equal(t, conn.Out(), "0")
 
-		key, _ := db.Key().Get("age")
+		key, _ := red.Key().Get("age")
 		be.Equal(t, key.Exists(), false)
 	})
 }

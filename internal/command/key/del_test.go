@@ -69,12 +69,11 @@ func TestDelExec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
-			db, red := getDB(t)
-			defer db.Close()
+			red := getRedka(t)
 
-			_ = db.Str().Set("name", "alice")
-			_ = db.Str().Set("age", 50)
-			_ = db.Str().Set("city", "paris")
+			_ = red.Str().Set("name", "alice")
+			_ = red.Str().Set("age", 50)
+			_ = red.Str().Set("city", "paris")
 
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseDel, test.cmd)
@@ -83,9 +82,9 @@ func TestDelExec(t *testing.T) {
 			be.Equal(t, res, test.res)
 			be.Equal(t, conn.Out(), test.out)
 
-			_, err = db.Str().Get("name")
+			_, err = red.Str().Get("name")
 			be.Err(t, err, core.ErrNotFound)
-			city, _ := db.Str().Get("city")
+			city, _ := red.Str().Get("city")
 			be.Equal(t, city.String(), "paris")
 		})
 	}

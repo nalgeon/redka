@@ -50,14 +50,13 @@ func TestKeysParse(t *testing.T) {
 }
 
 func TestKeysExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("k11", "11")
-	_ = db.Str().Set("k12", "12")
-	_ = db.Str().Set("k21", "21")
-	_ = db.Str().Set("k22", "22")
-	_ = db.Str().Set("k31", "31")
+	_ = red.Str().Set("k11", "11")
+	_ = red.Str().Set("k12", "12")
+	_ = red.Str().Set("k21", "21")
+	_ = red.Str().Set("k22", "22")
+	_ = red.Str().Set("k31", "31")
 
 	tests := []struct {
 		cmd string

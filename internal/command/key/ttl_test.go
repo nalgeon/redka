@@ -46,10 +46,8 @@ func TestTTLParse(t *testing.T) {
 
 func TestTTLExec(t *testing.T) {
 	t.Run("has ttl", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+		red := getRedka(t)
+		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(ParseTTL, "ttl name")
 		conn := redis.NewFakeConn()
@@ -60,10 +58,8 @@ func TestTTLExec(t *testing.T) {
 	})
 
 	t.Run("no ttl", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseTTL, "ttl name")
 		conn := redis.NewFakeConn()
@@ -74,8 +70,7 @@ func TestTTLExec(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseTTL, "ttl name")
 		conn := redis.NewFakeConn()

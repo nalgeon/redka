@@ -41,23 +41,21 @@ func TestRandomKeyParse(t *testing.T) {
 
 func TestRandomKeyExec(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
-		_ = db.Str().Set("city", "paris")
-		keys := []string{"name", "age", "city"}
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
+		_ = red.Str().Set("city", "paris")
 
 		conn := redis.NewFakeConn()
 		cmd := redis.MustParse(ParseRandomKey, "randomkey")
 		res, err := cmd.Run(conn, red)
 		be.Err(t, err, nil)
-		be.Equal(t, slices.Contains(keys, res.(core.Key).Key), true)
-		be.Equal(t, slices.Contains(keys, conn.Out()), true)
+		keys := []string{"name", "age", "city"}
+		be.True(t, slices.Contains(keys, res.(core.Key).Key))
+		be.True(t, slices.Contains(keys, conn.Out()))
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 		conn := redis.NewFakeConn()
 		cmd := redis.MustParse(ParseRandomKey, "randomkey")
 		res, err := cmd.Run(conn, red)

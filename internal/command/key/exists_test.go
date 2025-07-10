@@ -44,12 +44,11 @@ func TestExistsParse(t *testing.T) {
 }
 
 func TestExistsExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("name", "alice")
-	_ = db.Str().Set("age", 50)
-	_ = db.Str().Set("city", "paris")
+	_ = red.Str().Set("name", "alice")
+	_ = red.Str().Set("age", 50)
+	_ = red.Str().Set("city", "paris")
 
 	tests := []struct {
 		cmd string

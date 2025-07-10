@@ -51,10 +51,8 @@ func TestRenameNXParse(t *testing.T) {
 
 func TestRenameNXExec(t *testing.T) {
 	t.Run("create new", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseRenameNX, "renamenx name title")
 		conn := redis.NewFakeConn()
@@ -63,18 +61,16 @@ func TestRenameNXExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), false)
-		key, _ = db.Key().Get("title")
+		key, _ = red.Key().Get("title")
 		be.Equal(t, key.Exists(), true)
 	})
 
 	t.Run("replace existing", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("title", "bob")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("title", "bob")
 
 		cmd := redis.MustParse(ParseRenameNX, "renamenx name title")
 		conn := redis.NewFakeConn()
@@ -83,21 +79,19 @@ func TestRenameNXExec(t *testing.T) {
 		be.Equal(t, res, false)
 		be.Equal(t, conn.Out(), "0")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), true)
-		val, _ := db.Str().Get("name")
+		val, _ := red.Str().Get("name")
 		be.Equal(t, val.String(), "alice")
-		key, _ = db.Key().Get("title")
+		key, _ = red.Key().Get("title")
 		be.Equal(t, key.Exists(), true)
-		val, _ = db.Str().Get("title")
+		val, _ = red.Str().Get("title")
 		be.Equal(t, val.String(), "bob")
 	})
 
 	t.Run("rename to self", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseRenameNX, "renamenx name name")
 		conn := redis.NewFakeConn()
@@ -106,17 +100,15 @@ func TestRenameNXExec(t *testing.T) {
 		be.Equal(t, res, false)
 		be.Equal(t, conn.Out(), "0")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), true)
-		val, _ := db.Str().Get("name")
+		val, _ := red.Str().Get("name")
 		be.Equal(t, val.String(), "alice")
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("title", "bob")
+		red := getRedka(t)
+		_ = red.Str().Set("title", "bob")
 
 		cmd := redis.MustParse(ParseRenameNX, "renamenx name title")
 		conn := redis.NewFakeConn()
@@ -125,11 +117,11 @@ func TestRenameNXExec(t *testing.T) {
 		be.Equal(t, res, nil)
 		be.Equal(t, conn.Out(), redis.ErrNotFound.Error()+" (renamenx)")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), false)
-		key, _ = db.Key().Get("title")
+		key, _ = red.Key().Get("title")
 		be.Equal(t, key.Exists(), true)
-		val, _ := db.Str().Get("title")
+		val, _ := red.Str().Get("title")
 		be.Equal(t, val.String(), "bob")
 	})
 }

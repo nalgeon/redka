@@ -44,13 +44,12 @@ func TestTypeParse(t *testing.T) {
 }
 
 func TestTypeExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("kstr", "string")
-	_, _ = db.List().PushBack("klist", "list")
-	_, _ = db.Hash().Set("khash", "field", "hash")
-	_, _ = db.ZSet().Add("kzset", "zset", 1)
+	_ = red.Str().Set("kstr", "string")
+	_, _ = red.List().PushBack("klist", "list")
+	_, _ = red.Hash().Set("khash", "field", "hash")
+	_, _ = red.ZSet().Add("kzset", "zset", 1)
 
 	tests := []struct {
 		key  string

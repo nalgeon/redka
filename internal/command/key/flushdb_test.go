@@ -39,11 +39,9 @@ func TestFlushDBParse(t *testing.T) {
 
 func TestFlushDBExec(t *testing.T) {
 	t.Run("full", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
 
 		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
@@ -52,13 +50,12 @@ func TestFlushDBExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		keys, _ := db.Key().Keys("*")
+		keys, _ := red.Key().Keys("*")
 		be.Equal(t, len(keys), 0)
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
@@ -67,7 +64,7 @@ func TestFlushDBExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		keys, _ := db.Key().Keys("*")
+		keys, _ := red.Key().Keys("*")
 		be.Equal(t, len(keys), 0)
 	})
 }

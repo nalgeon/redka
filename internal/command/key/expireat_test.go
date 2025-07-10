@@ -71,10 +71,8 @@ func TestExpireAtExec(t *testing.T) {
 		return ParseExpireAt(b, 1000)
 	}
 	t.Run("create expireat", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		expireAt := time.Now().Add(60 * time.Second)
 		cmd := redis.MustParse(parse, fmt.Sprintf("expireat name %d", expireAt.Unix()))
@@ -84,15 +82,13 @@ func TestExpireAtExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 	})
 
 	t.Run("update expire", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		expireAt := time.Now()
 		cmd := redis.MustParse(parse, fmt.Sprintf("expireat name %d", expireAt.Add(60*time.Second).Unix()))
@@ -109,15 +105,13 @@ func TestExpireAtExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, *key.ETime/1000, expireAt.Add(20*time.Second).UnixMilli()/1000)
 	})
 
 	t.Run("set to zero", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(parse, "expireat name 0")
 		conn := redis.NewFakeConn()
@@ -126,15 +120,13 @@ func TestExpireAtExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), false)
 	})
 
 	t.Run("negative", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(parse, "expireat name -10")
 		conn := redis.NewFakeConn()
@@ -143,15 +135,13 @@ func TestExpireAtExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "1")
 
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, key.Exists(), false)
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(parse, "expireat age 1700000000")
 		conn := redis.NewFakeConn()
@@ -160,7 +150,7 @@ func TestExpireAtExec(t *testing.T) {
 		be.Equal(t, res, false)
 		be.Equal(t, conn.Out(), "0")
 
-		key, _ := db.Key().Get("age")
+		key, _ := red.Key().Get("age")
 		be.Equal(t, key.Exists(), false)
 	})
 }
