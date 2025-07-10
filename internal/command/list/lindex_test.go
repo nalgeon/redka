@@ -52,8 +52,7 @@ func TestLIndexParse(t *testing.T) {
 
 func TestLIndexExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()
@@ -63,9 +62,8 @@ func TestLIndexExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("single elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()
@@ -75,11 +73,10 @@ func TestLIndexExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "elem")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key 1")
 		conn := redis.NewFakeConn()
@@ -89,9 +86,8 @@ func TestLIndexExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "two")
 	})
 	t.Run("list index out of bounds", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key 1")
 		conn := redis.NewFakeConn()
@@ -101,11 +97,10 @@ func TestLIndexExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("negative index", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key -2")
 		conn := redis.NewFakeConn()
@@ -115,9 +110,8 @@ func TestLIndexExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "two")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLIndex, "lindex key 0")
 		conn := redis.NewFakeConn()

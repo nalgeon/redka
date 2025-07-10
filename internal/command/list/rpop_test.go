@@ -46,8 +46,7 @@ func TestRPopParse(t *testing.T) {
 
 func TestRPopExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseRPop, "rpop key")
 		conn := redis.NewFakeConn()
@@ -57,9 +56,8 @@ func TestRPopExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("pop elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseRPop, "rpop key")
 		conn := redis.NewFakeConn()
@@ -69,11 +67,10 @@ func TestRPopExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "elem")
 	})
 	t.Run("pop multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		{
 			cmd := redis.MustParse(ParseRPop, "rpop key")
@@ -93,9 +90,8 @@ func TestRPopExec(t *testing.T) {
 		}
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseRPop, "rpop key")
 		conn := redis.NewFakeConn()

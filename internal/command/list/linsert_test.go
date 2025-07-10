@@ -70,8 +70,7 @@ func TestLInsertParse(t *testing.T) {
 
 func TestLInsertExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key before pivot elem")
 		conn := redis.NewFakeConn()
@@ -80,13 +79,12 @@ func TestLInsertExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		_, err = db.List().Get("key", 0)
+		_, err = red.List().Get("key", 0)
 		be.Equal(t, err, core.ErrNotFound)
 	})
 	t.Run("insert before first", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, err := db.List().PushBack("key", "pivot")
+		red := getRedka(t)
+		_, err := red.List().PushBack("key", "pivot")
 		be.Err(t, err, nil)
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key before pivot elem")
@@ -96,14 +94,13 @@ func TestLInsertExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		elem, _ := db.List().Get("key", 0)
+		elem, _ := red.List().Get("key", 0)
 		be.Equal(t, elem, core.Value("elem"))
 	})
 	t.Run("insert before middle", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key before thr two")
 		conn := redis.NewFakeConn()
@@ -112,14 +109,13 @@ func TestLInsertExec(t *testing.T) {
 		be.Equal(t, res, 3)
 		be.Equal(t, conn.Out(), "3")
 
-		elem, _ := db.List().Get("key", 1)
+		elem, _ := red.List().Get("key", 1)
 		be.Equal(t, elem, core.Value("two"))
 	})
 	t.Run("insert after middle", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key after thr two")
 		conn := redis.NewFakeConn()
@@ -128,14 +124,13 @@ func TestLInsertExec(t *testing.T) {
 		be.Equal(t, res, 3)
 		be.Equal(t, conn.Out(), "3")
 
-		elem, _ := db.List().Get("key", 2)
+		elem, _ := red.List().Get("key", 2)
 		be.Equal(t, elem, core.Value("two"))
 	})
 	t.Run("elem not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key before thr two")
 		conn := redis.NewFakeConn()
@@ -145,9 +140,8 @@ func TestLInsertExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "-1")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLInsert, "linsert key before pivot elem")
 		conn := redis.NewFakeConn()

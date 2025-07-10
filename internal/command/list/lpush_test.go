@@ -50,8 +50,7 @@ func TestLPushParse(t *testing.T) {
 
 func TestLPushExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLPush, "lpush key elem")
 		conn := redis.NewFakeConn()
@@ -60,13 +59,12 @@ func TestLPushExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "1")
 
-		elem, _ := db.List().Get("key", 0)
+		elem, _ := red.List().Get("key", 0)
 		be.Equal(t, elem.String(), "elem")
 	})
 	t.Run("add elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
 
 		cmd := redis.MustParse(ParseLPush, "lpush key two")
 		conn := redis.NewFakeConn()
@@ -75,12 +73,11 @@ func TestLPushExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		elem, _ := db.List().Get("key", 0)
+		elem, _ := red.List().Get("key", 0)
 		be.Equal(t, elem.String(), "two")
 	})
 	t.Run("add miltiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		{
 			cmd := redis.MustParse(ParseLPush, "lpush key one")
@@ -99,15 +96,14 @@ func TestLPushExec(t *testing.T) {
 			be.Equal(t, conn.Out(), "2")
 		}
 
-		el0, _ := db.List().Get("key", 0)
+		el0, _ := red.List().Get("key", 0)
 		be.Equal(t, el0.String(), "two")
-		el1, _ := db.List().Get("key", 1)
+		el1, _ := red.List().Get("key", 1)
 		be.Equal(t, el1.String(), "one")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLPush, "lpush key elem")
 		conn := redis.NewFakeConn()

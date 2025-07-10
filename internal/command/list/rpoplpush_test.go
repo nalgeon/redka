@@ -47,8 +47,7 @@ func TestRPopLPushParse(t *testing.T) {
 
 func TestRPopLPushExec(t *testing.T) {
 	t.Run("src not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()
@@ -58,9 +57,8 @@ func TestRPopLPushExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("pop elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "elem")
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()
@@ -69,17 +67,16 @@ func TestRPopLPushExec(t *testing.T) {
 		be.Equal(t, res.(core.Value), core.Value("elem"))
 		be.Equal(t, conn.Out(), "elem")
 
-		count, _ := db.List().Len("src")
+		count, _ := red.List().Len("src")
 		be.Equal(t, count, 0)
-		count, _ = db.List().Len("dst")
+		count, _ = red.List().Len("dst")
 		be.Equal(t, count, 1)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "one")
-		_, _ = db.List().PushBack("src", "two")
-		_, _ = db.List().PushBack("src", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "one")
+		_, _ = red.List().PushBack("src", "two")
+		_, _ = red.List().PushBack("src", "thr")
 
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
@@ -98,17 +95,16 @@ func TestRPopLPushExec(t *testing.T) {
 			be.Equal(t, conn.Out(), "two")
 		}
 
-		count, _ := db.List().Len("src")
+		count, _ := red.List().Len("src")
 		be.Equal(t, count, 1)
-		count, _ = db.List().Len("dst")
+		count, _ = red.List().Len("dst")
 		be.Equal(t, count, 2)
 	})
 	t.Run("push to self", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "one")
-		_, _ = db.List().PushBack("src", "two")
-		_, _ = db.List().PushBack("src", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "one")
+		_, _ = red.List().PushBack("src", "two")
+		_, _ = red.List().PushBack("src", "thr")
 
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src src")
@@ -127,15 +123,14 @@ func TestRPopLPushExec(t *testing.T) {
 			be.Equal(t, conn.Out(), "two")
 		}
 
-		elems, _ := db.List().Range("src", 0, -1)
+		elems, _ := red.List().Range("src", 0, -1)
 		be.Equal(t, elems[0].String(), "two")
 		be.Equal(t, elems[1].String(), "thr")
 		be.Equal(t, elems[2].String(), "one")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("src", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("src", "str")
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()

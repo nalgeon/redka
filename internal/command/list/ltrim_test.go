@@ -47,8 +47,7 @@ func TestLTrimParse(t *testing.T) {
 
 func TestLTrimExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 0 0")
 		conn := redis.NewFakeConn()
@@ -58,9 +57,8 @@ func TestLTrimExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "OK")
 	})
 	t.Run("keep single elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 0 0")
 		conn := redis.NewFakeConn()
@@ -69,16 +67,15 @@ func TestLTrimExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "OK")
 
-		count, _ := db.List().Len("key")
+		count, _ := red.List().Len("key")
 		be.Equal(t, count, 1)
 	})
 	t.Run("keep multiple elems", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
-		_, _ = db.List().PushBack("key", "fou")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
+		_, _ = red.List().PushBack("key", "fou")
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 1 2")
 		conn := redis.NewFakeConn()
@@ -87,20 +84,19 @@ func TestLTrimExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "OK")
 
-		count, _ := db.List().Len("key")
+		count, _ := red.List().Len("key")
 		be.Equal(t, count, 2)
-		el0, _ := db.List().Get("key", 0)
+		el0, _ := red.List().Get("key", 0)
 		be.Equal(t, el0.String(), "two")
-		el1, _ := db.List().Get("key", 1)
+		el1, _ := red.List().Get("key", 1)
 		be.Equal(t, el1.String(), "thr")
 	})
 	t.Run("negative index", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
-		_, _ = db.List().PushBack("key", "fou")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
+		_, _ = red.List().PushBack("key", "fou")
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 0 -1")
 		conn := redis.NewFakeConn()
@@ -109,15 +105,14 @@ func TestLTrimExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "OK")
 
-		count, _ := db.List().Len("key")
+		count, _ := red.List().Len("key")
 		be.Equal(t, count, 4)
 	})
 	t.Run("start > stop", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 2 1")
 		conn := redis.NewFakeConn()
@@ -126,13 +121,12 @@ func TestLTrimExec(t *testing.T) {
 		be.Equal(t, res, 3)
 		be.Equal(t, conn.Out(), "OK")
 
-		count, _ := db.List().Len("key")
+		count, _ := red.List().Len("key")
 		be.Equal(t, count, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLTrim, "ltrim key 0 0")
 		conn := redis.NewFakeConn()

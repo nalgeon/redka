@@ -45,8 +45,7 @@ func TestLLenParse(t *testing.T) {
 
 func TestLLenExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
@@ -56,9 +55,8 @@ func TestLLenExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("single elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
@@ -68,11 +66,10 @@ func TestLLenExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("multiple elems", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()
@@ -82,9 +79,8 @@ func TestLLenExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "3")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLLen, "llen key")
 		conn := redis.NewFakeConn()

@@ -58,8 +58,7 @@ func TestLSetParse(t *testing.T) {
 
 func TestLSetExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLSet, "lset key 0 elem")
 		conn := redis.NewFakeConn()
@@ -69,11 +68,10 @@ func TestLSetExec(t *testing.T) {
 		be.Equal(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
 	})
 	t.Run("set elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 1 upd")
 		conn := redis.NewFakeConn()
@@ -82,15 +80,14 @@ func TestLSetExec(t *testing.T) {
 		be.Equal(t, res, nil)
 		be.Equal(t, conn.Out(), "OK")
 
-		el1, _ := db.List().Get("key", 1)
+		el1, _ := red.List().Get("key", 1)
 		be.Equal(t, el1.String(), "upd")
 	})
 	t.Run("negative index", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLSet, "lset key -1 upd")
 		conn := redis.NewFakeConn()
@@ -99,13 +96,12 @@ func TestLSetExec(t *testing.T) {
 		be.Equal(t, res, nil)
 		be.Equal(t, conn.Out(), "OK")
 
-		el2, _ := db.List().Get("key", 2)
+		el2, _ := red.List().Get("key", 2)
 		be.Equal(t, el2.String(), "upd")
 	})
 	t.Run("index out of bounds", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 1 upd")
 		conn := redis.NewFakeConn()
@@ -115,9 +111,8 @@ func TestLSetExec(t *testing.T) {
 		be.Equal(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 0 elem")
 		conn := redis.NewFakeConn()
