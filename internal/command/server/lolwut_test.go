@@ -40,8 +40,7 @@ func TestLolwutParse(t *testing.T) {
 
 func TestLolwutExec(t *testing.T) {
 	t.Run("lolwut", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLolwut, "lolwut you ok?")
 		conn := redis.NewFakeConn()
@@ -51,8 +50,7 @@ func TestLolwutExec(t *testing.T) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLolwut, "lolwut")
 		conn := redis.NewFakeConn()

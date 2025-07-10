@@ -35,11 +35,9 @@ func TestDBSizeParse(t *testing.T) {
 
 func TestDBSizeExec(t *testing.T) {
 	t.Run("dbsize", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
 
 		cmd := redis.MustParse(ParseDBSize, "dbsize")
 		conn := redis.NewFakeConn()
@@ -50,8 +48,7 @@ func TestDBSizeExec(t *testing.T) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseDBSize, "dbsize")
 		conn := redis.NewFakeConn()

@@ -50,8 +50,7 @@ func TestConfigParse(t *testing.T) {
 
 func TestConfigExec(t *testing.T) {
 	t.Run("config get", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseConfig, "config get *")
 		conn := redis.NewFakeConn()
