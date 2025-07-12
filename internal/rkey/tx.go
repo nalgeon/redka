@@ -271,10 +271,7 @@ func (tx *Tx) Scan(cursor int, pattern string, ktype core.TypeID, count int) (Sc
 		count = scanPageSize
 	}
 	query := tx.sql.scan
-	ktypeGuard := false
-	if ktype == core.TypeAny {
-		ktypeGuard = true
-	}
+	ktypeGuard := ktype == core.TypeAny
 	pattern = tx.dialect.GlobToLike(pattern)
 	args := []any{
 		cursor,

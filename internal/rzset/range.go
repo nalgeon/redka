@@ -98,7 +98,7 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 	// Change sort direction if necessary.
 	query := c.tx.sql.rangeRank
 	if c.sortDir != sqlx.Asc {
-		query = strings.Replace(query, sqlx.Asc, c.sortDir, -1)
+		query = strings.ReplaceAll(query, sqlx.Asc, c.sortDir)
 	}
 
 	// Prepare query arguments.
@@ -137,7 +137,7 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 	// Change sort direction if necessary.
 	query := c.tx.sql.rangeScore
 	if c.sortDir != sqlx.Asc {
-		query = strings.Replace(query, sqlx.Asc, c.sortDir, -1)
+		query = strings.ReplaceAll(query, sqlx.Asc, c.sortDir)
 	}
 
 	// Prepare query arguments.

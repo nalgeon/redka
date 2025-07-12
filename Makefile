@@ -1,4 +1,4 @@
-.PHONY: setup lint vet test build run
+.PHONY: build
 
 has_git := $(shell command -v git 2>/dev/null)
 
@@ -21,7 +21,7 @@ setup:
 	@go mod download
 
 lint:
-	@golangci-lint run --print-issued-lines=false --out-format=colored-line-number ./...
+	@golangci-lint run ./...
 
 vet:
 	@go vet ./...

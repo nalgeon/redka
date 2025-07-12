@@ -53,7 +53,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Fill the map with the values for existing keys.
 	items := map[string]core.Value{}

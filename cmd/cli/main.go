@@ -17,7 +17,7 @@ const dbURI = "file:/data.db?vfs=memdb"
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: redka-cli <filename>\n")
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage: redka-cli <filename>\n")
 		flag.PrintDefaults()
 	}
 }

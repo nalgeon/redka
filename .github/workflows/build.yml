@@ -41,9 +41,13 @@ jobs:
                   sudo apt-get install -y libsqlite3-dev
                   go get .
 
+            - name: Install linter
+              uses: golangci/golangci-lint-action@v8
+
             - name: Build and test
               run: |
                   make build
+                  make vet lint
                   make test-sqlite
                   make test-postgres
 

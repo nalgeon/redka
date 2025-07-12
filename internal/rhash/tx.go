@@ -92,7 +92,7 @@ func (tx *Tx) Fields(key string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build a slice of hash fields.
 	fields := []string{}
@@ -140,7 +140,7 @@ func (tx *Tx) GetMany(key string, fields ...string) (map[string]core.Value, erro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Fill the map with the values for existing fields.
 	items := map[string]core.Value{}
@@ -226,7 +226,7 @@ func (tx *Tx) Items(key string) (map[string]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build a map of hash fields and their values.
 	items := map[string]core.Value{}
@@ -389,7 +389,7 @@ func (tx *Tx) Values(key string) ([]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build a slice of hash values.
 	vals := []core.Value{}

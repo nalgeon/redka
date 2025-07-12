@@ -201,7 +201,7 @@ func (tx *Tx) Range(key string, start, stop int) ([]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var values []core.Value
 	for rows.Next() {

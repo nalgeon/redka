@@ -63,7 +63,7 @@ func Select[T any](db Tx, query string, args []any,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var vals []T
 	for rows.Next() {

@@ -20,7 +20,7 @@ func ExampleOpen() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// ...
 }
 
@@ -31,7 +31,7 @@ func ExampleOpenRead() {
 		panic(err)
 	}
 	_ = db.Str().Set("name", "alice")
-	db.Close()
+	_ = db.Close()
 
 	// open a read-only database
 	db, err = redka.OpenRead("redka.db", nil)
@@ -45,7 +45,7 @@ func ExampleOpenRead() {
 	err = db.Str().Set("name", "bob")
 	fmt.Println(err)
 	// attempt to write a readonly database
-	db.Close()
+	_ = db.Close()
 
 	// Output:
 	// alice
@@ -57,7 +57,7 @@ func ExampleDB_Close() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// ...
 }
 
@@ -66,7 +66,7 @@ func ExampleDB_Hash() {
 	// In real code, always check for errors.
 
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ok, err := db.Hash().Set("user:1", "name", "alice")
 	fmt.Printf("ok=%v, err=%v\n", ok, err)
@@ -90,7 +90,7 @@ func ExampleDB_Key() {
 	// In real code, always check for errors.
 
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 	_ = db.Str().Set("city", "paris")
@@ -121,7 +121,7 @@ func ExampleDB_Str() {
 	// In real code, always check for errors.
 
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().Set("name", "alice")
 
@@ -141,7 +141,7 @@ func ExampleDB_ZSet() {
 	// In real code, always check for errors.
 
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ok, err := db.ZSet().Add("race", "alice", 11)
 	fmt.Printf("ok=%v, err=%v\n", ok, err)
@@ -166,7 +166,7 @@ func ExampleDB_Update() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	updCount := 0
 	err = db.Update(func(tx *redka.Tx) error {
@@ -195,7 +195,7 @@ func ExampleDB_View() {
 	// In real code, always check for errors.
 
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().SetMany(map[string]any{
 		"name": "alice",
@@ -236,7 +236,7 @@ func TestOpenDB(t *testing.T) {
 
 	db, err := redka.OpenDB(sdb, sdb, nil)
 	be.Err(t, err, nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	n, err := db.Key().Len()
 	be.Err(t, err, nil)
@@ -322,7 +322,7 @@ func TestTimeout(t *testing.T) {
 	opts := &redka.Options{Timeout: time.Nanosecond}
 	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
 	be.Err(t, err, nil)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	err = db.Str().Set("name", "alice")
 	be.Err(t, err, context.DeadlineExceeded)
 }
