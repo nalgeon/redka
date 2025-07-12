@@ -52,11 +52,10 @@ func TestZRemParse(t *testing.T) {
 
 func TestZRemExec(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
 
 		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
@@ -65,20 +64,19 @@ func TestZRemExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		count, _ := db.ZSet().Len("key")
+		count, _ := red.ZSet().Len("key")
 		be.Equal(t, count, 1)
 
-		_, err = db.ZSet().GetScore("key", "one")
+		_, err = red.ZSet().GetScore("key", "one")
 		be.Err(t, err, core.ErrNotFound)
-		_, err = db.ZSet().GetScore("key", "two")
+		_, err = red.ZSet().GetScore("key", "two")
 		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("all", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
 
 		cmd := redis.MustParse(ParseZRem, "zrem key one two thr")
 		conn := redis.NewFakeConn()
@@ -87,15 +85,14 @@ func TestZRemExec(t *testing.T) {
 		be.Equal(t, res, 3)
 		be.Equal(t, conn.Out(), "3")
 
-		count, _ := db.ZSet().Len("key")
+		count, _ := red.ZSet().Len("key")
 		be.Equal(t, count, 0)
 	})
 	t.Run("none", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
 
 		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")
 		conn := redis.NewFakeConn()
@@ -104,12 +101,11 @@ func TestZRemExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		count, _ := db.ZSet().Len("key")
+		count, _ := red.ZSet().Len("key")
 		be.Equal(t, count, 3)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZRem, "zrem key one two")
 		conn := redis.NewFakeConn()
@@ -119,8 +115,7 @@ func TestZRemExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseZRem, "zrem key fou fiv")

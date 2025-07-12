@@ -65,8 +65,7 @@ func TestZAddParse(t *testing.T) {
 
 func TestZAddExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one")
 		conn := redis.NewFakeConn()
@@ -75,12 +74,11 @@ func TestZAddExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "1")
 
-		score, _ := db.ZSet().GetScore("key", "one")
+		score, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, score, 11.0)
 	})
 	t.Run("create multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one 22 two")
 		conn := redis.NewFakeConn()
@@ -89,17 +87,16 @@ func TestZAddExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		one, _ := db.ZSet().GetScore("key", "one")
+		one, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, one, 11.0)
-		two, _ := db.ZSet().GetScore("key", "two")
+		two, _ := red.ZSet().GetScore("key", "two")
 		be.Equal(t, two, 22.0)
 	})
 
 	t.Run("create/update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_, _ = db.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "one", 11)
 
 		cmd := redis.MustParse(ParseZAdd, "zadd key 12 one 22 two")
 		conn := redis.NewFakeConn()
@@ -108,17 +105,16 @@ func TestZAddExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "1")
 
-		one, _ := db.ZSet().GetScore("key", "one")
+		one, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, one, 12.0)
-		two, _ := db.ZSet().GetScore("key", "two")
+		two, _ := red.ZSet().GetScore("key", "two")
 		be.Equal(t, two, 22.0)
 	})
 	t.Run("update multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
 
 		cmd := redis.MustParse(ParseZAdd, "zadd key 12 one 23 two")
 		conn := redis.NewFakeConn()
@@ -127,15 +123,14 @@ func TestZAddExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		one, _ := db.ZSet().GetScore("key", "one")
+		one, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, one, 12.0)
-		two, _ := db.ZSet().GetScore("key", "two")
+		two, _ := red.ZSet().GetScore("key", "two")
 		be.Equal(t, two, 23.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseZAdd, "zadd key 11 one")
 		conn := redis.NewFakeConn()

@@ -45,10 +45,9 @@ func TestZCardParse(t *testing.T) {
 
 func TestZCardExec(t *testing.T) {
 	t.Run("zcard", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
 
 		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
@@ -58,10 +57,9 @@ func TestZCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "2")
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Delete("key", "one")
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Delete("key", "one")
 
 		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
@@ -71,8 +69,7 @@ func TestZCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()
@@ -82,9 +79,8 @@ func TestZCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseZCard, "zcard key")
 		conn := redis.NewFakeConn()

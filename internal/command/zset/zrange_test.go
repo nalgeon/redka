@@ -98,12 +98,11 @@ func TestZRangeParse(t *testing.T) {
 
 func TestZRangeExec(t *testing.T) {
 	t.Run("by rank", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
-		_, _ = db.ZSet().Add("key", "2nd", 2)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
+		_, _ = red.ZSet().Add("key", "2nd", 2)
 
 		{
 			cmd := redis.MustParse(ParseZRange, "zrange key 0 1")
@@ -139,12 +138,11 @@ func TestZRangeExec(t *testing.T) {
 		}
 	})
 	t.Run("by rank rev", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
-		_, _ = db.ZSet().Add("key", "2nd", 2)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
+		_, _ = red.ZSet().Add("key", "2nd", 2)
 
 		{
 			cmd := redis.MustParse(ParseZRange, "zrange key 0 1 rev")
@@ -180,12 +178,11 @@ func TestZRangeExec(t *testing.T) {
 		}
 	})
 	t.Run("by score", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 10)
-		_, _ = db.ZSet().Add("key", "two", 20)
-		_, _ = db.ZSet().Add("key", "thr", 30)
-		_, _ = db.ZSet().Add("key", "2nd", 20)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 10)
+		_, _ = red.ZSet().Add("key", "two", 20)
+		_, _ = red.ZSet().Add("key", "thr", 30)
+		_, _ = red.ZSet().Add("key", "2nd", 20)
 
 		{
 			cmd := redis.MustParse(ParseZRange, "zrange key 0 10 byscore")
@@ -221,12 +218,11 @@ func TestZRangeExec(t *testing.T) {
 		}
 	})
 	t.Run("by score rev", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 10)
-		_, _ = db.ZSet().Add("key", "two", 20)
-		_, _ = db.ZSet().Add("key", "thr", 30)
-		_, _ = db.ZSet().Add("key", "2nd", 20)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 10)
+		_, _ = red.ZSet().Add("key", "two", 20)
+		_, _ = red.ZSet().Add("key", "thr", 30)
+		_, _ = red.ZSet().Add("key", "2nd", 20)
 
 		{
 			cmd := redis.MustParse(ParseZRange, "zrange key 0 10 byscore rev")
@@ -262,12 +258,11 @@ func TestZRangeExec(t *testing.T) {
 		}
 	})
 	t.Run("limit", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 10)
-		_, _ = db.ZSet().Add("key", "two", 20)
-		_, _ = db.ZSet().Add("key", "thr", 30)
-		_, _ = db.ZSet().Add("key", "2nd", 20)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 10)
+		_, _ = red.ZSet().Add("key", "two", 20)
+		_, _ = red.ZSet().Add("key", "thr", 30)
+		_, _ = red.ZSet().Add("key", "2nd", 20)
 
 		{
 			cmd := redis.MustParse(ParseZRange, "zrange key 0 50 byscore limit 0 2")
@@ -303,12 +298,11 @@ func TestZRangeExec(t *testing.T) {
 		}
 	})
 	t.Run("with scores", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
-		_, _ = db.ZSet().Add("key", "2nd", 2)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
+		_, _ = red.ZSet().Add("key", "2nd", 2)
 
 		cmd := redis.MustParse(ParseZRange, "zrange key 0 5 withscores")
 		conn := redis.NewFakeConn()
@@ -318,12 +312,11 @@ func TestZRangeExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "8,one,1,2nd,2,two,2,thr,3")
 	})
 	t.Run("negative indexes", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_, _ = db.ZSet().Add("key", "two", 2)
-		_, _ = db.ZSet().Add("key", "thr", 3)
-		_, _ = db.ZSet().Add("key", "2nd", 2)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_, _ = red.ZSet().Add("key", "two", 2)
+		_, _ = red.ZSet().Add("key", "thr", 3)
+		_, _ = red.ZSet().Add("key", "2nd", 2)
 
 		cmd := redis.MustParse(ParseZRange, "zrange key -2 -1")
 		conn := redis.NewFakeConn()
@@ -333,8 +326,7 @@ func TestZRangeExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZRange, "zrange key 0 1")
 		conn := redis.NewFakeConn()
@@ -344,9 +336,8 @@ func TestZRangeExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseZRange, "zrange key 0 1")
 		conn := redis.NewFakeConn()

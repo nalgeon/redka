@@ -57,11 +57,10 @@ func TestZCountParse(t *testing.T) {
 
 func TestZCountExec(t *testing.T) {
 	t.Run("zcount", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
-		_, _ = db.ZSet().Add("key", "thr", 33)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
+		_, _ = red.ZSet().Add("key", "thr", 33)
 
 		cmd := redis.MustParse(ParseZCount, "zcount key 15 25")
 		conn := redis.NewFakeConn()
@@ -71,11 +70,10 @@ func TestZCountExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("inclusive", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
-		_, _ = db.ZSet().Add("key", "thr", 33)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
+		_, _ = red.ZSet().Add("key", "thr", 33)
 
 		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()
@@ -85,11 +83,10 @@ func TestZCountExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "3")
 	})
 	t.Run("zero", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
-		_, _ = db.ZSet().Add("key", "thr", 33)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
+		_, _ = red.ZSet().Add("key", "thr", 33)
 
 		cmd := redis.MustParse(ParseZCount, "zcount key 44 55")
 		conn := redis.NewFakeConn()
@@ -99,8 +96,7 @@ func TestZCountExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()
@@ -110,9 +106,8 @@ func TestZCountExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseZCount, "zcount key 11 33")
 		conn := redis.NewFakeConn()

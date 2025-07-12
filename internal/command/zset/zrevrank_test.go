@@ -52,10 +52,9 @@ func TestZRevRankParse(t *testing.T) {
 
 func TestZRevRankExec(t *testing.T) {
 	t.Run("rank", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
 
 		cmd := redis.MustParse(ParseZRevRank, "zrevrank key two")
 		conn := redis.NewFakeConn()
@@ -65,10 +64,9 @@ func TestZRevRankExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("with score", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
-		_, _ = db.ZSet().Add("key", "two", 22)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
+		_, _ = red.ZSet().Add("key", "two", 22)
 
 		cmd := redis.MustParse(ParseZRevRank, "zrevrank key two withscore")
 		conn := redis.NewFakeConn()
@@ -78,9 +76,8 @@ func TestZRevRankExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "2,0,22")
 	})
 	t.Run("member not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 11)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 11)
 
 		cmd := redis.MustParse(ParseZRevRank, "zrevrank key two")
 		conn := redis.NewFakeConn()
@@ -90,8 +87,7 @@ func TestZRevRankExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZRevRank, "zrevrank key two")
 		conn := redis.NewFakeConn()
@@ -101,9 +97,8 @@ func TestZRevRankExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseZRevRank, "zrevrank key two")
 		conn := redis.NewFakeConn()

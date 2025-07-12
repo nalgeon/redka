@@ -78,19 +78,18 @@ func TestZInterStoreParse(t *testing.T) {
 
 func TestZInterStoreExec(t *testing.T) {
 	t.Run("inter", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().AddMany("key1", map[any]float64{
+		red := getRedka(t)
+		_, _ = red.ZSet().AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
 			"thr": 3,
 		})
-		_, _ = db.ZSet().AddMany("key2", map[any]float64{
+		_, _ = red.ZSet().AddMany("key2", map[any]float64{
 			"two": 20,
 			"thr": 3,
 			"fou": 4,
 		})
-		_, _ = db.ZSet().AddMany("key3", map[any]float64{
+		_, _ = red.ZSet().AddMany("key3", map[any]float64{
 			"one": 1,
 			"two": 200,
 			"thr": 3,
@@ -104,29 +103,28 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 2)
 	})
 	t.Run("overwrite", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().AddMany("key1", map[any]float64{
+		red := getRedka(t)
+		_, _ = red.ZSet().AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
 			"thr": 3,
 		})
-		_, _ = db.ZSet().AddMany("key2", map[any]float64{
+		_, _ = red.ZSet().AddMany("key2", map[any]float64{
 			"two": 20,
 			"thr": 3,
 			"fou": 4,
 		})
-		_, _ = db.ZSet().AddMany("key3", map[any]float64{
+		_, _ = red.ZSet().AddMany("key3", map[any]float64{
 			"one": 1,
 			"two": 200,
 			"thr": 3,
 			"fou": 400,
 		})
-		_, _ = db.ZSet().Add("dest", "one", 1)
+		_, _ = red.ZSet().Add("dest", "one", 1)
 
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -135,25 +133,24 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 2)
-		_, err = db.ZSet().GetScore("dest", "one")
+		_, err = red.ZSet().GetScore("dest", "one")
 		be.Equal(t, err, core.ErrNotFound)
 	})
 	t.Run("aggregate", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().AddMany("key1", map[any]float64{
+		red := getRedka(t)
+		_, _ = red.ZSet().AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
 			"thr": 3,
 		})
-		_, _ = db.ZSet().AddMany("key2", map[any]float64{
+		_, _ = red.ZSet().AddMany("key2", map[any]float64{
 			"two": 20,
 			"thr": 3,
 			"fou": 4,
 		})
-		_, _ = db.ZSet().AddMany("key3", map[any]float64{
+		_, _ = red.ZSet().AddMany("key3", map[any]float64{
 			"one": 1,
 			"two": 200,
 			"thr": 3,
@@ -167,15 +164,14 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		two, _ := db.ZSet().GetScore("dest", "two")
+		two, _ := red.ZSet().GetScore("dest", "two")
 		be.Equal(t, two, 2.0)
-		thr, _ := db.ZSet().GetScore("dest", "thr")
+		thr, _ := red.ZSet().GetScore("dest", "thr")
 		be.Equal(t, thr, 3.0)
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().AddMany("key1", map[any]float64{
+		red := getRedka(t)
+		_, _ = red.ZSet().AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
 			"thr": 3,
@@ -188,15 +184,14 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 3)
 		be.Equal(t, conn.Out(), "3")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 3)
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key1", "one", 1)
-		_, _ = db.ZSet().Add("key2", "two", 1)
-		_, _ = db.ZSet().Add("key3", "thr", 1)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key1", "one", 1)
+		_, _ = red.ZSet().Add("key2", "two", 1)
+		_, _ = red.ZSet().Add("key3", "thr", 1)
 
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 3 key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -205,14 +200,13 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 0)
 	})
 	t.Run("source key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key1", "one", 1)
-		_, _ = db.ZSet().Add("dest", "one", 1)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key1", "one", 1)
+		_, _ = red.ZSet().Add("dest", "one", 1)
 
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 2 key1 key2")
 		conn := redis.NewFakeConn()
@@ -221,14 +215,13 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 0)
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
-		_, _ = db.ZSet().Add("dest", "one", 1)
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
+		_, _ = red.ZSet().Add("dest", "one", 1)
 
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()
@@ -237,14 +230,13 @@ func TestZInterStoreExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		count, _ := db.ZSet().Len("dest")
+		count, _ := red.ZSet().Len("dest")
 		be.Equal(t, count, 0)
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 1)
-		_ = db.Str().Set("dest", "value")
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 1)
+		_ = red.Str().Set("dest", "value")
 
 		cmd := redis.MustParse(ParseZInterStore, "zinterstore dest 1 key")
 		conn := redis.NewFakeConn()

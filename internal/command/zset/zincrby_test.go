@@ -53,8 +53,7 @@ func TestZIncrByParse(t *testing.T) {
 
 func TestZIncrByExec(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseZIncrBy, "zincrby key 25.5 one")
 		conn := redis.NewFakeConn()
@@ -63,13 +62,12 @@ func TestZIncrByExec(t *testing.T) {
 		be.Equal(t, res, 25.5)
 		be.Equal(t, conn.Out(), "25.5")
 
-		score, _ := db.ZSet().GetScore("key", "one")
+		score, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, score, 25.5)
 	})
 	t.Run("create field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 10)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 10)
 
 		cmd := redis.MustParse(ParseZIncrBy, "zincrby key 25.5 two")
 		conn := redis.NewFakeConn()
@@ -78,13 +76,12 @@ func TestZIncrByExec(t *testing.T) {
 		be.Equal(t, res, 25.5)
 		be.Equal(t, conn.Out(), "25.5")
 
-		score, _ := db.ZSet().GetScore("key", "two")
+		score, _ := red.ZSet().GetScore("key", "two")
 		be.Equal(t, score, 25.5)
 	})
 	t.Run("update field", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 25.5)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 25.5)
 
 		cmd := redis.MustParse(ParseZIncrBy, "zincrby key 10.5 one")
 		conn := redis.NewFakeConn()
@@ -93,13 +90,12 @@ func TestZIncrByExec(t *testing.T) {
 		be.Equal(t, res, 36.0)
 		be.Equal(t, conn.Out(), "36")
 
-		score, _ := db.ZSet().GetScore("key", "one")
+		score, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, score, 36.0)
 	})
 	t.Run("decrement", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.ZSet().Add("key", "one", 25.5)
+		red := getRedka(t)
+		_, _ = red.ZSet().Add("key", "one", 25.5)
 
 		cmd := redis.MustParse(ParseZIncrBy, "zincrby key -10.5 one")
 		conn := redis.NewFakeConn()
@@ -108,12 +104,11 @@ func TestZIncrByExec(t *testing.T) {
 		be.Equal(t, res, 15.0)
 		be.Equal(t, conn.Out(), "15")
 
-		score, _ := db.ZSet().GetScore("key", "one")
+		score, _ := red.ZSet().GetScore("key", "one")
 		be.Equal(t, score, 15.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 		_ = red.Str().Set("key", "one")
 
 		cmd := redis.MustParse(ParseZIncrBy, "zincrby key 25.5 one")

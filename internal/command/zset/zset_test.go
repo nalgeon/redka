@@ -3,13 +3,12 @@ package zset
 import (
 	"testing"
 
-	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
-func getDB(tb testing.TB) (*redka.DB, redis.Redka) {
+func getRedka(tb testing.TB) redis.Redka {
 	tb.Helper()
 	db := testx.OpenDB(tb)
-	return db, redis.RedkaDB(db)
+	return redis.RedkaDB(db)
 }
