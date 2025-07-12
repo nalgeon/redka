@@ -20,11 +20,15 @@ build_date := $(shell date -u '+%Y-%m-%dT%H:%M:%S')
 setup:
 	@go mod download
 
-lint:
-	@golangci-lint run ./...
-
 vet:
+	@echo "> running vet..."
 	@go vet ./...
+	@echo "✓ finished vet"
+
+lint:
+	@echo "> running lint..."
+	@golangci-lint run ./...
+	@echo "✓ finished lint"
 
 test:
 	@echo "> running tests with $(driver) driver..."
@@ -42,7 +46,9 @@ test-postgres:
 	@echo "✓ finished tests"
 
 build:
+	@echo "> running build..."
 	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.version=$(build_ver) -X main.commit=$(build_rev) -X main.date=$(build_date)" -trimpath -o build/redka -v cmd/redka/main.go
+	@echo "✓ finished build"
 
 build-cli:
 	@CGO_ENABLED=1 go build -ldflags "-s -w" -trimpath -o build/redka-cli -v cmd/cli/main.go
