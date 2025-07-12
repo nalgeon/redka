@@ -321,7 +321,7 @@ func (tx *Tx) insert(key string, pivot, elem any, query string) (int, error) {
 	args = []any{keyID, pivotb, keyID, keyID, elemb, keyID}
 	_, err = tx.tx.Exec(query, args...)
 	if err != nil {
-		if sqlx.ConstraintFailed(err, "not null", "rlist", "pos") {
+		if tx.dialect.ConstraintFailed(err, "not null", "rlist", "pos") {
 			return -1, core.ErrNotFound
 		}
 		return 0, err
@@ -356,7 +356,7 @@ func (tx *Tx) push(key string, elem any, query string) (int, error) {
 	var keyID, n int
 	err = tx.tx.QueryRow(tx.sql.push, args...).Scan(&keyID, &n)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 
 	// Insert the element.

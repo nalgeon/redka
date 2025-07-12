@@ -202,7 +202,7 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 	var keyID int
 	err = tx.tx.QueryRow(tx.sql.add1, args...).Scan(&keyID)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 
 	var score float64
@@ -331,7 +331,7 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 	var keyID int
 	err = tx.tx.QueryRow(tx.sql.add1, args...).Scan(&keyID)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
 	_, err = tx.tx.Exec(tx.sql.add2, keyID, elemb, score)
 	return err

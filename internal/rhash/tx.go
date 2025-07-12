@@ -428,7 +428,7 @@ func (tx *Tx) set(key string, field string, value any) error {
 	var keyID int
 	err = tx.tx.QueryRow(tx.sql.set1, args...).Scan(&keyID)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
 	_, err = tx.tx.Exec(tx.sql.set2, keyID, field, valueb)
 	return err

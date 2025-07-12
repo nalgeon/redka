@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/nalgeon/redka/internal/core"
 )
 
 // SQL dialect.
@@ -16,6 +18,24 @@ const (
 )
 
 var ErrDialect = errors.New("unknown SQL dialect")
+
+// ConstraintFailed checks if the error is due to
+// a constraint violation on a column.
+// Error examples:
+//   - sqlite3.Error (NOT NULL constraint failed: rkey.type)
+//   - *pq.Error (pq: null value in column "type" of relation "rkey" violates not-null constraint)
+func (d Dialect) ConstraintFailed(err error, constraint, table string, column string) bool {
+	var message string
+	switch d {
+	case DialectPostgres:
+		message = `"` + column + `" of relation "` + table +
+			`" violates ` + strings.ReplaceAll(constraint, " ", "-") + ` constraint`
+	case DialectSqlite:
+		message = constraint + " constraint failed: " + table + "." + column
+	}
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, message)
+}
 
 // Enumerate replaces ? placeholders with $1, $2, ... $n.
 func (d Dialect) Enumerate(query string) string {
@@ -69,4 +89,17 @@ func (d Dialect) LimitAll() string {
 		return "limit -1"
 	}
 	return "limit all"
+}
+
+// Returns ErrKeyType if the error is due to a not-null
+// constraint violation on rkey.type.
+// Otherwise, returns the original error.
+func (d Dialect) TypedError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if d.ConstraintFailed(err, "not null", "rkey", "type") {
+		return core.ErrKeyType
+	}
+	return err
 }

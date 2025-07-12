@@ -66,7 +66,7 @@ func (tx *Tx) Add(key string, elems ...any) (int, error) {
 	var keyID int
 	err = tx.tx.QueryRow(tx.sql.add1, key, time.Now().UnixMilli()).Scan(&keyID)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 
 	// Add the elements.
@@ -448,7 +448,7 @@ func (tx *Tx) createKey(key string, now int64) (int, error) {
 	var keyID int
 	err := tx.tx.QueryRow(tx.sql.add1, key, now).Scan(&keyID)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 	return keyID, nil
 }

@@ -5,8 +5,6 @@ package sqlx
 import (
 	"database/sql"
 	"strings"
-
-	"github.com/nalgeon/redka/internal/core"
 )
 
 // Sorting direction.
@@ -80,28 +78,4 @@ func Select[T any](db Tx, query string, args []any,
 	}
 
 	return vals, err
-}
-
-// Returns typed errors for some specific cases.
-func TypedError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if ConstraintFailed(err, "not null", "rkey", "type") {
-		return core.ErrKeyType
-	}
-	return err
-}
-
-// ConstraintFailed checks if the error is due to
-// a constraint violation on a column.
-// Error examples:
-//   - sqlite3.Error (NOT NULL constraint failed: rkey.type)
-//   - *pq.Error (pq: null value in column "type" of relation "rkey" violates not-null constraint)
-func ConstraintFailed(err error, constraint, table string, column string) bool {
-	sqliteMsg := constraint + " constraint failed: " + table + "." + column
-	postgresMsg := `"` + column + `" of relation "` + table +
-		`" violates ` + strings.ReplaceAll(constraint, " ", "-") + ` constraint`
-	errStr := strings.ToLower(err.Error())
-	return strings.Contains(errStr, sqliteMsg) || strings.Contains(errStr, postgresMsg)
 }

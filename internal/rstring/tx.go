@@ -205,7 +205,7 @@ func (tx *Tx) set(key string, value any, at time.Time) error {
 	args := []any{key, etime, time.Now().UnixMilli()}
 	_, err = tx.tx.Exec(tx.sql.set1, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
 
 	args = []any{key, valueb}
@@ -224,7 +224,7 @@ func (tx *Tx) update(key string, value any) error {
 
 	_, err = tx.tx.Exec(tx.sql.update1, key, time.Now().UnixMilli())
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
 	_, err = tx.tx.Exec(tx.sql.update2, key, valueb)
 	return err

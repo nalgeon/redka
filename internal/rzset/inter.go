@@ -137,7 +137,7 @@ func (c InterCmd) store(tx *Tx) (int, error) {
 	var destID int
 	err = tx.tx.QueryRow(tx.sql.add1, c.dest, now).Scan(&destID)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 
 	// Intersect the source sets and store the result.
