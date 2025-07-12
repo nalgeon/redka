@@ -38,24 +38,6 @@ func ExampleOpen_memory() {
 	// ...
 }
 
-func ExampleOpen_options() {
-	// Set custom options for the database.
-	opts := &redka.Options{
-		DriverName: "sqlite3",
-		Timeout:    5 * time.Second,
-		Pragma: map[string]string{
-			"synchronous": "off",
-		},
-	}
-
-	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
-	if err != nil {
-		panic(err)
-	}
-	defer func() { _ = db.Close() }()
-	// ...
-}
-
 func ExampleOpen_postgres() {
 	// Open an existing PostgreSQL database.
 	// Pass the connection string in this format:
@@ -72,7 +54,10 @@ func ExampleOpen_postgres() {
 }
 
 func ExampleOpenRead() {
-	// open a writable database
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	// Open a writable database.
 	db, err := redka.Open("redka.db", nil)
 	if err != nil {
 		panic(err)
@@ -80,23 +65,43 @@ func ExampleOpenRead() {
 	_ = db.Str().Set("name", "alice")
 	_ = db.Close()
 
-	// open a read-only database
+	// Open a read-only database.
 	db, err = redka.OpenRead("redka.db", nil)
 	if err != nil {
 		panic(err)
 	}
-	// read operations work fine
+
+	// Read operations work fine.
 	name, _ := db.Str().Get("name")
 	fmt.Println(name)
-	// write operations will fail
+
+	// Write operations will fail.
 	err = db.Str().Set("name", "bob")
 	fmt.Println(err)
-	// attempt to write a readonly database
+
 	_ = db.Close()
 
 	// Output:
 	// alice
 	// attempt to write a readonly database
+}
+
+func ExampleOptions() {
+	// Set custom options for the database.
+	opts := &redka.Options{
+		DriverName: "sqlite3",
+		Timeout:    5 * time.Second,
+		Pragma: map[string]string{
+			"synchronous": "off",
+		},
+	}
+
+	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
+	// ...
 }
 
 func ExampleDB_Close() {
@@ -167,6 +172,48 @@ func ExampleDB_Key() {
 	// key=name, type=string, version=1, exists=true
 	// key=, type=unknown, version=0, exists=false
 	// keys: name city
+}
+
+func ExampleDB_List() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
+
+	n, err := db.List().PushBack("queue", "first")
+	fmt.Printf("n=%v, err=%v\n", n, err)
+	n, err = db.List().PushBack("queue", "second")
+	fmt.Printf("n=%v, err=%v\n", n, err)
+
+	task, err := db.List().PopFront("queue")
+	fmt.Printf("task=%v, err=%v\n", task, err)
+
+	// Output:
+	// n=1, err=<nil>
+	// n=2, err=<nil>
+	// task=first, err=<nil>
+}
+
+func ExampleDB_Set() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
+
+	n, err := db.Set().Add("nums", 11, 12, 11, 13)
+	fmt.Printf("n=%v, err=%v\n", n, err)
+	n, err = db.Set().Add("nums", 14)
+	fmt.Printf("n=%v, err=%v\n", n, err)
+
+	items, err := db.Set().Items("nums")
+	fmt.Printf("items=%v, err=%v\n", items, err)
+
+	// Output:
+	// n=3, err=<nil>
+	// n=1, err=<nil>
+	// items=[11 12 13 14], err=<nil>
 }
 
 func ExampleDB_Str() {

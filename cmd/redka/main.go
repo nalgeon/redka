@@ -1,9 +1,12 @@
 // Redka server.
-// Example usage:
+//
+// Example usage (SQLite):
 //
 //	./redka -h localhost -p 6379 redka.db
-// 	./redka -h localhost -p 6379 "postgres://redka:redka@localhost:5432/redka?sslmode=disable"
-
+//
+// Example usage (PostgreSQL):
+//
+//	./redka -h localhost -p 6379 "postgres://redka:redka@localhost:5432/redka?sslmode=disable"
 package main
 
 import (

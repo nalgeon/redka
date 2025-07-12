@@ -1,6 +1,6 @@
-// Package Redka implements Redis-like database backed by SQLite.
-// It provides an API to interact with data structures like keys,
-// strings and hashes.
+// Package Redka implements Redis-like database backed by a relational database
+// (SQLite or PostgreSQL). It provides an API to interact with data structures
+// like keys, strings and hashes.
 //
 // Typically, you open a database with [Open] and use the returned
 // [DB] instance methods like [DB.Key] or [DB.Str] to access the
@@ -29,6 +29,7 @@ import (
 // the data structure of the value with that key.
 type TypeID = core.TypeID
 
+// Key types.
 const (
 	TypeAny    = core.TypeAny
 	TypeString = core.TypeString
@@ -81,7 +82,7 @@ var defaultOptions = Options{
 	Logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 }
 
-// DB is a Redis-like database backed by SQLite.
+// DB is a Redis-like repository backed by a relational database.
 // Provides access to data structures like keys, strings, and hashes.
 //
 // DB is safe for concurrent use by multiple goroutines as long as you use
