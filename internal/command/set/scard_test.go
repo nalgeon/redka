@@ -45,9 +45,8 @@ func TestSCardParse(t *testing.T) {
 
 func TestSCardExec(t *testing.T) {
 	t.Run("card", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two")
 
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
@@ -57,10 +56,9 @@ func TestSCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "2")
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one")
-		_, _ = db.Set().Delete("key", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one")
+		_, _ = red.Set().Delete("key", "one")
 
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
@@ -70,8 +68,7 @@ func TestSCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()
@@ -81,9 +78,8 @@ func TestSCardExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSCard, "scard key")
 		conn := redis.NewFakeConn()

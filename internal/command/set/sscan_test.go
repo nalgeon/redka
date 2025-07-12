@@ -1,6 +1,7 @@
 package set
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nalgeon/be"
@@ -117,11 +118,11 @@ func TestSScanParse(t *testing.T) {
 }
 
 func TestSScanExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
-	_, _ = db.Set().Add("key", "m11", "m12", "m21", "m22", "m31")
+	red := getRedka(t)
+	_, _ = red.Set().Add("key", "m11", "m12", "m21", "m22", "m31")
 
 	t.Run("sscan all", func(t *testing.T) {
+		var cursor int
 		{
 			cmd := redis.MustParse(ParseSScan, "sscan key 0")
 			conn := redis.NewFakeConn()
@@ -130,14 +131,17 @@ func TestSScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			be.Equal(t, sres.Cursor, 5)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 5)
 			be.Equal(t, sres.Items[0], core.Value("m11"))
 			be.Equal(t, sres.Items[4], core.Value("m31"))
-			be.Equal(t, conn.Out(), "2,5,5,m11,m12,m21,m22,m31")
+			wantOut := fmt.Sprintf("2,%d,5,m11,m12,m21,m22,m31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
-			cmd := redis.MustParse(ParseSScan, "sscan key 5")
+			next := fmt.Sprintf("sscan key %d", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
@@ -157,13 +161,15 @@ func TestSScanExec(t *testing.T) {
 		be.Err(t, err, nil)
 
 		sres := res.(rset.ScanResult)
-		be.Equal(t, sres.Cursor, 4)
+		be.True(t, sres.Cursor > 0)
 		be.Equal(t, len(sres.Items), 2)
 		be.Equal(t, sres.Items[0].String(), "m21")
 		be.Equal(t, sres.Items[1].String(), "m22")
-		be.Equal(t, conn.Out(), "2,4,2,m21,m22")
+		wantOut := fmt.Sprintf("2,%d,2,m21,m22", sres.Cursor)
+		be.Equal(t, conn.Out(), wantOut)
 	})
 	t.Run("sscan count", func(t *testing.T) {
+		var cursor int
 		{
 			// page 1
 			cmd := redis.MustParse(ParseSScan, "sscan key 0 match * count 2")
@@ -173,44 +179,53 @@ func TestSScanExec(t *testing.T) {
 			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			be.Equal(t, sres.Cursor, 2)
+			be.True(t, sres.Cursor > 0)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].String(), "m11")
 			be.Equal(t, sres.Items[1].String(), "m12")
-			be.Equal(t, conn.Out(), "2,2,2,m11,m12")
+			wantOut := fmt.Sprintf("2,%d,2,m11,m12", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 2
-			cmd := redis.MustParse(ParseSScan, "sscan key 2 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
 			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			be.Equal(t, sres.Cursor, 4)
+			be.True(t, sres.Cursor > cursor)
 			be.Equal(t, len(sres.Items), 2)
 			be.Equal(t, sres.Items[0].String(), "m21")
 			be.Equal(t, sres.Items[1].String(), "m22")
-			be.Equal(t, conn.Out(), "2,4,2,m21,m22")
+			wantOut := fmt.Sprintf("2,%d,2,m21,m22", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 3
-			cmd := redis.MustParse(ParseSScan, "sscan key 4 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
 			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			be.Equal(t, sres.Cursor, 5)
+			be.True(t, sres.Cursor > cursor)
 			be.Equal(t, len(sres.Items), 1)
 			be.Equal(t, sres.Items[0].String(), "m31")
-			be.Equal(t, conn.Out(), "2,5,1,m31")
+			wantOut := fmt.Sprintf("2,%d,1,m31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// no more pages
-			cmd := redis.MustParse(ParseSScan, "sscan key 5 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)

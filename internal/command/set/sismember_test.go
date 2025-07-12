@@ -51,9 +51,8 @@ func TestSIsMemberParse(t *testing.T) {
 
 func TestSIsMemberExec(t *testing.T) {
 	t.Run("elem found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one")
 
 		cmd := redis.MustParse(ParseSIsMember, "sismember key one")
 		conn := redis.NewFakeConn()
@@ -63,9 +62,8 @@ func TestSIsMemberExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "1")
 	})
 	t.Run("elem not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one")
 
 		cmd := redis.MustParse(ParseSIsMember, "sismember key two")
 		conn := redis.NewFakeConn()
@@ -75,8 +73,7 @@ func TestSIsMemberExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSIsMember, "sismember key one")
 		conn := redis.NewFakeConn()
@@ -86,9 +83,8 @@ func TestSIsMemberExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "one")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "one")
 
 		cmd := redis.MustParse(ParseSIsMember, "sismember key one")
 		conn := redis.NewFakeConn()

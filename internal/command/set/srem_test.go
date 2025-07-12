@@ -57,9 +57,8 @@ func TestSRemParse(t *testing.T) {
 
 func TestSRemExec(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSRem, "srem key one thr")
 		conn := redis.NewFakeConn()
@@ -68,13 +67,12 @@ func TestSRemExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		items, _ := db.Set().Items("key")
+		items, _ := red.Set().Items("key")
 		be.Equal(t, items, []core.Value{core.Value("two")})
 	})
 	t.Run("none", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSRem, "srem key fou fiv")
 		conn := redis.NewFakeConn()
@@ -83,12 +81,11 @@ func TestSRemExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		slen, _ := db.Set().Len("key")
+		slen, _ := red.Set().Len("key")
 		be.Equal(t, slen, 3)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSRem, "srem key one two")
 		conn := redis.NewFakeConn()
@@ -98,9 +95,8 @@ func TestSRemExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseSRem, "srem key one two")
 		conn := redis.NewFakeConn()

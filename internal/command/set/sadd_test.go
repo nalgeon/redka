@@ -57,8 +57,7 @@ func TestSAddParse(t *testing.T) {
 
 func TestSAddExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSAdd, "sadd key one")
 		conn := redis.NewFakeConn()
@@ -67,12 +66,11 @@ func TestSAddExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "1")
 
-		items, _ := db.Set().Items("key")
+		items, _ := red.Set().Items("key")
 		be.Equal(t, items, []core.Value{core.Value("one")})
 	})
 	t.Run("create multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSAdd, "sadd key one two")
 		conn := redis.NewFakeConn()
@@ -81,14 +79,13 @@ func TestSAddExec(t *testing.T) {
 		be.Equal(t, res, 2)
 		be.Equal(t, conn.Out(), "2")
 
-		items, _ := db.Set().Items("key")
+		items, _ := red.Set().Items("key")
 		sortValues(items)
 		be.Equal(t, items, []core.Value{core.Value("one"), core.Value("two")})
 	})
 	t.Run("create/update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one")
 
 		cmd := redis.MustParse(ParseSAdd, "sadd key one two")
 		conn := redis.NewFakeConn()
@@ -97,14 +94,13 @@ func TestSAddExec(t *testing.T) {
 		be.Equal(t, res, 1)
 		be.Equal(t, conn.Out(), "1")
 
-		items, _ := db.Set().Items("key")
+		items, _ := red.Set().Items("key")
 		sortValues(items)
 		be.Equal(t, items, []core.Value{core.Value("one"), core.Value("two")})
 	})
 	t.Run("update multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two")
 
 		cmd := redis.MustParse(ParseSAdd, "sadd key one two")
 		conn := redis.NewFakeConn()
@@ -113,14 +109,13 @@ func TestSAddExec(t *testing.T) {
 		be.Equal(t, res, 0)
 		be.Equal(t, conn.Out(), "0")
 
-		items, _ := db.Set().Items("key")
+		items, _ := red.Set().Items("key")
 		sortValues(items)
 		be.Equal(t, items, []core.Value{core.Value("one"), core.Value("two")})
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSAdd, "sadd key one")
 		conn := redis.NewFakeConn()

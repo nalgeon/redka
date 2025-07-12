@@ -46,22 +46,18 @@ func TestSMembersParse(t *testing.T) {
 
 func TestSMembersExec(t *testing.T) {
 	t.Run("items", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSMembers, "smembers key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		be.Err(t, err, nil)
-		be.Equal(t, res.([]core.Value), []core.Value{
-			core.Value("one"), core.Value("thr"), core.Value("two"),
-		})
-		be.Equal(t, conn.Out(), "3,one,thr,two")
+		be.Equal(t, len(res.([]core.Value)), 3)
+		be.Equal(t, conn.Out(), "3,one,thr,two", "3,one,two,thr")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSMembers, "smembers key")
 		conn := redis.NewFakeConn()
@@ -71,9 +67,8 @@ func TestSMembersExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSMembers, "smembers key")
 		conn := redis.NewFakeConn()

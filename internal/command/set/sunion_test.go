@@ -46,11 +46,10 @@ func TestSUnionParse(t *testing.T) {
 
 func TestSUnionExec(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two")
-		_, _ = db.Set().Add("key2", "two", "thr")
-		_, _ = db.Set().Add("key3", "thr", "fou")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two")
+		_, _ = red.Set().Add("key2", "two", "thr")
+		_, _ = red.Set().Add("key3", "thr", "fou")
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -60,8 +59,7 @@ func TestSUnionExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "4,fou,one,thr,two")
 	})
 	t.Run("no keys", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1")
 		conn := redis.NewFakeConn()
@@ -71,9 +69,8 @@ func TestSUnionExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1")
 		conn := redis.NewFakeConn()
@@ -83,10 +80,9 @@ func TestSUnionExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "3,one,thr,two")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_, _ = db.Set().Add("key2", "two")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_, _ = red.Set().Add("key2", "two")
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -96,8 +92,7 @@ func TestSUnionExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "2,one,two")
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -107,11 +102,10 @@ func TestSUnionExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_ = db.Str().Set("key2", "two")
-		_, _ = db.Set().Add("key3", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_ = red.Str().Set("key2", "two")
+		_, _ = red.Set().Add("key3", "thr")
 
 		cmd := redis.MustParse(ParseSUnion, "sunion key1 key2 key3")
 		conn := redis.NewFakeConn()

@@ -46,9 +46,8 @@ func TestSRandMemberParse(t *testing.T) {
 
 func TestSRandMemberExec(t *testing.T) {
 	t.Run("random", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()
@@ -60,8 +59,7 @@ func TestSRandMemberExec(t *testing.T) {
 		be.Equal(t, s == "one" || s == "two" || s == "thr", true)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()
@@ -71,9 +69,8 @@ func TestSRandMemberExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()

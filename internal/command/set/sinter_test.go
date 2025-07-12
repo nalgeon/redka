@@ -46,11 +46,10 @@ func TestSInterParse(t *testing.T) {
 
 func TestSInterExec(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two", "thr")
-		_, _ = db.Set().Add("key2", "two", "thr", "fou")
-		_, _ = db.Set().Add("key3", "one", "two", "thr", "fou")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two", "thr")
+		_, _ = red.Set().Add("key2", "two", "thr", "fou")
+		_, _ = red.Set().Add("key3", "one", "two", "thr", "fou")
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -60,8 +59,7 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "2,thr,two")
 	})
 	t.Run("no keys", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1")
 		conn := redis.NewFakeConn()
@@ -71,9 +69,8 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1")
 		conn := redis.NewFakeConn()
@@ -83,11 +80,10 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "3,one,thr,two")
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two")
-		_, _ = db.Set().Add("key2", "two", "thr")
-		_, _ = db.Set().Add("key3", "thr", "fou")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two")
+		_, _ = red.Set().Add("key2", "two", "thr")
+		_, _ = red.Set().Add("key3", "thr", "fou")
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -97,10 +93,9 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_, _ = db.Set().Add("key2", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_, _ = red.Set().Add("key2", "one")
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -110,8 +105,7 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -121,11 +115,10 @@ func TestSInterExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_ = db.Str().Set("key2", "one")
-		_, _ = db.Set().Add("key3", "one")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_ = red.Str().Set("key2", "one")
+		_, _ = red.Set().Add("key3", "one")
 
 		cmd := redis.MustParse(ParseSInter, "sinter key1 key2 key3")
 		conn := redis.NewFakeConn()

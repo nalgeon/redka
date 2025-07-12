@@ -46,9 +46,8 @@ func TestSPopParse(t *testing.T) {
 
 func TestSPopExec(t *testing.T) {
 	t.Run("pop", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSPop, "spop key")
 		conn := redis.NewFakeConn()
@@ -59,12 +58,11 @@ func TestSPopExec(t *testing.T) {
 		s = conn.Out()
 		be.Equal(t, s == "one" || s == "two" || s == "thr", true)
 
-		slen, _ := db.Set().Len("key")
+		slen, _ := red.Set().Len("key")
 		be.Equal(t, slen, 2)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSPop, "spop key")
 		conn := redis.NewFakeConn()
@@ -74,9 +72,8 @@ func TestSPopExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSPop, "spop key")
 		conn := redis.NewFakeConn()

@@ -46,22 +46,20 @@ func TestSDiffParse(t *testing.T) {
 
 func TestSDiffExec(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two", "thr", "fiv")
-		_, _ = db.Set().Add("key2", "two", "fou", "six")
-		_, _ = db.Set().Add("key3", "thr", "six")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two", "thr", "fiv")
+		_, _ = red.Set().Add("key2", "two", "fou", "six")
+		_, _ = red.Set().Add("key3", "thr", "six")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		be.Err(t, err, nil)
 		be.Equal(t, len(res.([]core.Value)), 2)
-		be.Equal(t, conn.Out(), "2,fiv,one")
+		be.Equal(t, conn.Out(), "2,fiv,one", "2,one,fiv")
 	})
 	t.Run("no keys", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1")
 		conn := redis.NewFakeConn()
@@ -71,23 +69,21 @@ func TestSDiffExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 		be.Err(t, err, nil)
 		be.Equal(t, len(res.([]core.Value)), 3)
-		be.Equal(t, conn.Out(), "3,one,thr,two")
+		be.Equal(t, conn.Out(), "3,one,thr,two", "3,one,two,thr")
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one", "two")
-		_, _ = db.Set().Add("key2", "one", "fou")
-		_, _ = db.Set().Add("key3", "two", "fiv")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one", "two")
+		_, _ = red.Set().Add("key2", "one", "fou")
+		_, _ = red.Set().Add("key3", "two", "fiv")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -97,10 +93,9 @@ func TestSDiffExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("first not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key2", "two")
-		_, _ = db.Set().Add("key3", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key2", "two")
+		_, _ = red.Set().Add("key3", "thr")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -110,10 +105,9 @@ func TestSDiffExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("rest not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_, _ = db.Set().Add("key2", "two")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_, _ = red.Set().Add("key2", "two")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -123,8 +117,7 @@ func TestSDiffExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "1,one")
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
@@ -134,11 +127,10 @@ func TestSDiffExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "0")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key1", "one")
-		_ = db.Str().Set("key2", "two")
-		_, _ = db.Set().Add("key3", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key1", "one")
+		_ = red.Str().Set("key2", "two")
+		_, _ = red.Set().Add("key3", "thr")
 
 		cmd := redis.MustParse(ParseSDiff, "sdiff key1 key2 key3")
 		conn := redis.NewFakeConn()
