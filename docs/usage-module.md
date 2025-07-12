@@ -96,5 +96,4 @@ Redka supports the following SQLite drivers:
 
 -   `github.com/mattn/go-sqlite3` ([example](../example/simple/main.go))
 -   `github.com/ncruces/go-sqlite3` ([example](../example/ncruces/main.go))
--   `github.com/tursodatabase/go-libsql` ([example](../example/libsql/main.go))
 -   `modernc.org/sqlite` ([example](../example/modernc/main.go))
