@@ -41,7 +41,7 @@ type queries struct {
 type Tx struct {
 	dialect sqlx.Dialect
 	tx      sqlx.Tx
-	sql     queries
+	sql     *queries
 }
 
 // NewTx creates a set repository transaction
@@ -498,13 +498,13 @@ type ScanResult struct {
 }
 
 // getSQL returns the SQL queries for the specified dialect.
-func getSQL(dialect sqlx.Dialect) queries {
+func getSQL(dialect sqlx.Dialect) *queries {
 	switch dialect {
 	case sqlx.DialectSqlite:
-		return sqlite
+		return &sqlite
 	case sqlx.DialectPostgres:
-		return postgres
+		return &postgres
 	default:
-		return queries{}
+		return &queries{}
 	}
 }
