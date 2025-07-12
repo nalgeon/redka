@@ -6,6 +6,19 @@
 // [DB] instance methods like [DB.Key] or [DB.Str] to access the
 // data structures. You should only use one instance of DB throughout
 // your program and close it with [DB.Close] when the program exits.
+//
+// See usage examples in the documentation below and at these links:
+//   - [mattn] - CGO SQLite driver.
+//   - [ncruces] - Pure Go SQLite driver (WASM).
+//   - [modernc] - Pure Go SQLite driver (libc port).
+//   - [postgres] - Postgres driver.
+//   - [tx] - Using transactions.
+//
+// [mattn]: https://github.com/nalgeon/redka/blob/main/example/mattn/main.go
+// [ncruces]: https://github.com/nalgeon/redka/blob/main/example/ncruces/main.go
+// [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
+// [postgres]: https://github.com/nalgeon/redka/blob/main/example/postgres/main.go
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 package redka
 
 import (
@@ -250,33 +263,21 @@ func (db *DB) ZSet() *rzset.DB {
 }
 
 // Update executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) Update(f func(tx *Tx) error) error {
 	return db.act.Update(f)
 }
 
 // UpdateContext executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) UpdateContext(ctx context.Context, f func(tx *Tx) error) error {
 	return db.act.UpdateContext(ctx, f)
 }
 
 // View executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) View(f func(tx *Tx) error) error {
 	return db.act.View(f)
 }
 
 // ViewContext executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) ViewContext(ctx context.Context, f func(tx *Tx) error) error {
 	return db.act.ViewContext(ctx, f)
 }
@@ -328,10 +329,6 @@ func (db *DB) startBgManager() *time.Ticker {
 // Same as [DB], Tx provides access to data structures like keys,
 // strings, and hashes. The difference is that you call Tx methods
 // within a transaction managed by [DB.Update] or [DB.View].
-//
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 type Tx struct {
 	tx     sqlx.Tx
 	hashTx *rhash.Tx
