@@ -52,8 +52,7 @@ func TestGetSetParse(t *testing.T) {
 
 func TestGetSetExec(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseGetSet, "getset name alice")
 		conn := redis.NewFakeConn()
@@ -62,15 +61,13 @@ func TestGetSetExec(t *testing.T) {
 		be.Equal(t, res.(core.Value), core.Value(nil))
 		be.Equal(t, conn.Out(), "(nil)")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseGetSet, "getset name bob")
 		conn := redis.NewFakeConn()
@@ -79,7 +76,7 @@ func TestGetSetExec(t *testing.T) {
 		be.Equal(t, res.(core.Value), core.Value("alice"))
 		be.Equal(t, conn.Out(), "alice")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "bob")
 	})
 }

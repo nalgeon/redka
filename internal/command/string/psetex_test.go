@@ -66,8 +66,7 @@ func TestPSetEXExec(t *testing.T) {
 	}
 
 	t.Run("create", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(parse, "psetex name 60000 alice")
 		conn := redis.NewFakeConn()
@@ -77,18 +76,16 @@ func TestPSetEXExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(60 * time.Second)
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(parse, "psetex name 60000 bob")
 		conn := redis.NewFakeConn()
@@ -98,18 +95,16 @@ func TestPSetEXExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(60 * time.Second)
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "bob")
 	})
 
 	t.Run("change ttl", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+		red := getRedka(t)
+		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(parse, "psetex name 10000 bob")
 		conn := redis.NewFakeConn()
@@ -119,10 +114,10 @@ func TestPSetEXExec(t *testing.T) {
 		be.Equal(t, conn.Out(), "OK")
 
 		expireAt := time.Now().Add(10 * time.Second)
-		key, _ := db.Key().Get("name")
+		key, _ := red.Key().Get("name")
 		be.Equal(t, *key.ETime/1000, expireAt.UnixMilli()/1000)
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "bob")
 	})
 

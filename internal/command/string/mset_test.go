@@ -58,8 +58,7 @@ func TestMSetParse(t *testing.T) {
 
 func TestMSetExec(t *testing.T) {
 	t.Run("create single", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseMSet, "mset name alice")
 		conn := redis.NewFakeConn()
@@ -68,13 +67,12 @@ func TestMSetExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "alice")
 	})
 
 	t.Run("create multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseMSet, "mset name alice age 25")
 		conn := redis.NewFakeConn()
@@ -83,17 +81,16 @@ func TestMSetExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "alice")
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.String(), "25")
 	})
 
 	t.Run("create/update", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_ = db.Str().Set("name", "alice")
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseMSet, "mset name bob age 50")
 		conn := redis.NewFakeConn()
@@ -102,18 +99,17 @@ func TestMSetExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "bob")
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.String(), "50")
 	})
 
 	t.Run("update multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
 
 		cmd := redis.MustParse(ParseMSet, "mset name bob age 50")
 		conn := redis.NewFakeConn()
@@ -122,9 +118,9 @@ func TestMSetExec(t *testing.T) {
 		be.Equal(t, res, true)
 		be.Equal(t, conn.Out(), "OK")
 
-		name, _ := db.Str().Get("name")
+		name, _ := red.Str().Get("name")
 		be.Equal(t, name.String(), "bob")
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.String(), "50")
 	})
 }

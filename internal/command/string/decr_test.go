@@ -54,8 +54,7 @@ func TestDecrExec(t *testing.T) {
 	}
 
 	t.Run("create", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(parse, "decr age")
 		conn := redis.NewFakeConn()
@@ -64,14 +63,13 @@ func TestDecrExec(t *testing.T) {
 		be.Equal(t, res, -1)
 		be.Equal(t, conn.Out(), "-1")
 
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.MustInt(), -1)
 	})
 
 	t.Run("decr", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("age", "25")
+		red := getRedka(t)
+		_ = red.Str().Set("age", "25")
 
 		cmd := redis.MustParse(parse, "decr age")
 		conn := redis.NewFakeConn()
@@ -80,7 +78,7 @@ func TestDecrExec(t *testing.T) {
 		be.Equal(t, res, 24)
 		be.Equal(t, conn.Out(), "24")
 
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.MustInt(), 24)
 	})
 }

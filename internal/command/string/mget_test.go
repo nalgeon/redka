@@ -45,11 +45,10 @@ func TestMGetParse(t *testing.T) {
 }
 
 func TestMGetExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("name", "alice")
-	_ = db.Str().Set("age", 25)
+	_ = red.Str().Set("name", "alice")
+	_ = red.Str().Set("age", 25)
 
 	tests := []struct {
 		cmd string

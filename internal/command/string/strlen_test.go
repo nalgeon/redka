@@ -45,9 +45,8 @@ func TestStrlenParse(t *testing.T) {
 
 func TestStrlenExec(t *testing.T) {
 	t.Run("strlen", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("name", "alice")
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
 
 		cmd := redis.MustParse(ParseStrlen, "strlen name")
 		conn := redis.NewFakeConn()
@@ -58,8 +57,7 @@ func TestStrlenExec(t *testing.T) {
 	})
 
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseStrlen, "strlen name")
 		conn := redis.NewFakeConn()

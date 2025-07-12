@@ -54,8 +54,7 @@ func TestIncrByExec(t *testing.T) {
 	}
 
 	t.Run("create", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(parse, "incrby age 42")
 		conn := redis.NewFakeConn()
@@ -64,14 +63,13 @@ func TestIncrByExec(t *testing.T) {
 		be.Equal(t, res, 42)
 		be.Equal(t, conn.Out(), "42")
 
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.MustInt(), 42)
 	})
 
 	t.Run("incrby", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("age", "25")
+		red := getRedka(t)
+		_ = red.Str().Set("age", "25")
 
 		cmd := redis.MustParse(parse, "incrby age 42")
 		conn := redis.NewFakeConn()
@@ -80,7 +78,7 @@ func TestIncrByExec(t *testing.T) {
 		be.Equal(t, res, 67)
 		be.Equal(t, conn.Out(), "67")
 
-		age, _ := db.Str().Get("age")
+		age, _ := red.Str().Get("age")
 		be.Equal(t, age.MustInt(), 67)
 	})
 }

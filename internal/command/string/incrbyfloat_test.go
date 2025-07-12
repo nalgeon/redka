@@ -55,8 +55,7 @@ func TestIncrByFloatParse(t *testing.T) {
 }
 
 func TestIncrByFloatExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
 	tests := []struct {
 		cmd string
@@ -87,7 +86,7 @@ func TestIncrByFloatExec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
-			_ = db.Str().Set("age", 25)
+			_ = red.Str().Set("age", 25)
 
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseIncrByFloat, test.cmd)
@@ -97,5 +96,4 @@ func TestIncrByFloatExec(t *testing.T) {
 			be.Equal(t, conn.Out(), test.out)
 		})
 	}
-
 }
