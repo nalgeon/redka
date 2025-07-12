@@ -27,7 +27,19 @@ vet:
 	@go vet ./...
 
 test:
-	@go test ./... -tags=$(driver)
+	@echo "> running tests with $(driver) driver..."
+	@go test -tags=$(driver) ./...
+	@echo "✓ finished tests"
+
+test-sqlite:
+	@echo "> running tests with sqlite driver..."
+	@go test -tags=sqlite3 ./...
+	@echo "✓ finished tests"
+
+test-postgres:
+	@echo "> running tests with postgres driver..."
+	@go test -tags=postgres -p=1 ./...
+	@echo "✓ finished tests"
 
 build:
 	@CGO_ENABLED=1 go build -ldflags "-s -w -X main.version=$(build_ver) -X main.commit=$(build_rev) -X main.date=$(build_date)" -trimpath -o build/redka -v cmd/redka/main.go
@@ -39,10 +51,22 @@ run:
 	@./build/redka
 
 postgres-start:
-	@docker run --rm --detach --name=redka-postgres --env=POSTGRES_USER=redka --env=POSTGRES_PASSWORD=redka --env=POSTGRES_DB=redka --publish=5432:5432 postgres:17-alpine
+	@echo "> starting postgres..."
+	@docker run --rm --detach --name=redka-postgres \
+		--env=POSTGRES_USER=redka \
+		--env=POSTGRES_PASSWORD=redka \
+		--env=POSTGRES_DB=redka \
+		--publish=5432:5432 \
+		postgres:17-alpine
+	@until docker exec redka-postgres \
+		pg_isready --username=redka --dbname=redka --quiet --quiet; \
+		do sleep 1; done
+	@echo "✓ started postgres"
 
 postgres-stop:
+	@echo "> stopping postgres..."
 	@docker stop redka-postgres
+	@echo "✓ stopped postgres"
 
 postgres-shell:
 	@docker exec -it redka-postgres psql --username=redka --dbname=redka
