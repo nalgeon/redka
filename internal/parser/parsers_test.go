@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/nalgeon/redka/internal/testx"
+	"github.com/nalgeon/be"
 )
 
 func TestFlag(t *testing.T) {
@@ -70,10 +70,10 @@ func TestFlag(t *testing.T) {
 			var dest bool
 			parser := Flag(test.name, &dest)
 			match, rest, err := parser(test.args)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, match, test.match)
-			testx.AssertEqual(t, dest, test.match)
-			testx.AssertEqual(t, rest, test.rest)
+			be.Err(t, err, nil)
+			be.Equal(t, match, test.match)
+			be.Equal(t, dest, test.match)
+			be.Equal(t, rest, test.rest)
 		})
 	}
 }

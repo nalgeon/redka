@@ -8,59 +8,34 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlGet = `
-	select value
-	from rstring join rkey on kid = rkey.id and type = 1
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlGetMany = `
-	select key, value
-	from rstring
-	join rkey on kid = rkey.id and type = 1
-	where key in (:keys) and (etime is null or etime > ?)`
-
-	sqlSet1 = `
-	insert into rkey (key, type, version, etime, mtime)
-	values (?, 1, 1, ?, ?)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
-		etime = excluded.etime,
-		mtime = excluded.mtime`
-
-	sqlSet2 = `
-	insert into rstring (kid, value)
-	values ((select id from rkey where key = ?), ?)
-	on conflict (kid) do update
-	set value = excluded.value`
-
-	sqlUpdate1 = `
-	insert into rkey (key, type, version, etime, mtime)
-	values (?, 1, 1, null, ?)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
-		mtime = excluded.mtime`
-
-	sqlUpdate2 = sqlSet2
-)
+// SQL queries for the string repository.
+type queries struct {
+	get     string
+	getMany string
+	set1    string
+	set2    string
+	update1 string
+	update2 string
+}
 
 // Tx is a string repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     *queries
 }
 
 // NewTx creates a string repository transaction
 // from a generic database transaction.
-func NewTx(tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Get returns the value of the key.
 // If the key does not exist or is not a string, returns ErrNotFound.
 func (tx *Tx) Get(key string) (core.Value, error) {
-	return get(tx.tx, key)
+	return tx.get(key)
 }
 
 // GetMany returns a map of values for given keys.
@@ -69,7 +44,8 @@ func (tx *Tx) Get(key string) (core.Value, error) {
 func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	// Get the values of the requested keys.
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlGetMany, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.getMany, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 
 	var rows *sql.Rows
@@ -77,7 +53,7 @@ func (tx *Tx) GetMany(keys ...string) (map[string]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Fill the map with the values for existing keys.
 	items := map[string]core.Value{}
@@ -117,7 +93,7 @@ func (tx *Tx) Incr(key string, delta int) (int, error) {
 
 	// increment the value
 	newVal := valInt + delta
-	err = update(tx.tx, key, newVal)
+	err = tx.update(key, newVal)
 	if err != nil {
 		return 0, err
 	}
@@ -145,7 +121,7 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 
 	// increment the value
 	newVal := valFloat + delta
-	err = update(tx.tx, key, newVal)
+	err = tx.update(key, newVal)
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +144,7 @@ func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
 	if ttl > 0 {
 		at = time.Now().Add(ttl)
 	}
-	err := set(tx.tx, key, value, at)
+	err := tx.set(key, value, at)
 	return err
 }
 
@@ -186,7 +162,7 @@ func (tx *Tx) SetMany(items map[string]any) error {
 
 	at := time.Time{} // no expiration
 	for key, val := range items {
-		err := set(tx.tx, key, val, at)
+		err := tx.set(key, val, at)
 		if err != nil {
 			return err
 		}
@@ -200,10 +176,10 @@ func (tx *Tx) SetWith(key string, value any) SetCmd {
 	return SetCmd{tx: tx, key: key, val: value}
 }
 
-func get(tx sqlx.Tx, key string) (core.Value, error) {
+func (tx *Tx) get(key string) (core.Value, error) {
 	args := []any{key, time.Now().UnixMilli()}
 	var val []byte
-	err := tx.QueryRow(sqlGet, args...).Scan(&val)
+	err := tx.tx.QueryRow(tx.sql.get, args...).Scan(&val)
 	if err == sql.ErrNoRows {
 		return core.Value(nil), core.ErrNotFound
 	}
@@ -214,7 +190,7 @@ func get(tx sqlx.Tx, key string) (core.Value, error) {
 }
 
 // set sets the key value and (optionally) its expiration time.
-func set(tx sqlx.Tx, key string, value any, at time.Time) error {
+func (tx *Tx) set(key string, value any, at time.Time) error {
 	valueb, err := core.ToBytes(value)
 	if err != nil {
 		return err
@@ -227,29 +203,41 @@ func set(tx sqlx.Tx, key string, value any, at time.Time) error {
 	}
 
 	args := []any{key, etime, time.Now().UnixMilli()}
-	_, err = tx.Exec(sqlSet1, args...)
+	_, err = tx.tx.Exec(tx.sql.set1, args...)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
 
 	args = []any{key, valueb}
-	_, err = tx.Exec(sqlSet2, args...)
+	_, err = tx.tx.Exec(tx.sql.set2, args...)
 	return err
 }
 
 // update updates the value of the existing key without changing its
 // expiration time. If the key does not exist, creates a new key with
 // the specified value and no expiration time.
-func update(tx sqlx.Tx, key string, value any) error {
+func (tx *Tx) update(key string, value any) error {
 	valueb, err := core.ToBytes(value)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(sqlUpdate1, key, time.Now().UnixMilli())
+	_, err = tx.tx.Exec(tx.sql.update1, key, time.Now().UnixMilli())
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
-	_, err = tx.Exec(sqlUpdate2, key, valueb)
+	_, err = tx.tx.Exec(tx.sql.update2, key, valueb)
 	return err
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) *queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return &sqlite
+	case sqlx.DialectPostgres:
+		return &postgres
+	default:
+		return &queries{}
+	}
 }

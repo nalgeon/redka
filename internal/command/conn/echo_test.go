@@ -3,8 +3,8 @@ package conn
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestEchoParse(t *testing.T) {
@@ -34,19 +34,18 @@ func TestEchoParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseEcho, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.parts, test.want)
+				be.Equal(t, cmd.parts, test.want)
 			} else {
-				testx.AssertEqual(t, cmd, Echo{})
+				be.Equal(t, cmd, Echo{})
 			}
 		})
 	}
 }
 
 func TestEchoExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
 	tests := []struct {
 		cmd string
@@ -70,9 +69,9 @@ func TestEchoExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseEcho, test.cmd)
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.res)
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Err(t, err, nil)
+			be.Equal(t, res, test.res)
+			be.Equal(t, conn.Out(), test.out)
 		})
 	}
 }

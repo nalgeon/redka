@@ -1,6 +1,6 @@
 # Persistence
 
-Redka stores data in a SQLite database using the following tables:
+Redka stores data in a SQL database using the following tables:
 
 ```
 rkey

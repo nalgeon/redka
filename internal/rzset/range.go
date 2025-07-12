@@ -7,27 +7,6 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlRangeRank = `
-	with ranked as (
-		select elem, score, (row_number() over w - 1) as rank
-		from rzset join rkey on kid = rkey.id and type = 5
-		where key = ? and (etime is null or etime > ?)
-		window w as (partition by kid order by score asc, elem asc)
-	)
-	select elem, score
-	from ranked
-	where rank between ? and ?
-	order by rank, elem asc`
-
-	sqlRangeScore = `
-	select elem, score
-	from rzset join rkey on kid = rkey.id and type = 5
-	where key = ? and (etime is null or etime > ?)
-	and score between ? and ?
-	order by score asc, elem asc`
-)
-
 type byRank struct {
 	start, stop int
 }
@@ -38,7 +17,7 @@ type byScore struct {
 
 // RangeCmd retrieves a range of elements from a sorted set.
 type RangeCmd struct {
-	tx      sqlx.Tx
+	tx      *Tx
 	key     string
 	byRank  *byRank
 	byScore *byScore
@@ -117,9 +96,9 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 	}
 
 	// Change sort direction if necessary.
-	query := sqlRangeRank
+	query := c.tx.sql.rangeRank
 	if c.sortDir != sqlx.Asc {
-		query = strings.Replace(query, sqlx.Asc, c.sortDir, -1)
+		query = strings.ReplaceAll(query, sqlx.Asc, c.sortDir)
 	}
 
 	// Prepare query arguments.
@@ -131,11 +110,11 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 	}
 
 	// Execute the query.
-	rows, err := c.tx.Query(query, args...)
+	rows, err := c.tx.tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build the resulting element-score slice.
 	var items []SetItem
@@ -156,9 +135,9 @@ func (c RangeCmd) rangeRank() ([]SetItem, error) {
 // rangeScore retrieves a range of elements by score.
 func (c RangeCmd) rangeScore() ([]SetItem, error) {
 	// Change sort direction if necessary.
-	query := sqlRangeScore
+	query := c.tx.sql.rangeScore
 	if c.sortDir != sqlx.Asc {
-		query = strings.Replace(query, sqlx.Asc, c.sortDir, -1)
+		query = strings.ReplaceAll(query, sqlx.Asc, c.sortDir)
 	}
 
 	// Prepare query arguments.
@@ -171,22 +150,22 @@ func (c RangeCmd) rangeScore() ([]SetItem, error) {
 
 	// Add offset and count if necessary.
 	if c.offset > 0 && c.count > 0 {
-		query += " limit ?, ?"
-		args = append(args, c.offset, c.count)
+		query += " limit $5 offset $6"
+		args = append(args, c.count, c.offset)
 	} else if c.count > 0 {
-		query += " limit ?"
+		query += " limit $5"
 		args = append(args, c.count)
 	} else if c.offset > 0 {
-		query += " limit ?, -1"
+		query += " " + c.tx.dialect.LimitAll() + " offset $5"
 		args = append(args, c.offset)
 	}
 
 	// Execute the query.
-	rows, err := c.tx.Query(query, args...)
+	rows, err := c.tx.tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Build the resulting element-score slice.
 	var items []SetItem

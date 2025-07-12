@@ -9,10 +9,20 @@ redka [-h host] [-p port] [-s unix-socket] [db-path]
 For example:
 
 ```shell
+# use in-memory sqlite database
 ./redka
+
+# use file sqlite database
 ./redka data.db
+
+# listen on all network interfaces
 ./redka -h 0.0.0.0 -p 6379 data.db
+
+# listen on unix socket
 ./redka -s /tmp/redka.sock data.db
+
+# use postgres database
+./redka -p 6379 "postgres://redka:redka@localhost:5432/redka?sslmode=disable"
 ```
 
 Server defaults are host `localhost`, port `6379` and empty DB path. The unix socket path, if given, overrides the host/port arguments.
@@ -42,7 +52,7 @@ Once the server is running, connect to it using `redis-cli` or an API client lik
 redis-cli -h localhost -p 6379
 ```
 
-```
+```text
 127.0.0.1:6379> echo hello
 "hello"
 127.0.0.1:6379> set name alice

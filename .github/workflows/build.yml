@@ -13,6 +13,20 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: redka
+                    POSTGRES_PASSWORD: redka
+                    POSTGRES_DB: redka
+                options: >-
+                    --health-cmd "pg_isready --username=redka --dbname=redka --quiet"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -20,7 +34,7 @@ jobs:
             - name: Setup Go
               uses: actions/setup-go@v5
               with:
-                  go-version: "stable"
+                  go-version-file: "go.mod"
 
             - name: Install dependencies
               run: |
@@ -28,8 +42,15 @@ jobs:
                   sudo apt-get install -y libsqlite3-dev
                   go get .
 
-            - name: Test and build
-              run: make test build
+            - name: Install linter
+              uses: golangci/golangci-lint-action@v8
+
+            - name: Build and test
+              run: |
+                  make build
+                  make vet lint
+                  make test-sqlite
+                  make test-postgres
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4

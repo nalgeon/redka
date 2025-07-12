@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/rzset"
@@ -13,81 +14,77 @@ import (
 func TestAdd(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		created, err := zset.Add("key", "one", 1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		be.Err(t, err, nil)
+		be.Equal(t, created, true)
 
 		created, err = zset.Add("key", "two", 2)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		be.Err(t, err, nil)
+		be.Equal(t, created, true)
 
 		created, err = zset.Add("key", "thr", 3)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		be.Err(t, err, nil)
+		be.Equal(t, created, true)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 3)
+		be.Equal(t, key.Version, 3)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 3)
+		be.Equal(t, zlen, 3)
 
 		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
+		be.Equal(t, one, 1.0)
 		two, _ := zset.GetScore("key", "two")
-		testx.AssertEqual(t, two, 2.0)
+		be.Equal(t, two, 2.0)
 		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 	})
 	t.Run("update", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		created, err := zset.Add("key", "one", 1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		be.Err(t, err, nil)
+		be.Equal(t, created, true)
 
 		created, err = zset.Add("key", "two", 2)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, true)
+		be.Err(t, err, nil)
+		be.Equal(t, created, true)
 
 		created, err = zset.Add("key", "two", 3)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, created, false)
+		be.Err(t, err, nil)
+		be.Equal(t, created, false)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 3)
+		be.Equal(t, key.Version, 3)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 2)
+		be.Equal(t, zlen, 2)
 
 		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
+		be.Equal(t, one, 1.0)
 		two, _ := zset.GetScore("key", "two")
-		testx.AssertEqual(t, two, 3.0)
+		be.Equal(t, two, 3.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "string")
 
 		created, err := zset.Add("key", "one", 1)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, created, false)
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, created, false)
 
 		_, err = zset.GetScore("key", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
-		testx.AssertEqual(t, sval.String(), "string")
+		be.Equal(t, sval.String(), "string")
 	})
 }
 
 func TestAddMany(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		items := map[any]float64{
 			"one": 1,
@@ -95,25 +92,24 @@ func TestAddMany(t *testing.T) {
 			"thr": 3,
 		}
 		n, err := zset.AddMany("key", items)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 3)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 3)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 3)
+		be.Equal(t, key.Version, 3)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 3)
+		be.Equal(t, zlen, 3)
 
 		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
+		be.Equal(t, one, 1.0)
 		two, _ := zset.GetScore("key", "two")
-		testx.AssertEqual(t, two, 2.0)
+		be.Equal(t, two, 2.0)
 		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 	})
 	t.Run("update", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
@@ -125,29 +121,28 @@ func TestAddMany(t *testing.T) {
 			"fiv": 5,
 		}
 		n, err := zset.AddMany("key", items)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 2)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 7)
+		be.Equal(t, key.Version, 7)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 5)
+		be.Equal(t, zlen, 5)
 
 		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 10.0)
+		be.Equal(t, one, 10.0)
 		two, _ := zset.GetScore("key", "two")
-		testx.AssertEqual(t, two, 20.0)
+		be.Equal(t, two, 20.0)
 		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 		fou, _ := zset.GetScore("key", "fou")
-		testx.AssertEqual(t, fou, 4.0)
+		be.Equal(t, fou, 4.0)
 		fiv, _ := zset.GetScore("key", "fiv")
-		testx.AssertEqual(t, fiv, 5.0)
+		be.Equal(t, fiv, 5.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items := map[any]float64{
@@ -156,25 +151,24 @@ func TestAddMany(t *testing.T) {
 			"thr": 3,
 		}
 		n, err := zset.AddMany("key", items)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, n, 0)
 
 		_, err = zset.GetScore("key", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 		_, err = zset.GetScore("key", "two")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 		_, err = zset.GetScore("key", "thr")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("key")
-		testx.AssertEqual(t, sval.String(), "str")
+		be.Equal(t, sval.String(), "str")
 	})
 }
 
 func TestCount(t *testing.T) {
 	t.Run("count", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -199,170 +193,159 @@ func TestCount(t *testing.T) {
 		}
 		for _, test := range tests {
 			count, err := zset.Count("key", test.min, test.max)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, count, test.count)
+			be.Err(t, err, nil)
+			be.Equal(t, count, test.count)
 		}
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		count, err := zset.Count("key", 1, 2)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		count, err := zset.Count("key", 1, 2)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 0)
 	})
 }
 
 func TestDelete(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
 
 		n, err := zset.Delete("key", "one", "two")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 2)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 4)
+		be.Equal(t, key.Version, 4)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 1)
+		be.Equal(t, zlen, 1)
 
 		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 	})
 	t.Run("all", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
 
 		n, err := zset.Delete("key", "one", "two", "thr")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 3)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 3)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 4)
+		be.Equal(t, key.Version, 4)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 0)
+		be.Equal(t, zlen, 0)
 
 		_, err = zset.GetScore("key", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("none", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "thr", 3)
 
 		n, err := zset.Delete("key", "fou", "fiv")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 3)
+		be.Equal(t, key.Version, 3)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 3)
+		be.Equal(t, zlen, 3)
 
 		one, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, one, 1.0)
+		be.Equal(t, one, 1.0)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		n, err := zset.Delete("key", "one", "two")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		n, err := zset.Delete("key", "one", "two")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 	})
 }
 
 func TestDeleteRank(t *testing.T) {
 	t.Run("delete", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 		_, _ = zset.Add("key", "2nd", 2)
 		_, _ = zset.Add("key", "thr", 3)
 
 		n, err := zset.DeleteWith("key").ByRank(1, 2).Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 2)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 5)
+		be.Equal(t, key.Version, 5)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 2)
+		be.Equal(t, zlen, 2)
 
 		two, _ := zset.GetScore("key", "one")
-		testx.AssertEqual(t, two, 1.0)
+		be.Equal(t, two, 1.0)
 		thr, _ := zset.GetScore("key", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 	})
 	t.Run("negative indexes", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 
 		n, err := zset.DeleteWith("key").ByRank(-2, -1).Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 	})
 }
 
 func TestDeleteScore(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
 	_, _ = zset.Add("key", "2nd", 2)
 	_, _ = zset.Add("key", "thr", 3)
 
 	n, err := zset.DeleteWith("key").ByScore(1, 2).Run()
-	testx.AssertNoErr(t, err)
-	testx.AssertEqual(t, n, 3)
+	be.Err(t, err, nil)
+	be.Equal(t, n, 3)
 
 	key, _ := db.Key().Get("key")
-	testx.AssertEqual(t, key.Version, 5)
+	be.Equal(t, key.Version, 5)
 
 	zlen, _ := zset.Len("key")
-	testx.AssertEqual(t, zlen, 1)
+	be.Equal(t, zlen, 1)
 
 	thr, _ := zset.GetScore("key", "thr")
-	testx.AssertEqual(t, thr, 3.0)
+	be.Equal(t, thr, 3.0)
 }
 
 func TestGetRank(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -371,40 +354,39 @@ func TestGetRank(t *testing.T) {
 	_ = db.Str().Set("str", "str")
 
 	rank, score, _ := zset.GetRank("key", "one")
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 1.0)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 1.0)
 
 	rank, score, _ = zset.GetRank("key", "2nd")
-	testx.AssertEqual(t, rank, 1)
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, rank, 1)
+	be.Equal(t, score, 2.0)
 
 	rank, score, _ = zset.GetRank("key", "two")
-	testx.AssertEqual(t, rank, 2)
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, rank, 2)
+	be.Equal(t, score, 2.0)
 
 	rank, score, _ = zset.GetRank("key", "thr")
-	testx.AssertEqual(t, rank, 3)
-	testx.AssertEqual(t, score, 3.0)
+	be.Equal(t, rank, 3)
+	be.Equal(t, score, 3.0)
 
 	rank, score, err := zset.GetRank("key", "not")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 
 	rank, score, err = zset.GetRank("other", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 
 	rank, score, err = zset.GetRank("str", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 }
 
 func TestGetRankRev(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -413,40 +395,39 @@ func TestGetRankRev(t *testing.T) {
 	_ = db.Str().Set("str", "str")
 
 	rank, score, _ := zset.GetRankRev("key", "thr")
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 3.0)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 3.0)
 
 	rank, score, _ = zset.GetRankRev("key", "two")
-	testx.AssertEqual(t, rank, 1)
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, rank, 1)
+	be.Equal(t, score, 2.0)
 
 	rank, score, _ = zset.GetRankRev("key", "2nd")
-	testx.AssertEqual(t, rank, 2)
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, rank, 2)
+	be.Equal(t, score, 2.0)
 
 	rank, score, _ = zset.GetRankRev("key", "one")
-	testx.AssertEqual(t, rank, 3)
-	testx.AssertEqual(t, score, 1.0)
+	be.Equal(t, rank, 3)
+	be.Equal(t, score, 1.0)
 
 	rank, score, err := zset.GetRankRev("key", "not")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 
 	rank, score, err = zset.GetRankRev("other", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 
 	rank, score, err = zset.GetRankRev("str", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, rank, 0)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, rank, 0)
+	be.Equal(t, score, 0.0)
 }
 
 func TestGetScore(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -455,102 +436,96 @@ func TestGetScore(t *testing.T) {
 	_ = db.Str().Set("str", "str")
 
 	score, _ := zset.GetScore("key", "one")
-	testx.AssertEqual(t, score, 1.0)
+	be.Equal(t, score, 1.0)
 
 	score, _ = zset.GetScore("key", "two")
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, score, 2.0)
 
 	score, _ = zset.GetScore("key", "thr")
-	testx.AssertEqual(t, score, 3.0)
+	be.Equal(t, score, 3.0)
 
 	score, _ = zset.GetScore("key", "2nd")
-	testx.AssertEqual(t, score, 2.0)
+	be.Equal(t, score, 2.0)
 
 	score, err := zset.GetScore("key", "not")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, score, 0.0)
 
 	score, err = zset.GetScore("other", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, score, 0.0)
 
 	score, err = zset.GetScore("str", "one")
-	testx.AssertErr(t, err, core.ErrNotFound)
-	testx.AssertEqual(t, score, 0.0)
+	be.Err(t, err, core.ErrNotFound)
+	be.Equal(t, score, 0.0)
 }
 
 func TestIncr(t *testing.T) {
 	t.Run("create key", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		val, err := zset.Incr("key", "one", 25.5)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 25.5)
+		be.Err(t, err, nil)
+		be.Equal(t, val, 25.5)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 1)
+		be.Equal(t, zlen, 1)
 	})
 	t.Run("create field", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "one", 10)
 		val, err := zset.Incr("key", "two", 25.5)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 25.5)
+		be.Err(t, err, nil)
+		be.Equal(t, val, 25.5)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 2)
+		be.Equal(t, key.Version, 2)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 2)
+		be.Equal(t, zlen, 2)
 	})
 	t.Run("update field", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "one", 25.5)
 		val, err := zset.Incr("key", "one", 10.5)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 36.0)
+		be.Err(t, err, nil)
+		be.Equal(t, val, 36.0)
 
 		key, _ := db.Key().Get("key")
-		testx.AssertEqual(t, key.Version, 2)
+		be.Equal(t, key.Version, 2)
 
 		zlen, _ := zset.Len("key")
-		testx.AssertEqual(t, zlen, 1)
+		be.Equal(t, zlen, 1)
 	})
 	t.Run("decrement", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 25.5)
 		val, err := zset.Incr("key", "one", -10.5)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, val, 15.0)
+		be.Err(t, err, nil)
+		be.Equal(t, val, 15.0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "one")
 
 		val, err := zset.Incr("key", "one", 25.0)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, val, 0.0)
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, val, 0.0)
 
 		_, err = zset.GetScore("key", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 }
 
 func TestInter(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -569,15 +544,14 @@ func TestInter(t *testing.T) {
 		})
 
 		items, err := zset.Inter("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("thr"), Score: 9},
 			{Elem: core.Value("two"), Score: 222},
 		})
 	})
 	t.Run("single key", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -585,58 +559,53 @@ func TestInter(t *testing.T) {
 		})
 
 		items, err := zset.Inter("key1")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 1},
 			{Elem: core.Value("two"), Score: 2},
 			{Elem: core.Value("thr"), Score: 3},
 		})
 	})
 	t.Run("empty", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 1)
 		_, _ = zset.Add("key3", "thr", 1)
 
 		items, err := zset.Inter("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 
 		items, err := zset.Inter("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		items, err := zset.Inter("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key1", "str")
 		_, _ = zset.Add("key2", "two", 2)
 		_, _ = zset.Add("key3", "two", 2)
 
 		items, err := zset.Inter("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 }
 
 func TestInterWith(t *testing.T) {
 	t.Run("sum", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -655,15 +624,14 @@ func TestInterWith(t *testing.T) {
 		})
 
 		items, err := zset.InterWith("key1", "key2", "key3").Sum().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("thr"), Score: 9},
 			{Elem: core.Value("two"), Score: 222},
 		})
 	})
 	t.Run("min", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -682,15 +650,14 @@ func TestInterWith(t *testing.T) {
 		})
 
 		items, err := zset.InterWith("key1", "key2", "key3").Min().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("two"), Score: 2},
 			{Elem: core.Value("thr"), Score: 3},
 		})
 	})
 	t.Run("max", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -709,8 +676,8 @@ func TestInterWith(t *testing.T) {
 		})
 
 		items, err := zset.InterWith("key1", "key2", "key3").Max().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("thr"), Score: 3},
 			{Elem: core.Value("two"), Score: 200},
 		})
@@ -720,7 +687,6 @@ func TestInterWith(t *testing.T) {
 func TestInterStore(t *testing.T) {
 	t.Run("store", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
@@ -740,120 +706,114 @@ func TestInterStore(t *testing.T) {
 		})
 
 		n, err := zset.InterWith("key1", "key2", "key3").Dest("dest").Max().Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 2)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 2)
+		be.Equal(t, zlen, 2)
 
 		thr, _ := zset.GetScore("dest", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 		two, _ := zset.GetScore("dest", "two")
-		testx.AssertEqual(t, two, 200.0)
+		be.Equal(t, two, 200.0)
 	})
 	t.Run("rewrite dest", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_, _ = zset.Add("dest", "old", 10)
 
 		n, err := zset.InterWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 1)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 1)
+		be.Equal(t, zlen, 1)
 
 		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		be.Equal(t, one, 3.0)
 		_, err = zset.GetScore("dest", "old")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 2)
 		_, _ = zset.Add("dest", "old", 10)
 
 		n, err := zset.InterWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 0)
+		be.Equal(t, zlen, 0)
 
 		_, err = zset.GetScore("dest", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 		_, err = zset.GetScore("dest", "two")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 		_, err = zset.GetScore("dest", "old")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("source key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 
 		n, err := zset.InterWith("key1", "key2", "key3").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 
 		_, err = zset.GetScore("dest", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_ = db.Str().Set("key3", 3)
 
 		n, err := zset.InterWith("key1", "key2", "key3").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 
 		_, err = zset.GetScore("dest", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_ = db.Str().Set("dest", 10)
 
 		n, err := zset.InterWith("key1", "key2").Dest("dest").Store()
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, n, 0)
 
 		_, err = zset.GetScore("dest", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("dest")
-		testx.AssertEqual(t, sval.String(), "10")
+		be.Equal(t, sval.String(), "10")
 	})
 }
 
 func TestLen(t *testing.T) {
 	db, zset := getDB(t)
-	defer db.Close()
 
 	_, _ = zset.Add("key", "one", 1)
 	_, _ = zset.Add("key", "two", 2)
@@ -862,26 +822,25 @@ func TestLen(t *testing.T) {
 
 	t.Run("count", func(t *testing.T) {
 		count, err := zset.Len("key")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 4)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 4)
 	})
 	t.Run("key not found", func(t *testing.T) {
 		count, err := zset.Len("not")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		_ = db.Str().Set("str", "str")
 		count, err := zset.Len("str")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 0)
 	})
 }
 
 func TestRangeRank(t *testing.T) {
 	t.Run("range", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -912,13 +871,12 @@ func TestRangeRank(t *testing.T) {
 
 		for _, test := range tests {
 			items, err := zset.Range("key", test.start, test.stop)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, items, test.items)
+			be.Err(t, err, nil)
+			be.Equal(t, items, test.items)
 		}
 	})
 	t.Run("desc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
@@ -949,44 +907,40 @@ func TestRangeRank(t *testing.T) {
 
 		for _, test := range tests {
 			items, err := zset.RangeWith("key").ByRank(test.start, test.stop).Desc().Run()
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, items, test.items)
+			be.Err(t, err, nil)
+			be.Equal(t, items, test.items)
 		}
 	})
 	t.Run("negative indexes", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 1)
 		_, _ = zset.Add("key", "two", 2)
 
 		items, err := zset.Range("key", -2, -1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		items, err := zset.Range("key", 0, 1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items, err := zset.Range("key", 0, 1)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 }
 
 func TestRangeScore(t *testing.T) {
 	t.Run("asc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1022,13 +976,12 @@ func TestRangeScore(t *testing.T) {
 
 		for _, test := range tests {
 			items, err := zset.RangeWith("key").ByScore(test.start, test.stop).Run()
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, items, test.items)
+			be.Err(t, err, nil)
+			be.Equal(t, items, test.items)
 		}
 	})
 	t.Run("desc", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1064,13 +1017,12 @@ func TestRangeScore(t *testing.T) {
 
 		for _, test := range tests {
 			items, err := zset.RangeWith("key").ByScore(test.start, test.stop).Desc().Run()
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, items, test.items)
+			be.Err(t, err, nil)
+			be.Equal(t, items, test.items)
 		}
 	})
 	t.Run("offset/count", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key", "one", 10)
 		_, _ = zset.Add("key", "two", 20)
@@ -1108,123 +1060,139 @@ func TestRangeScore(t *testing.T) {
 				ByScore(test.start, test.stop).
 				Offset(test.offset).Count(test.count).
 				Run()
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, items, test.items)
+			be.Err(t, err, nil)
+			be.Equal(t, items, test.items)
 		}
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		items, err := zset.RangeWith("key").ByScore(0, 10).Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		items, err := zset.RangeWith("key").ByScore(0, 10).Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 }
 
 func TestScan(t *testing.T) {
-	db, zset := getDB(t)
-	defer db.Close()
+	t.Run("scan", func(t *testing.T) {
+		db, zset := getDB(t)
 
-	_, _ = zset.Add("key", "f11", 11)
-	_, _ = zset.Add("key", "f12", 12)
-	_, _ = zset.Add("key", "f21", 21)
-	_, _ = zset.Add("key", "f22", 22)
-	_, _ = zset.Add("key", "f31", 31)
-	_ = db.Str().Set("str", "str")
+		_, _ = zset.Add("key", "f11", 11)
+		_, _ = zset.Add("key", "f12", 12)
+		_, _ = zset.Add("key", "f21", 21)
+		_, _ = zset.Add("key", "f22", 22)
+		_, _ = zset.Add("key", "f31", 31)
+		_ = db.Str().Set("str", "str")
 
-	tests := []struct {
-		name    string
-		cursor  int
-		pattern string
-		count   int
+		tests := []struct {
+			name    string
+			pattern string
+			count   int
+			want    []rzset.SetItem
+		}{
+			{"all", "*", 5,
+				[]rzset.SetItem{
+					{Elem: core.Value("f11"), Score: 11},
+					{Elem: core.Value("f12"), Score: 12},
+					{Elem: core.Value("f21"), Score: 21},
+					{Elem: core.Value("f22"), Score: 22},
+					{Elem: core.Value("f31"), Score: 31},
+				},
+			},
+			{"some", "f2*", 4,
+				[]rzset.SetItem{
+					{Elem: core.Value("f21"), Score: 21},
+					{Elem: core.Value("f22"), Score: 22},
+				},
+			},
+			{"none", "n*", 0, []rzset.SetItem(nil)},
+		}
 
-		wantCursor int
-		wantItems  []rzset.SetItem
-	}{
-		{"all", 0, "*", 0, 5,
-			[]rzset.SetItem{
-				{Elem: core.Value("f11"), Score: 11},
-				{Elem: core.Value("f12"), Score: 12},
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-				{Elem: core.Value("f31"), Score: 31},
-			},
-		},
-		{"some", 0, "f2*", 10, 4,
-			[]rzset.SetItem{
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-			},
-		},
-		{"none", 0, "n*", 10, 0, []rzset.SetItem(nil)},
-		{"cursor 1st", 0, "*", 2, 2,
-			[]rzset.SetItem{
-				{Elem: core.Value("f11"), Score: 11},
-				{Elem: core.Value("f12"), Score: 12},
-			},
-		},
-		{"cursor 2nd", 2, "*", 2, 4,
-			[]rzset.SetItem{
-				{Elem: core.Value("f21"), Score: 21},
-				{Elem: core.Value("f22"), Score: 22},
-			},
-		},
-		{"cursor 3rd", 4, "*", 2, 5,
-			[]rzset.SetItem{
-				{Elem: core.Value("f31"), Score: 31},
-			},
-		},
-		{"exhausted", 6, "*", 2, 0, []rzset.SetItem(nil)},
-	}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				out, err := zset.Scan("key", 0, test.pattern, test.count)
+				be.Err(t, err, nil)
+				be.Equal(t, len(out.Items), len(test.want))
+				for i, item := range out.Items {
+					be.Equal(t, item.Elem, test.want[i].Elem)
+					be.Equal(t, item.Score, test.want[i].Score)
+				}
+			})
+		}
+	})
+	t.Run("pagination", func(t *testing.T) {
+		db, zset := getDB(t)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			out, err := zset.Scan("key", test.cursor, test.pattern, test.count)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, out.Cursor, test.wantCursor)
-			for i, item := range out.Items {
-				testx.AssertEqual(t, item.Elem, test.wantItems[i].Elem)
-				testx.AssertEqual(t, item.Score, test.wantItems[i].Score)
-			}
-		})
-	}
+		_, _ = zset.Add("key", "f11", 11)
+		_, _ = zset.Add("key", "f12", 12)
+		_, _ = zset.Add("key", "f21", 21)
+		_, _ = zset.Add("key", "f22", 22)
+		_, _ = zset.Add("key", "f31", 31)
+		_ = db.Str().Set("str", "str")
 
+		out, err := zset.Scan("key", 0, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 2)
+		be.Equal(t, out.Items[0].Elem, core.Value("f11"))
+		be.Equal(t, out.Items[0].Score, 11)
+		be.Equal(t, out.Items[1].Elem, core.Value("f12"))
+		be.Equal(t, out.Items[1].Score, 12)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 2)
+		be.Equal(t, out.Items[0].Elem, core.Value("f21"))
+		be.Equal(t, out.Items[0].Score, 21)
+		be.Equal(t, out.Items[1].Elem, core.Value("f22"))
+		be.Equal(t, out.Items[1].Score, 22)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 1)
+		be.Equal(t, out.Items[0].Elem, core.Value("f31"))
+		be.Equal(t, out.Items[0].Score, 31)
+
+		out, err = zset.Scan("key", out.Cursor, "*", 2)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 0)
+	})
 	t.Run("ignore other keys", func(t *testing.T) {
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "elem", 10)
 		_, _ = zset.Add("key2", "elem", 20)
 
 		out, err := zset.Scan("key1", 0, "*", 0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(out.Items), 1)
-		testx.AssertEqual(t, out.Items[0].Elem.String(), "elem")
-		testx.AssertEqual(t, out.Items[0].Score, 10.0)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 1)
+		be.Equal(t, out.Items[0].Elem.String(), "elem")
+		be.Equal(t, out.Items[0].Score, 10.0)
 	})
 	t.Run("key not found", func(t *testing.T) {
+		_, zset := getDB(t)
 		out, err := zset.Scan("not", 0, "*", 0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(out.Items), 0)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 0)
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
+		db, zset := getDB(t)
+		_ = db.Str().Set("str", "str")
 		out, err := zset.Scan("str", 0, "*", 0)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, len(out.Items), 0)
+		be.Err(t, err, nil)
+		be.Equal(t, len(out.Items), 0)
 	})
 }
 
 func TestScanner(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key", "f11", 11)
 		_, _ = zset.Add("key", "f12", 12)
@@ -1241,7 +1209,7 @@ func TestScanner(t *testing.T) {
 			return sc.Err()
 		})
 
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 		elems := make([]string, len(items))
 		scores := make([]int, len(items))
 
@@ -1249,12 +1217,11 @@ func TestScanner(t *testing.T) {
 			elems[i] = it.Elem.String()
 			scores[i] = int(it.Score)
 		}
-		testx.AssertEqual(t, elems, []string{"f11", "f12", "f21", "f22", "f31"})
-		testx.AssertEqual(t, scores, []int{11, 12, 21, 22, 31})
+		be.Equal(t, elems, []string{"f11", "f12", "f21", "f22", "f31"})
+		be.Equal(t, scores, []int{11, 12, 21, 22, 31})
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		sc := zset.Scanner("not", "*", 2)
 		var items []rzset.SetItem
@@ -1262,12 +1229,11 @@ func TestScanner(t *testing.T) {
 			items = append(items, sc.Item())
 		}
 
-		testx.AssertNoErr(t, sc.Err())
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, sc.Err(), nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key", "str")
 
 		sc := zset.Scanner("key", "*", 2)
@@ -1276,15 +1242,14 @@ func TestScanner(t *testing.T) {
 			items = append(items, sc.Item())
 		}
 
-		testx.AssertNoErr(t, sc.Err())
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, sc.Err(), nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 }
 
 func TestUnion(t *testing.T) {
 	t.Run("intersecting", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1303,8 +1268,8 @@ func TestUnion(t *testing.T) {
 		})
 
 		items, err := zset.Union("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 2},
 			{Elem: core.Value("thr"), Score: 9},
 			{Elem: core.Value("two"), Score: 222},
@@ -1312,50 +1277,46 @@ func TestUnion(t *testing.T) {
 		})
 	})
 	t.Run("distinct", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 1)
 		_, _ = zset.Add("key3", "thr", 1)
 
 		items, err := zset.Union("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 1},
 			{Elem: core.Value("thr"), Score: 1},
 			{Elem: core.Value("two"), Score: 1},
 		})
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "two", 2)
 
 		items, err := zset.Union("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 1},
 			{Elem: core.Value("two"), Score: 2},
 		})
 	})
 	t.Run("all not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		items, err := zset.Union("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem(nil))
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem(nil))
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_ = db.Str().Set("key1", "str")
 		_, _ = zset.Add("key2", "two", 2)
 		_, _ = zset.Add("key3", "two", 2)
 
 		items, err := zset.Union("key1", "key2", "key3")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("two"), Score: 4},
 		})
 	})
@@ -1363,8 +1324,7 @@ func TestUnion(t *testing.T) {
 
 func TestUnionWith(t *testing.T) {
 	t.Run("sum", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1383,8 +1343,8 @@ func TestUnionWith(t *testing.T) {
 		})
 
 		items, err := zset.UnionWith("key1", "key2", "key3").Sum().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 2},
 			{Elem: core.Value("thr"), Score: 9},
 			{Elem: core.Value("two"), Score: 222},
@@ -1392,8 +1352,7 @@ func TestUnionWith(t *testing.T) {
 		})
 	})
 	t.Run("min", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1412,8 +1371,8 @@ func TestUnionWith(t *testing.T) {
 		})
 
 		items, err := zset.UnionWith("key1", "key2", "key3").Min().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 1},
 			{Elem: core.Value("two"), Score: 2},
 			{Elem: core.Value("thr"), Score: 3},
@@ -1421,8 +1380,7 @@ func TestUnionWith(t *testing.T) {
 		})
 	})
 	t.Run("max", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1441,8 +1399,8 @@ func TestUnionWith(t *testing.T) {
 		})
 
 		items, err := zset.UnionWith("key1", "key2", "key3").Max().Run()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, items, []rzset.SetItem{
+		be.Err(t, err, nil)
+		be.Equal(t, items, []rzset.SetItem{
 			{Elem: core.Value("one"), Score: 1},
 			{Elem: core.Value("thr"), Score: 3},
 			{Elem: core.Value("two"), Score: 200},
@@ -1454,7 +1412,6 @@ func TestUnionWith(t *testing.T) {
 func TestUnionStore(t *testing.T) {
 	t.Run("store", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 		_, _ = zset.AddMany("key1", map[any]float64{
 			"one": 1,
 			"two": 2,
@@ -1473,120 +1430,111 @@ func TestUnionStore(t *testing.T) {
 		})
 
 		n, err := zset.UnionWith("key1", "key2", "key3").Dest("dest").Max().Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 4)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 4)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 4)
+		be.Equal(t, zlen, 4)
 
 		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 1.0)
+		be.Equal(t, one, 1.0)
 		thr, _ := zset.GetScore("dest", "thr")
-		testx.AssertEqual(t, thr, 3.0)
+		be.Equal(t, thr, 3.0)
 		two, _ := zset.GetScore("dest", "two")
-		testx.AssertEqual(t, two, 200.0)
+		be.Equal(t, two, 200.0)
 		fou, _ := zset.GetScore("dest", "fou")
-		testx.AssertEqual(t, fou, 400.0)
+		be.Equal(t, fou, 400.0)
 	})
 	t.Run("rewrite dest", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_, _ = zset.Add("dest", "old", 10)
 
 		n, err := zset.UnionWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 1)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 1)
+		be.Equal(t, zlen, 1)
 
 		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		be.Equal(t, one, 3.0)
 		_, err = zset.GetScore("dest", "old")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("empty", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
-
 		_, _ = zset.Add("dest", "old", 10)
 
 		n, err := zset.UnionWith("key1", "key2").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 0)
 
 		key, _ := db.Key().Get("dest")
-		testx.AssertEqual(t, key.Version, 1)
+		be.Equal(t, key.Version, 1)
 
 		zlen, _ := zset.Len("dest")
-		testx.AssertEqual(t, zlen, 0)
+		be.Equal(t, zlen, 0)
 
 		_, err = zset.GetScore("dest", "old")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("source key not found", func(t *testing.T) {
-		db, zset := getDB(t)
-		defer db.Close()
+		_, zset := getDB(t)
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 
 		n, err := zset.UnionWith("key1", "key2", "key3").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 1)
 
 		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		be.Equal(t, one, 3.0)
 	})
 	t.Run("source key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_ = db.Str().Set("key3", 3)
 
 		n, err := zset.UnionWith("key1", "key2", "key3").Dest("dest").Store()
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, n, 1)
+		be.Err(t, err, nil)
+		be.Equal(t, n, 1)
 
 		one, _ := zset.GetScore("dest", "one")
-		testx.AssertEqual(t, one, 3.0)
+		be.Equal(t, one, 3.0)
 	})
 	t.Run("dest key type mismatch", func(t *testing.T) {
 		db, zset := getDB(t)
-		defer db.Close()
 
 		_, _ = zset.Add("key1", "one", 1)
 		_, _ = zset.Add("key2", "one", 2)
 		_ = db.Str().Set("dest", 10)
 
 		n, err := zset.UnionWith("key1", "key2").Dest("dest").Store()
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, n, 0)
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, n, 0)
 
 		_, err = zset.GetScore("dest", "one")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		be.Err(t, err, core.ErrNotFound)
 
 		sval, _ := db.Str().Get("dest")
-		testx.AssertEqual(t, sval.String(), "10")
+		be.Equal(t, sval.String(), "10")
 	})
 }
 
 func getDB(tb testing.TB) (*redka.DB, *rzset.DB) {
 	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	db := testx.OpenDB(tb)
 	return db, db.ZSet()
 }

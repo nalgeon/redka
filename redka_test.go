@@ -8,62 +8,123 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka"
 	"github.com/nalgeon/redka/internal/testx"
 )
 
-func ExampleOpen() {
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
+func ExampleOpen_file() {
+	// Open a file-based SQLite database.
+	// The database will be created if it doesn't exist.
+	db, err := redka.Open("redka.db", nil)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
+	// ...
+
+}
+
+func ExampleOpen_memory() {
+	// Open an in-memory SQLite database.
+	db, err := redka.Open("file:/redka.db?vfs=memdb", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
+	// ...
+}
+
+func ExampleOpen_postgres() {
+	// Open an existing PostgreSQL database.
+	// Pass the connection string in this format:
+	connString := "postgres://user:password@localhost:5432/mydb?sslmode=disable"
+	// You also need to explicitly pass the driver name:
+	opts := &redka.Options{DriverName: "postgres"}
+
+	db, err := redka.Open(connString, opts)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
 	// ...
 }
 
 func ExampleOpenRead() {
-	// open a writable database
-	db, err := redka.Open("data.db", nil)
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	// Open a writable database.
+	db, err := redka.Open("redka.db", nil)
 	if err != nil {
 		panic(err)
 	}
 	_ = db.Str().Set("name", "alice")
-	db.Close()
+	_ = db.Close()
 
-	// open a read-only database
-	db, err = redka.OpenRead("data.db", nil)
+	// Open a read-only database.
+	db, err = redka.OpenRead("redka.db", nil)
 	if err != nil {
 		panic(err)
 	}
-	// read operations work fine
+
+	// Read operations work fine.
 	name, _ := db.Str().Get("name")
 	fmt.Println(name)
-	// write operations will fail
+
+	// Write operations will fail.
 	err = db.Str().Set("name", "bob")
 	fmt.Println(err)
-	// attempt to write a readonly database
-	db.Close()
+
+	_ = db.Close()
 
 	// Output:
 	// alice
 	// attempt to write a readonly database
 }
 
-func ExampleDB_Close() {
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
+func ExampleOptions() {
+	// Set custom options for the database.
+	opts := &redka.Options{
+		DriverName: "sqlite3",
+		Timeout:    5 * time.Second,
+		Pragma: map[string]string{
+			"synchronous": "off",
+		},
+	}
+
+	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// ...
+}
+
+func ExampleDB_Close() {
+	db, err := redka.Open("file:/redka.db?vfs=memdb", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// Perform some operations on the database.
+	// ...
+
+	err = db.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func ExampleDB_Hash() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
-	defer db.Close()
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
 
 	ok, err := db.Hash().Set("user:1", "name", "alice")
 	fmt.Printf("ok=%v, err=%v\n", ok, err)
@@ -86,8 +147,8 @@ func ExampleDB_Key() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
-	defer db.Close()
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
 	_ = db.Str().Set("city", "paris")
@@ -113,12 +174,54 @@ func ExampleDB_Key() {
 	// keys: name city
 }
 
+func ExampleDB_List() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
+
+	n, err := db.List().PushBack("queue", "first")
+	fmt.Printf("n=%v, err=%v\n", n, err)
+	n, err = db.List().PushBack("queue", "second")
+	fmt.Printf("n=%v, err=%v\n", n, err)
+
+	task, err := db.List().PopFront("queue")
+	fmt.Printf("task=%v, err=%v\n", task, err)
+
+	// Output:
+	// n=1, err=<nil>
+	// n=2, err=<nil>
+	// task=first, err=<nil>
+}
+
+func ExampleDB_Set() {
+	// Error handling is omitted for brevity.
+	// In real code, always check for errors.
+
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
+
+	n, err := db.Set().Add("nums", 11, 12, 11, 13)
+	fmt.Printf("n=%v, err=%v\n", n, err)
+	n, err = db.Set().Add("nums", 14)
+	fmt.Printf("n=%v, err=%v\n", n, err)
+
+	items, err := db.Set().Items("nums")
+	fmt.Printf("items=%v, err=%v\n", items, err)
+
+	// Output:
+	// n=3, err=<nil>
+	// n=1, err=<nil>
+	// items=[11 12 13 14], err=<nil>
+}
+
 func ExampleDB_Str() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
-	defer db.Close()
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().Set("name", "alice")
 
@@ -137,8 +240,8 @@ func ExampleDB_ZSet() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
-	defer db.Close()
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
 
 	ok, err := db.ZSet().Add("race", "alice", 11)
 	fmt.Printf("ok=%v, err=%v\n", ok, err)
@@ -159,11 +262,11 @@ func ExampleDB_ZSet() {
 }
 
 func ExampleDB_Update() {
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
+	db, err := redka.Open("file:/redka.db?vfs=memdb", nil)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	updCount := 0
 	err = db.Update(func(tx *redka.Tx) error {
@@ -191,8 +294,8 @@ func ExampleDB_View() {
 	// Error handling is omitted for brevity.
 	// In real code, always check for errors.
 
-	db, _ := redka.Open("file:/data.db?vfs=memdb", nil)
-	defer db.Close()
+	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
+	defer func() { _ = db.Close() }()
 
 	_ = db.Str().SetMany(map[string]any{
 		"name": "alice",
@@ -228,45 +331,43 @@ func ExampleDB_View() {
 }
 
 func TestOpenDB(t *testing.T) {
-	sdb, err := sql.Open("sqlite3", "file:/data.db?vfs=memdb")
-	testx.AssertNoErr(t, err)
+	sdb, err := sql.Open("sqlite3", "file:/redka.db?vfs=memdb")
+	be.Err(t, err, nil)
 
 	db, err := redka.OpenDB(sdb, sdb, nil)
-	testx.AssertNoErr(t, err)
-	defer db.Close()
+	be.Err(t, err, nil)
+	defer func() { _ = db.Close() }()
 
 	n, err := db.Key().Len()
-	testx.AssertNoErr(t, err)
-	testx.AssertEqual(t, n, 0)
+	be.Err(t, err, nil)
+	be.Equal(t, n, 0)
 }
 
 func TestDB_View(t *testing.T) {
-	db := getDB(t, nil)
-	defer db.Close()
+	db := testx.OpenDB(t)
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
 
 	err := db.View(func(tx *redka.Tx) error {
 		count, err := tx.Key().Count("name", "age")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, count, 2)
+		be.Err(t, err, nil)
+		be.Equal(t, count, 2)
 
 		name, err := tx.Str().Get("name")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Err(t, err, nil)
+		be.Equal(t, name.String(), "alice")
 
 		age, err := tx.Str().Get("age")
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, age.MustInt(), 25)
+		be.Err(t, err, nil)
+		be.Equal(t, age.MustInt(), 25)
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 }
 
 func TestDB_Update(t *testing.T) {
-	db := getDB(t, nil)
-	defer db.Close()
+	db := testx.OpenDB(t)
 
 	err := db.Update(func(tx *redka.Tx) error {
 		err := tx.Str().Set("name", "alice")
@@ -280,25 +381,24 @@ func TestDB_Update(t *testing.T) {
 		}
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 
 	err = db.View(func(tx *redka.Tx) error {
 		count, _ := tx.Key().Count("name", "age")
-		testx.AssertEqual(t, count, 2)
+		be.Equal(t, count, 2)
 
 		name, _ := tx.Str().Get("name")
-		testx.AssertEqual(t, name.String(), "alice")
+		be.Equal(t, name.String(), "alice")
 
 		age, _ := tx.Str().Get("age")
-		testx.AssertEqual(t, age.MustInt(), 25)
+		be.Equal(t, age.MustInt(), 25)
 		return nil
 	})
-	testx.AssertNoErr(t, err)
+	be.Err(t, err, nil)
 }
 
 func TestRollback(t *testing.T) {
-	db := getDB(t, nil)
-	defer db.Close()
+	db := testx.OpenDB(t)
 
 	_ = db.Str().Set("name", "alice")
 	_ = db.Str().Set("age", 25)
@@ -310,26 +410,19 @@ func TestRollback(t *testing.T) {
 		_ = tx.Str().Set("age", 50)
 		return errRollback
 	})
-	testx.AssertEqual(t, err, errRollback)
+	be.Equal(t, err, errRollback)
 
 	name, _ := db.Str().Get("name")
-	testx.AssertEqual(t, name.String(), "alice")
+	be.Equal(t, name.String(), "alice")
 	age, _ := db.Str().Get("age")
-	testx.AssertEqual(t, age.MustInt(), 25)
+	be.Equal(t, age.MustInt(), 25)
 }
 
 func TestTimeout(t *testing.T) {
-	db := getDB(t, &redka.Options{Timeout: time.Nanosecond})
-	defer db.Close()
-	err := db.Str().Set("name", "alice")
-	testx.AssertErr(t, err, context.DeadlineExceeded)
-}
-
-func getDB(tb testing.TB, opts *redka.Options) *redka.DB {
-	tb.Helper()
-	db, err := redka.Open("file:/data.db?vfs=memdb", opts)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return db
+	opts := &redka.Options{Timeout: time.Nanosecond}
+	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
+	be.Err(t, err, nil)
+	defer func() { _ = db.Close() }()
+	err = db.Str().Set("name", "alice")
+	be.Err(t, err, context.DeadlineExceeded)
 }

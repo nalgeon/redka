@@ -1,12 +1,13 @@
 package zset
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rzset"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestZScanParse(t *testing.T) {
@@ -103,57 +104,60 @@ func TestZScanParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseZScan, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.cursor, test.cursor)
-				testx.AssertEqual(t, cmd.match, test.match)
-				testx.AssertEqual(t, cmd.count, test.count)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.cursor, test.cursor)
+				be.Equal(t, cmd.match, test.match)
+				be.Equal(t, cmd.count, test.count)
 			} else {
-				testx.AssertEqual(t, cmd, ZScan{})
+				be.Equal(t, cmd, ZScan{})
 			}
 		})
 	}
 }
 
 func TestZScanExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_, _ = db.ZSet().Add("key", "m11", 11)
-	_, _ = db.ZSet().Add("key", "m12", 12)
-	_, _ = db.ZSet().Add("key", "m21", 21)
-	_, _ = db.ZSet().Add("key", "m22", 22)
-	_, _ = db.ZSet().Add("key", "m31", 31)
+	_, _ = red.ZSet().Add("key", "m11", 11)
+	_, _ = red.ZSet().Add("key", "m12", 12)
+	_, _ = red.ZSet().Add("key", "m21", 21)
+	_, _ = red.ZSet().Add("key", "m22", 22)
+	_, _ = red.ZSet().Add("key", "m31", 31)
 
 	t.Run("zscan all", func(t *testing.T) {
+		var cursor int
 		{
 			cmd := redis.MustParse(ParseZScan, "zscan key 0")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 5)
-			testx.AssertEqual(t, sres.Items[0].Elem, core.Value("m11"))
-			testx.AssertEqual(t, sres.Items[0].Score, 11.0)
-			testx.AssertEqual(t, sres.Items[4].Elem, core.Value("m31"))
-			testx.AssertEqual(t, sres.Items[4].Score, 31.0)
-			testx.AssertEqual(t, conn.Out(), "2,5,10,m11,11,m12,12,m21,21,m22,22,m31,31")
+			be.True(t, sres.Cursor > 0)
+			be.Equal(t, len(sres.Items), 5)
+			be.Equal(t, sres.Items[0].Elem, core.Value("m11"))
+			be.Equal(t, sres.Items[0].Score, 11.0)
+			be.Equal(t, sres.Items[4].Elem, core.Value("m31"))
+			be.Equal(t, sres.Items[4].Score, 31.0)
+			wantOut := fmt.Sprintf("2,%d,10,m11,11,m12,12,m21,21,m22,22,m31,31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
-			cmd := redis.MustParse(ParseZScan, "zscan key 5")
+			next := fmt.Sprintf("zscan key %d", cursor)
+			cmd := redis.MustParse(ParseZScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 	t.Run("zscan pattern", func(t *testing.T) {
@@ -161,79 +165,90 @@ func TestZScanExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 
 		sres := res.(rzset.ScanResult)
-		testx.AssertEqual(t, sres.Cursor, 4)
-		testx.AssertEqual(t, len(sres.Items), 2)
-		testx.AssertEqual(t, sres.Items[0].Elem.String(), "m21")
-		testx.AssertEqual(t, sres.Items[0].Score, 21.0)
-		testx.AssertEqual(t, sres.Items[1].Elem.String(), "m22")
-		testx.AssertEqual(t, sres.Items[1].Score, 22.0)
-		testx.AssertEqual(t, conn.Out(), "2,4,4,m21,21,m22,22")
+		be.True(t, sres.Cursor > 0)
+		be.Equal(t, len(sres.Items), 2)
+		be.Equal(t, sres.Items[0].Elem.String(), "m21")
+		be.Equal(t, sres.Items[0].Score, 21.0)
+		be.Equal(t, sres.Items[1].Elem.String(), "m22")
+		be.Equal(t, sres.Items[1].Score, 22.0)
+		wantOut := fmt.Sprintf("2,%d,4,m21,21,m22,22", sres.Cursor)
+		be.Equal(t, conn.Out(), wantOut)
 	})
 	t.Run("zscan count", func(t *testing.T) {
+		var cursor int
 		{
 			// page 1
 			cmd := redis.MustParse(ParseZScan, "zscan key 0 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 2)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m11")
-			testx.AssertEqual(t, sres.Items[0].Score, 11.0)
-			testx.AssertEqual(t, sres.Items[1].Elem.String(), "m12")
-			testx.AssertEqual(t, sres.Items[1].Score, 12.0)
-			testx.AssertEqual(t, conn.Out(), "2,2,4,m11,11,m12,12")
+			be.True(t, sres.Cursor > 0)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Elem.String(), "m11")
+			be.Equal(t, sres.Items[0].Score, 11.0)
+			be.Equal(t, sres.Items[1].Elem.String(), "m12")
+			be.Equal(t, sres.Items[1].Score, 12.0)
+			wantOut := fmt.Sprintf("2,%d,4,m11,11,m12,12", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 2
-			cmd := redis.MustParse(ParseZScan, "zscan key 2 match * count 2")
+			next := fmt.Sprintf("zscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseZScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 4)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m21")
-			testx.AssertEqual(t, sres.Items[0].Score, 21.0)
-			testx.AssertEqual(t, sres.Items[1].Elem.String(), "m22")
-			testx.AssertEqual(t, sres.Items[1].Score, 22.0)
-			testx.AssertEqual(t, conn.Out(), "2,4,4,m21,21,m22,22")
+			be.True(t, sres.Cursor > cursor)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].Elem.String(), "m21")
+			be.Equal(t, sres.Items[0].Score, 21.0)
+			be.Equal(t, sres.Items[1].Elem.String(), "m22")
+			be.Equal(t, sres.Items[1].Score, 22.0)
+			wantOut := fmt.Sprintf("2,%d,4,m21,21,m22,22", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 3
-			cmd := redis.MustParse(ParseZScan, "zscan key 4 match * count 2")
+			next := fmt.Sprintf("zscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseZScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 1)
-			testx.AssertEqual(t, sres.Items[0].Elem.String(), "m31")
-			testx.AssertEqual(t, sres.Items[0].Score, 31.0)
-			testx.AssertEqual(t, conn.Out(), "2,5,2,m31,31")
+			be.True(t, sres.Cursor > cursor)
+			be.Equal(t, len(sres.Items), 1)
+			be.Equal(t, sres.Items[0].Elem.String(), "m31")
+			be.Equal(t, sres.Items[0].Score, 31.0)
+			wantOut := fmt.Sprintf("2,%d,2,m31,31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// no more pages
-			cmd := redis.MustParse(ParseZScan, "zscan key 5 match * count 2")
+			next := fmt.Sprintf("zscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseZScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rzset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 }

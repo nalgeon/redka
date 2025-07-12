@@ -5,8 +5,6 @@ package sqlx
 import (
 	"database/sql"
 	"strings"
-
-	"github.com/nalgeon/redka/internal/core"
 )
 
 // Sorting direction.
@@ -35,6 +33,17 @@ type RowScanner interface {
 	Scan(dest ...any) error
 }
 
+// InferDialect infers the SQL dialect from the driver name.
+func InferDialect(driverName string) Dialect {
+	if driverName == "postgres" || driverName == "pgx" {
+		return DialectPostgres
+	}
+	if strings.HasPrefix(driverName, "sqlite") {
+		return DialectSqlite
+	}
+	return DialectUnknown
+}
+
 // ExpandIn expands the IN clause in the query for a given parameter.
 func ExpandIn[T any](query string, param string, args []T) (string, []any) {
 	anyArgs := make([]any, len(args))
@@ -54,7 +63,7 @@ func Select[T any](db Tx, query string, args []any,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var vals []T
 	for rows.Next() {
@@ -69,22 +78,4 @@ func Select[T any](db Tx, query string, args []any,
 	}
 
 	return vals, err
-}
-
-// Returns typed errors for some specific cases.
-func TypedError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if ConstraintFailed(err, "NOT NULL", "rkey.type") {
-		return core.ErrKeyType
-	}
-	return err
-}
-
-// ConstraintFailed checks if the error is due to
-// a constraint violation on a column.
-func ConstraintFailed(err error, constraint, column string) bool {
-	msg := constraint + " constraint failed: " + column
-	return strings.Contains(err.Error(), msg)
 }

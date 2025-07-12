@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestRandomKeyParse(t *testing.T) {
@@ -31,9 +31,9 @@ func TestRandomKeyParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseRandomKey, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err != nil {
-				testx.AssertEqual(t, cmd, RandomKey{})
+				be.Equal(t, cmd, RandomKey{})
 			}
 		})
 	}
@@ -41,28 +41,26 @@ func TestRandomKeyParse(t *testing.T) {
 
 func TestRandomKeyExec(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
-		_ = db.Str().Set("city", "paris")
-		keys := []string{"name", "age", "city"}
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
+		_ = red.Str().Set("city", "paris")
 
 		conn := redis.NewFakeConn()
 		cmd := redis.MustParse(ParseRandomKey, "randomkey")
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, slices.Contains(keys, res.(core.Key).Key), true)
-		testx.AssertEqual(t, slices.Contains(keys, conn.Out()), true)
+		be.Err(t, err, nil)
+		keys := []string{"name", "age", "city"}
+		be.True(t, slices.Contains(keys, res.(core.Key).Key))
+		be.True(t, slices.Contains(keys, conn.Out()))
 	})
 	t.Run("not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 		conn := redis.NewFakeConn()
 		cmd := redis.MustParse(ParseRandomKey, "randomkey")
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 }

@@ -3,9 +3,9 @@ package hash
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestHDelParse(t *testing.T) {
@@ -44,12 +44,12 @@ func TestHDelParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseHDel, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.fields, test.fields)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.fields, test.fields)
 			} else {
-				testx.AssertEqual(t, cmd, HDel{})
+				be.Equal(t, cmd, HDel{})
 			}
 		})
 	}
@@ -57,66 +57,63 @@ func TestHDelParse(t *testing.T) {
 
 func TestHDelExec(t *testing.T) {
 	t.Run("one", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHDel, "hdel person name")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 
-		_, err = db.Hash().Get("person", "name")
-		testx.AssertErr(t, err, core.ErrNotFound)
-		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age.String(), "25")
+		_, err = red.Hash().Get("person", "name")
+		be.Err(t, err, core.ErrNotFound)
+		age, _ := red.Hash().Get("person", "age")
+		be.Equal(t, age.String(), "25")
 	})
 	t.Run("some", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
-		_, _ = db.Hash().Set("person", "happy", true)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
+		_, _ = red.Hash().Set("person", "happy", true)
 
 		cmd := redis.MustParse(ParseHDel, "hdel person name happy city")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
-		_, err = db.Hash().Get("person", "name")
-		testx.AssertErr(t, err, core.ErrNotFound)
-		age, _ := db.Hash().Get("person", "age")
-		testx.AssertEqual(t, age.String(), "25")
-		_, err = db.Hash().Get("person", "happy")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = red.Hash().Get("person", "name")
+		be.Err(t, err, core.ErrNotFound)
+		age, _ := red.Hash().Get("person", "age")
+		be.Equal(t, age.String(), "25")
+		_, err = red.Hash().Get("person", "happy")
+		be.Err(t, err, core.ErrNotFound)
 	})
 	t.Run("all", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
-		_, _ = db.Hash().Set("person", "name", "alice")
-		_, _ = db.Hash().Set("person", "age", 25)
+		_, _ = red.Hash().Set("person", "name", "alice")
+		_, _ = red.Hash().Set("person", "age", 25)
 
 		cmd := redis.MustParse(ParseHDel, "hdel person name age")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
 
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
-		_, err = db.Hash().Get("person", "name")
-		testx.AssertErr(t, err, core.ErrNotFound)
-		_, err = db.Hash().Get("person", "age")
-		testx.AssertErr(t, err, core.ErrNotFound)
+		_, err = red.Hash().Get("person", "name")
+		be.Err(t, err, core.ErrNotFound)
+		_, err = red.Hash().Get("person", "age")
+		be.Err(t, err, core.ErrNotFound)
 	})
 }

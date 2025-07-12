@@ -3,9 +3,9 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestRPopLPushParse(t *testing.T) {
@@ -34,12 +34,12 @@ func TestRPopLPushParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseRPopLPush, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.src, test.want.src)
-				testx.AssertEqual(t, cmd.dst, test.want.dst)
+				be.Equal(t, cmd.src, test.want.src)
+				be.Equal(t, cmd.dst, test.want.dst)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -47,101 +47,96 @@ func TestRPopLPushParse(t *testing.T) {
 
 func TestRPopLPushExec(t *testing.T) {
 	t.Run("src not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("pop elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "elem")
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value("elem"))
-		testx.AssertEqual(t, conn.Out(), "elem")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value("elem"))
+		be.Equal(t, conn.Out(), "elem")
 
-		count, _ := db.List().Len("src")
-		testx.AssertEqual(t, count, 0)
-		count, _ = db.List().Len("dst")
-		testx.AssertEqual(t, count, 1)
+		count, _ := red.List().Len("src")
+		be.Equal(t, count, 0)
+		count, _ = red.List().Len("dst")
+		be.Equal(t, count, 1)
 	})
 	t.Run("pop multiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "one")
-		_, _ = db.List().PushBack("src", "two")
-		_, _ = db.List().PushBack("src", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "one")
+		_, _ = red.List().PushBack("src", "two")
+		_, _ = red.List().PushBack("src", "thr")
 
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, core.Value("thr"))
-			testx.AssertEqual(t, conn.Out(), "thr")
+			be.Err(t, err, nil)
+			be.Equal(t, res.(core.Value), core.Value("thr"))
+			be.Equal(t, conn.Out(), "thr")
 		}
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, core.Value("two"))
-			testx.AssertEqual(t, conn.Out(), "two")
+			be.Err(t, err, nil)
+			be.Equal(t, res.(core.Value), core.Value("two"))
+			be.Equal(t, conn.Out(), "two")
 		}
 
-		count, _ := db.List().Len("src")
-		testx.AssertEqual(t, count, 1)
-		count, _ = db.List().Len("dst")
-		testx.AssertEqual(t, count, 2)
+		count, _ := red.List().Len("src")
+		be.Equal(t, count, 1)
+		count, _ = red.List().Len("dst")
+		be.Equal(t, count, 2)
 	})
 	t.Run("push to self", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("src", "one")
-		_, _ = db.List().PushBack("src", "two")
-		_, _ = db.List().PushBack("src", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("src", "one")
+		_, _ = red.List().PushBack("src", "two")
+		_, _ = red.List().PushBack("src", "thr")
 
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src src")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, core.Value("thr"))
-			testx.AssertEqual(t, conn.Out(), "thr")
+			be.Err(t, err, nil)
+			be.Equal(t, res.(core.Value), core.Value("thr"))
+			be.Equal(t, conn.Out(), "thr")
 		}
 		{
 			cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src src")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, core.Value("two"))
-			testx.AssertEqual(t, conn.Out(), "two")
+			be.Err(t, err, nil)
+			be.Equal(t, res.(core.Value), core.Value("two"))
+			be.Equal(t, conn.Out(), "two")
 		}
 
-		elems, _ := db.List().Range("src", 0, -1)
-		testx.AssertEqual(t, elems[0].String(), "two")
-		testx.AssertEqual(t, elems[1].String(), "thr")
-		testx.AssertEqual(t, elems[2].String(), "one")
+		elems, _ := red.List().Range("src", 0, -1)
+		be.Equal(t, elems[0].String(), "two")
+		be.Equal(t, elems[1].String(), "thr")
+		be.Equal(t, elems[2].String(), "one")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("src", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("src", "str")
 
 		cmd := redis.MustParse(ParseRPopLPush, "rpoplpush src dst")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 }

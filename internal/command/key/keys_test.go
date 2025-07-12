@@ -3,9 +3,9 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestKeysParse(t *testing.T) {
@@ -39,25 +39,24 @@ func TestKeysParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseKeys, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.pattern, test.want)
+				be.Equal(t, cmd.pattern, test.want)
 			} else {
-				testx.AssertEqual(t, cmd, Keys{})
+				be.Equal(t, cmd, Keys{})
 			}
 		})
 	}
 }
 
 func TestKeysExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("k11", "11")
-	_ = db.Str().Set("k12", "12")
-	_ = db.Str().Set("k21", "21")
-	_ = db.Str().Set("k22", "22")
-	_ = db.Str().Set("k31", "31")
+	_ = red.Str().Set("k11", "11")
+	_ = red.Str().Set("k12", "12")
+	_ = red.Str().Set("k21", "21")
+	_ = red.Str().Set("k22", "22")
+	_ = red.Str().Set("k31", "31")
 
 	tests := []struct {
 		cmd string
@@ -91,11 +90,11 @@ func TestKeysExec(t *testing.T) {
 			conn := redis.NewFakeConn()
 			cmd := redis.MustParse(ParseKeys, test.cmd)
 			keys, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 			for i, key := range keys.([]core.Key) {
-				testx.AssertEqual(t, key.Key, test.res[i])
+				be.Equal(t, key.Key, test.res[i])
 			}
-			testx.AssertEqual(t, conn.Out(), test.out)
+			be.Equal(t, conn.Out(), test.out)
 		})
 	}
 }

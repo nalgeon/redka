@@ -9,110 +9,47 @@ import (
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlAdd1 = `
-	insert into
-	rkey   (key, type, version, mtime, len)
-	values (  ?,    5,       1,     ?,   0)
-	on conflict (key) do update set
-		type = case when type = excluded.type then type else null end,
-		version = version+1,
-		mtime = excluded.mtime
-	returning id`
-
-	sqlAdd2 = `
-	insert into rzset (kid, elem, score)
-	values (?, ?, ?)
-	on conflict (kid, elem) do update
-	set score = excluded.score`
-
-	sqlCount = `
-	select count(elem)
-	from rzset join rkey on kid = rkey.id and type = 5
-	where key = ? and (etime is null or etime > ?) and elem in (:elems)`
-
-	sqlCountScore = `
-	select count(elem)
-	from rzset join rkey on kid = rkey.id and type = 5
-	where key = ? and (etime is null or etime > ?) and score between ? and ?`
-
-	sqlDelete1 = `
-	delete from rzset
-	where kid = (
-			select id from rkey
-			where key = ? and type = 5 and (etime is null or etime > ?)
-		) and elem in (:elems)`
-
-	sqlDelete2 = `
-	update rkey set
-		version = version + 1,
-		mtime = ?,
-		len = len - ?
-	where key = ? and type = 5 and (etime is null or etime > ?)`
-
-	sqlDeleteAll1 = `
-	delete from rzset
-	where kid = (
-		select id from rkey
-		where key = ? and type = 5 and (etime is null or etime > ?)
-	)`
-
-	sqlDeleteAll2 = `
-	update rkey set
-		version = 0,
-		mtime = 0,
-		len = 0
-	where key = ? and type = 5 and (etime is null or etime > ?)`
-
-	sqlGetRank = `
-	with ranked as (
-		select elem, score, (row_number() over w - 1) as rank
-		from rzset join rkey on kid = rkey.id and type = 5
-		where key = ? and (etime is null or etime > ?)
-		window w as (partition by kid order by score asc, elem asc)
-	)
-	select rank, score
-	from ranked
-	where elem = ?`
-
-	sqlGetScore = `
-	select score
-	from rzset join rkey on kid = rkey.id and type = 5
-	where key = ? and (etime is null or etime > ?) and elem = ?`
-
-	sqlIncr1 = sqlAdd1
-
-	sqlIncr2 = `
-	insert into rzset (kid, elem, score)
-	values (?, ?, ?)
-	on conflict (kid, elem) do update
-	set score = score + excluded.score
-	returning score`
-
-	sqlLen = `
-	select len from rkey
-	where key = ? and type = 5 and (etime is null or etime > ?)`
-
-	sqlScan = `
-	select rzset.rowid, elem, score
-	from rzset join rkey on kid = rkey.id and type = 5
-	where
-		key = ? and (etime is null or etime > ?)
-		and rzset.rowid > ? and elem glob ?
-	limit ?`
-)
-
+// scanPageSize is the default number
+// of set items per page when scanning.
 const scanPageSize = 10
+
+// SQL queries for the sorted set repository.
+type queries struct {
+	add1        string
+	add2        string
+	count       string
+	countScore  string
+	delete1     string
+	delete2     string
+	deleteAll1  string
+	deleteAll2  string
+	deleteRank  string
+	deleteScore string
+	getRank     string
+	getScore    string
+	incr        string
+	inter       string
+	interStore  string
+	len         string
+	rangeRank   string
+	rangeScore  string
+	scan        string
+	union       string
+	unionStore  string
+}
 
 // Tx is a sorted set repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     *queries
 }
 
 // NewTx creates a sorted set repository transaction
 // from a generic database transaction.
-func NewTx(tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Add adds or updates an element in a set.
@@ -166,7 +103,7 @@ func (tx *Tx) Count(key string, min, max float64) (int, error) {
 		min, max,
 	}
 	var n int
-	err := tx.tx.QueryRow(sqlCountScore, args...).Scan(&n)
+	err := tx.tx.QueryRow(tx.sql.countScore, args...).Scan(&n)
 	return n, err
 }
 
@@ -183,7 +120,8 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 
 	// Remove the elements.
 	now := time.Now().UnixMilli()
-	query, elemArgs := sqlx.ExpandIn(sqlDelete1, ":elems", elembs)
+	query, elemArgs := sqlx.ExpandIn(tx.sql.delete1, ":elems", elembs)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, now}, elemArgs...)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -196,7 +134,7 @@ func (tx *Tx) Delete(key string, elems ...any) (int, error) {
 
 	// Update the key.
 	args = []any{now, n, key, now}
-	_, err = tx.tx.Exec(sqlDelete2, args...)
+	_, err = tx.tx.Exec(tx.sql.delete2, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -238,7 +176,7 @@ func (tx *Tx) GetScore(key string, elem any) (float64, error) {
 
 	var score float64
 	args := []any{key, time.Now().UnixMilli(), elemb}
-	row := tx.tx.QueryRow(sqlGetScore, args...)
+	row := tx.tx.QueryRow(tx.sql.getScore, args...)
 	err = row.Scan(&score)
 	if err == sql.ErrNoRows {
 		return 0, core.ErrNotFound
@@ -262,14 +200,14 @@ func (tx *Tx) Incr(key string, elem any, delta float64) (float64, error) {
 
 	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
-	err = tx.tx.QueryRow(sqlIncr1, args...).Scan(&keyID)
+	err = tx.tx.QueryRow(tx.sql.add1, args...).Scan(&keyID)
 	if err != nil {
-		return 0, sqlx.TypedError(err)
+		return 0, tx.dialect.TypedError(err)
 	}
 
 	var score float64
 	args = []any{keyID, elemb, delta}
-	err = tx.tx.QueryRow(sqlIncr2, args...).Scan(&score)
+	err = tx.tx.QueryRow(tx.sql.incr, args...).Scan(&score)
 	if err != nil {
 		return 0, err
 	}
@@ -296,7 +234,7 @@ func (tx *Tx) InterWith(keys ...string) InterCmd {
 func (tx *Tx) Len(key string) (int, error) {
 	var n int
 	args := []any{key, time.Now().UnixMilli()}
-	err := tx.tx.QueryRow(sqlLen, args...).Scan(&n)
+	err := tx.tx.QueryRow(tx.sql.len, args...).Scan(&n)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
@@ -309,13 +247,13 @@ func (tx *Tx) Len(key string) (int, error) {
 // Start and stop are 0-based, inclusive. Negative values are not supported.
 // If the key does not exist or is not a set, returns a nil slice.
 func (tx *Tx) Range(key string, start, stop int) ([]SetItem, error) {
-	cmd := RangeCmd{tx: tx.tx, key: key, sortDir: sqlx.Asc}
+	cmd := RangeCmd{tx: tx, key: key, sortDir: sqlx.Asc}
 	return cmd.ByRank(start, stop).Run()
 }
 
 // RangeWith ranges elements from a set with additional options.
 func (tx *Tx) RangeWith(key string) RangeCmd {
-	return RangeCmd{tx: tx.tx, key: key, sortDir: sqlx.Asc}
+	return RangeCmd{tx: tx, key: key, sortDir: sqlx.Asc}
 }
 
 // Scan iterates over set items with elements matching pattern.
@@ -325,6 +263,7 @@ func (tx *Tx) RangeWith(key string) RangeCmd {
 // If the key does not exist or is not a set, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
+	pattern = tx.dialect.GlobToLike(pattern)
 	if count == 0 {
 		count = scanPageSize
 	}
@@ -341,7 +280,7 @@ func (tx *Tx) Scan(key string, cursor int, pattern string, count int) (ScanResul
 		it.Elem = core.Value(elem)
 		return it, err
 	}
-	items, err := sqlx.Select(tx.tx, sqlScan, args, scan)
+	items, err := sqlx.Select(tx.tx, tx.sql.scan, args, scan)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -390,11 +329,11 @@ func (tx *Tx) add(key string, elem any, score float64) error {
 
 	args := []any{key, time.Now().UnixMilli()}
 	var keyID int
-	err = tx.tx.QueryRow(sqlAdd1, args...).Scan(&keyID)
+	err = tx.tx.QueryRow(tx.sql.add1, args...).Scan(&keyID)
 	if err != nil {
-		return sqlx.TypedError(err)
+		return tx.dialect.TypedError(err)
 	}
-	_, err = tx.tx.Exec(sqlAdd2, keyID, elemb, score)
+	_, err = tx.tx.Exec(tx.sql.add2, keyID, elemb, score)
 	return err
 }
 
@@ -404,7 +343,8 @@ func (tx *Tx) count(key string, elems ...any) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	query, elemArgs := sqlx.ExpandIn(sqlCount, ":elems", elembs)
+	query, elemArgs := sqlx.ExpandIn(tx.sql.count, ":elems", elembs)
+	query = tx.dialect.Enumerate(query)
 	args := append([]any{key, time.Now().UnixMilli()}, elemArgs...)
 	var count int
 	err = tx.tx.QueryRow(query, args...).Scan(&count)
@@ -419,7 +359,7 @@ func (tx *Tx) getRank(key string, elem any, sortDir string) (rank int, score flo
 	}
 
 	args := []any{key, time.Now().UnixMilli(), elemb}
-	query := sqlGetRank
+	query := tx.sql.getRank
 	if sortDir != sqlx.Asc {
 		query = strings.Replace(query, sqlx.Asc, sortDir, 2)
 	}
@@ -458,4 +398,16 @@ type SetItem struct {
 type ScanResult struct {
 	Cursor int
 	Items  []SetItem
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) *queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return &sqlite
+	case sqlx.DialectPostgres:
+		return &postgres
+	default:
+		return &queries{}
+	}
 }

@@ -6,16 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/nalgeon/redka"
+	"github.com/nalgeon/redka/internal/testx"
 	"github.com/tidwall/redcon"
 )
 
 func TestHandlers(t *testing.T) {
-	db, err := redka.Open("file:/data.db?vfs=memdb", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := testx.OpenDB(t)
 
 	mux := createHandlers(db)
 	tests := []struct {

@@ -3,8 +3,8 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestFlushDBParse(t *testing.T) {
@@ -29,9 +29,9 @@ func TestFlushDBParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseFlushDB, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err != nil {
-				testx.AssertEqual(t, cmd, FlushDB{})
+				be.Equal(t, cmd, FlushDB{})
 			}
 		})
 	}
@@ -39,35 +39,32 @@ func TestFlushDBParse(t *testing.T) {
 
 func TestFlushDBExec(t *testing.T) {
 	t.Run("full", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-
-		_ = db.Str().Set("name", "alice")
-		_ = db.Str().Set("age", 25)
+		red := getRedka(t)
+		_ = red.Str().Set("name", "alice")
+		_ = red.Str().Set("age", 25)
 
 		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "OK")
 
-		keys, _ := db.Key().Keys("*")
-		testx.AssertEqual(t, len(keys), 0)
+		keys, _ := red.Key().Keys("*")
+		be.Equal(t, len(keys), 0)
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseFlushDB, "flushdb")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, true)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, true)
+		be.Equal(t, conn.Out(), "OK")
 
-		keys, _ := db.Key().Keys("*")
-		testx.AssertEqual(t, len(keys), 0)
+		keys, _ := red.Key().Keys("*")
+		be.Equal(t, len(keys), 0)
 	})
 }
