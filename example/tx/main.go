@@ -10,11 +10,12 @@ import (
 )
 
 func main() {
-	db, err := redka.Open("data.db", nil)
+	// Open the database.
+	db, err := redka.Open("redka.db", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	{
 		// Writable transaction.
