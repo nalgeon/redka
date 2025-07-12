@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/nalgeon/be"
@@ -15,8 +16,54 @@ import (
 	"github.com/nalgeon/redka/internal/testx"
 )
 
-func ExampleOpen() {
+func ExampleOpen_file() {
+	// Open a file-based SQLite database.
+	// The database will be created if it doesn't exist.
+	db, err := redka.Open("redka.db", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
+	// ...
+
+}
+
+func ExampleOpen_memory() {
+	// Open an in-memory SQLite database.
 	db, err := redka.Open("file:/redka.db?vfs=memdb", nil)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
+	// ...
+}
+
+func ExampleOpen_options() {
+	// Set custom options for the database.
+	opts := &redka.Options{
+		DriverName: "sqlite3",
+		Timeout:    5 * time.Second,
+		Pragma: map[string]string{
+			"synchronous": "off",
+		},
+	}
+
+	db, err := redka.Open("file:/redka.db?vfs=memdb", opts)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = db.Close() }()
+	// ...
+}
+
+func ExampleOpen_postgres() {
+	// Open an existing PostgreSQL database.
+	// Pass the connection string in this format:
+	connString := "postgres://user:password@localhost:5432/mydb?sslmode=disable"
+	// You also need to explicitly pass the driver name:
+	opts := &redka.Options{DriverName: "postgres"}
+
+	db, err := redka.Open(connString, opts)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +104,14 @@ func ExampleDB_Close() {
 	if err != nil {
 		panic(err)
 	}
-	defer func() { _ = db.Close() }()
+
+	// Perform some operations on the database.
 	// ...
+
+	err = db.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func ExampleDB_Hash() {
