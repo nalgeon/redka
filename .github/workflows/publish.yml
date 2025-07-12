@@ -3,7 +3,7 @@ name: publish
 on:
     push:
         tags:
-            - "*"
+            - "v*.*.*"
     workflow_dispatch:
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
             - name: Set up Go
               uses: actions/setup-go@v5
               with:
-                  go-version: "stable"
+                  go-version-file: "go.mod"
 
             - name: Build binary
               run: GOOS=${{ matrix.goos }} make build
@@ -85,3 +85,4 @@ jobs:
                   file: release/*
                   file_glob: true
                   tag: ${{ github.ref }}
+                  draft: true
