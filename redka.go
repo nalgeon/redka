@@ -62,7 +62,7 @@ type Options struct {
 	// If empty, uses "sqlite3".
 	DriverName string
 	// Options to set on the database connection.
-	// If empty, uses the engine-specific defaults.
+	// If nil, uses the engine-specific defaults.
 	Pragma map[string]string
 	// Timeout for database operations.
 	// If zero, uses the default timeout of 5 seconds.

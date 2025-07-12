@@ -53,10 +53,11 @@ run:
 postgres-start:
 	@echo "> starting postgres..."
 	@docker run --rm --detach --name=redka-postgres \
+		--env=POSTGRES_DB=redka \
 		--env=POSTGRES_USER=redka \
 		--env=POSTGRES_PASSWORD=redka \
-		--env=POSTGRES_DB=redka \
 		--publish=5432:5432 \
+		--tmpfs /var/lib/postgresql/data \
 		postgres:17-alpine
 	@until docker exec redka-postgres \
 		pg_isready --username=redka --dbname=redka --quiet --quiet; \
