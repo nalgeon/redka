@@ -3,9 +3,9 @@ package set
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSRandMemberParse(t *testing.T) {
@@ -34,11 +34,11 @@ func TestSRandMemberParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSRandMember, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.key, test.want.key)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -46,40 +46,37 @@ func TestSRandMemberParse(t *testing.T) {
 
 func TestSRandMemberExec(t *testing.T) {
 	t.Run("random", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.Set().Add("key", "one", "two", "thr")
+		red := getRedka(t)
+		_, _ = red.Set().Add("key", "one", "two", "thr")
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 		s := res.(core.Value).String()
-		testx.AssertEqual(t, s == "one" || s == "two" || s == "thr", true)
+		be.Equal(t, s == "one" || s == "two" || s == "thr", true)
 		s = conn.Out()
-		testx.AssertEqual(t, s == "one" || s == "two" || s == "thr", true)
+		be.Equal(t, s == "one" || s == "two" || s == "thr", true)
 	})
 	t.Run("key not found", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "value")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "value")
 
 		cmd := redis.MustParse(ParseSRandMember, "srandmember key")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, core.Value(nil))
-		testx.AssertEqual(t, conn.Out(), "(nil)")
+		be.Err(t, err, nil)
+		be.Equal(t, res.(core.Value), core.Value(nil))
+		be.Equal(t, conn.Out(), "(nil)")
 	})
 }

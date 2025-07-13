@@ -13,16 +13,17 @@ import (
 // A list is a sequence of strings ordered by insertion order.
 // Use the list repository to work with lists and their elements.
 type DB struct {
-	ro     *sql.DB
-	rw     *sql.DB
-	update func(f func(tx *Tx) error) error
+	dialect sqlx.Dialect
+	ro      *sql.DB
+	rw      *sql.DB
+	update  func(f func(tx *Tx) error) error
 }
 
 // New connects to the list repository.
 // Does not create the database schema.
 func New(db *sqlx.DB) *DB {
 	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{ro: db.RO, rw: db.RW, update: actor.Update}
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
 }
 
 // Delete deletes all occurrences of an element from a list.
@@ -72,7 +73,7 @@ func (d *DB) DeleteFront(key string, elem any, count int) (int, error) {
 // If the index is out of bounds, returns ErrNotFound.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (d *DB) Get(key string, idx int) (core.Value, error) {
-	tx := NewTx(d.ro)
+	tx := NewTx(d.dialect, d.ro)
 	return tx.Get(key, idx)
 }
 
@@ -107,7 +108,7 @@ func (d *DB) InsertBefore(key string, pivot, elem any) (int, error) {
 // Len returns the number of elements in a list.
 // If the key does not exist or is not a list, returns 0.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.ro)
+	tx := NewTx(d.dialect, d.ro)
 	return tx.Len(key)
 }
 
@@ -182,7 +183,7 @@ func (d *DB) PushFront(key string, elem any) (int, error) {
 // (-1 is the last element, -2 is the second last, etc.)
 // If the key does not exist or is not a list, returns an empty slice.
 func (d *DB) Range(key string, start, stop int) ([]core.Value, error) {
-	tx := NewTx(d.ro)
+	tx := NewTx(d.dialect, d.ro)
 	return tx.Range(key, start, stop)
 }
 

@@ -47,19 +47,19 @@ After opening the database, call `redka.DB` methods to run individual commands:
 db.Str().Set("name", "alice")
 db.Str().Set("age", 25)
 
-count, err := db.Key().Count("name", "age", "city")
-slog.Info("count", "count", count, "err", err)
-
 name, err := db.Str().Get("name")
 slog.Info("get", "name", name, "err", err)
+
+age, err := db.Str().Get("age")
+slog.Info("get", "age", age, "err", err)
 ```
 
-```
-count count=2 err=<nil>
+```text
 get name="alice" err=<nil>
+get age="25" err=<nil>
 ```
 
-See the full example in [example/simple/main.go](../example/simple/main.go).
+See the full example in [example/mattn/main.go](../example/mattn/main.go).
 
 ## Transactions
 
@@ -84,7 +84,7 @@ err := db.Update(func(tx *redka.Tx) error {
 slog.Info("updated", "count", updCount, "err", err)
 ```
 
-```
+```text
 updated count=2 err=<nil>
 ```
 
@@ -94,7 +94,11 @@ See the full example in [example/tx/main.go](../example/tx/main.go).
 
 Redka supports the following SQLite drivers:
 
--   `github.com/mattn/go-sqlite3` ([example](../example/simple/main.go))
+-   `github.com/mattn/go-sqlite3` ([example](../example/mattn/main.go))
 -   `github.com/ncruces/go-sqlite3` ([example](../example/ncruces/main.go))
--   `github.com/tursodatabase/go-libsql` ([example](../example/libsql/main.go))
 -   `modernc.org/sqlite` ([example](../example/modernc/main.go))
+
+And the following Postgres drivers:
+
+-   `github.com/lib/pq` ([example](../example/postgres/main.go))
+-   `github.com/jackc/pgx/v5`

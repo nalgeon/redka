@@ -8,13 +8,13 @@ import (
 // Transactor is a domain transaction manager.
 // T is the type of the domain transaction.
 type Transactor[T any] struct {
-	db    *DB        // Database handle.
-	newTx func(Tx) T // Domain transaction constructor.
+	db    *DB                 // Database handle.
+	newTx func(Dialect, Tx) T // Domain transaction constructor.
 }
 
 // NewTransactor creates a new transaction manager.
-func NewTransactor[T any](db *DB, newTx func(Tx) T) *Transactor[T] {
-	return &Transactor[T]{db, newTx}
+func NewTransactor[T any](db *DB, newTx func(Dialect, Tx) T) *Transactor[T] {
+	return &Transactor[T]{db: db, newTx: newTx}
 }
 
 // Update executes a function within a writable transaction.
@@ -58,7 +58,7 @@ func (t *Transactor[T]) execTx(ctx context.Context, writable bool, f func(tx T) 
 
 	// Create a domain transaction from the database transaction,
 	// then execute the function with it.
-	tx := t.newTx(sqlTx)
+	tx := t.newTx(t.db.Dialect, sqlTx)
 	err = f(tx)
 	if err != nil {
 		return err

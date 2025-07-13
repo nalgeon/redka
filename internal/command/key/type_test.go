@@ -3,8 +3,8 @@ package key
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestTypeParse(t *testing.T) {
@@ -33,24 +33,23 @@ func TestTypeParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseType, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
+				be.Equal(t, cmd.key, test.key)
 			} else {
-				testx.AssertEqual(t, cmd, Type{})
+				be.Equal(t, cmd, Type{})
 			}
 		})
 	}
 }
 
 func TestTypeExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
+	red := getRedka(t)
 
-	_ = db.Str().Set("kstr", "string")
-	_, _ = db.List().PushBack("klist", "list")
-	_, _ = db.Hash().Set("khash", "field", "hash")
-	_, _ = db.ZSet().Add("kzset", "zset", 1)
+	_ = red.Str().Set("kstr", "string")
+	_, _ = red.List().PushBack("klist", "list")
+	_, _ = red.Hash().Set("khash", "field", "hash")
+	_, _ = red.ZSet().Add("kzset", "zset", 1)
 
 	tests := []struct {
 		key  string
@@ -68,9 +67,9 @@ func TestTypeExec(t *testing.T) {
 			cmd := redis.MustParse(ParseType, "type "+test.key)
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, test.want)
-			testx.AssertEqual(t, conn.Out(), test.want)
+			be.Err(t, err, nil)
+			be.Equal(t, res.(string), test.want)
+			be.Equal(t, conn.Out(), test.want)
 		})
 	}
 }

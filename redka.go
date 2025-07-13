@@ -1,11 +1,24 @@
-// Package Redka implements Redis-like database backed by SQLite.
-// It provides an API to interact with data structures like keys,
-// strings and hashes.
+// Package Redka implements Redis-like database backed by a relational database
+// (SQLite or PostgreSQL). It provides an API to interact with data structures
+// like keys, strings and hashes.
 //
 // Typically, you open a database with [Open] and use the returned
 // [DB] instance methods like [DB.Key] or [DB.Str] to access the
 // data structures. You should only use one instance of DB throughout
 // your program and close it with [DB.Close] when the program exits.
+//
+// See usage examples in the documentation below and at these links:
+//   - [mattn] - CGO SQLite driver.
+//   - [ncruces] - Pure Go SQLite driver (WASM).
+//   - [modernc] - Pure Go SQLite driver (libc port).
+//   - [postgres] - Postgres driver.
+//   - [tx] - Using transactions.
+//
+// [mattn]: https://github.com/nalgeon/redka/blob/main/example/mattn/main.go
+// [ncruces]: https://github.com/nalgeon/redka/blob/main/example/ncruces/main.go
+// [modernc]: https://github.com/nalgeon/redka/blob/main/example/modernc/main.go
+// [postgres]: https://github.com/nalgeon/redka/blob/main/example/postgres/main.go
+// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 package redka
 
 import (
@@ -29,6 +42,7 @@ import (
 // the data structure of the value with that key.
 type TypeID = core.TypeID
 
+// Key types.
 const (
 	TypeAny    = core.TypeAny
 	TypeString = core.TypeString
@@ -62,14 +76,10 @@ type Options struct {
 	// If empty, uses "sqlite3".
 	DriverName string
 	// Options to set on the database connection.
-	// If nil, uses the default pragmas:
-	//  - journal_mode=wal
-	//  - synchronous=normal
-	//  - temp_store=memory
-	//  - mmap_size=268435456
-	//  - foreign_keys=on
+	// If nil, uses the engine-specific defaults.
 	Pragma map[string]string
-	// Timeout for database operations. Default is 5 seconds.
+	// Timeout for database operations.
+	// If zero, uses the default timeout of 5 seconds.
 	Timeout time.Duration
 	// Logger for the database. If nil, uses a silent logger.
 	Logger *slog.Logger
@@ -78,14 +88,14 @@ type Options struct {
 	readOnly bool
 }
 
+// Application options defaults.
 var defaultOptions = Options{
 	DriverName: "sqlite3",
-	Pragma:     sqlx.DefaultPragma,
 	Timeout:    5 * time.Second,
 	Logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 }
 
-// DB is a Redis-like database backed by SQLite.
+// DB is a Redis-like repository backed by a relational database.
 // Provides access to data structures like keys, strings, and hashes.
 //
 // DB is safe for concurrent use by multiple goroutines as long as you use
@@ -114,23 +124,23 @@ type DB struct {
 func Open(path string, opts *Options) (*DB, error) {
 	// Apply the default options if necessary.
 	opts = applyOptions(defaultOptions, opts)
+	sopts := newSQLOptions(opts)
 
 	// Open the read-write database handle.
-	dataSource := sqlx.DataSource(path, false, opts.Pragma)
+	dataSource := sqlx.DataSource(path, false, sopts)
 	rw, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Open the read-only database handle.
-	dataSource = sqlx.DataSource(path, true, opts.Pragma)
+	dataSource = sqlx.DataSource(path, true, sopts)
 	ro, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the database-backed repository.
-	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout}
 	sdb, err := sqlx.Open(rw, ro, sopts)
 	if err != nil {
 		return nil, err
@@ -144,16 +154,16 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 	// Apply the default options if necessary.
 	opts = applyOptions(defaultOptions, opts)
 	opts.readOnly = true
+	sopts := newSQLOptions(opts)
 
 	// Open the read-only database handle.
-	dataSource := sqlx.DataSource(path, true, opts.Pragma)
+	dataSource := sqlx.DataSource(path, true, sopts)
 	db, err := sql.Open(opts.DriverName, dataSource)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the database-backed repository.
-	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout, ReadOnly: true}
 	sdb, err := sqlx.New(db, db, sopts)
 	if err != nil {
 		return nil, err
@@ -166,7 +176,7 @@ func OpenRead(path string, opts *Options) (*DB, error) {
 // The opts parameter is optional. If nil, uses default options.
 func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
-	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout}
+	sopts := newSQLOptions(opts)
 	sdb, err := sqlx.Open(rw, ro, sopts)
 	if err != nil {
 		return nil, err
@@ -178,7 +188,7 @@ func OpenDB(rw *sql.DB, ro *sql.DB, opts *Options) (*DB, error) {
 func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
 	opts = applyOptions(defaultOptions, opts)
 	opts.readOnly = true
-	sopts := &sqlx.Options{Pragma: opts.Pragma, Timeout: opts.Timeout, ReadOnly: true}
+	sopts := newSQLOptions(opts)
 	sdb, err := sqlx.New(db, db, sopts)
 	if err != nil {
 		return nil, err
@@ -253,33 +263,21 @@ func (db *DB) ZSet() *rzset.DB {
 }
 
 // Update executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) Update(f func(tx *Tx) error) error {
 	return db.act.Update(f)
 }
 
 // UpdateContext executes a function within a writable transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) UpdateContext(ctx context.Context, f func(tx *Tx) error) error {
 	return db.act.UpdateContext(ctx, f)
 }
 
 // View executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) View(f func(tx *Tx) error) error {
 	return db.act.View(f)
 }
 
 // ViewContext executes a function within a read-only transaction.
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 func (db *DB) ViewContext(ctx context.Context, f func(tx *Tx) error) error {
 	return db.act.ViewContext(ctx, f)
 }
@@ -331,10 +329,6 @@ func (db *DB) startBgManager() *time.Ticker {
 // Same as [DB], Tx provides access to data structures like keys,
 // strings, and hashes. The difference is that you call Tx methods
 // within a transaction managed by [DB.Update] or [DB.View].
-//
-// See the [tx] example for details.
-//
-// [tx]: https://github.com/nalgeon/redka/blob/main/example/tx/main.go
 type Tx struct {
 	tx     sqlx.Tx
 	hashTx *rhash.Tx
@@ -346,14 +340,14 @@ type Tx struct {
 }
 
 // newTx creates a new database transaction.
-func newTx(tx sqlx.Tx) *Tx {
+func newTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	return &Tx{tx: tx,
-		hashTx: rhash.NewTx(tx),
-		keyTx:  rkey.NewTx(tx),
-		listTx: rlist.NewTx(tx),
-		setTx:  rset.NewTx(tx),
-		strTx:  rstring.NewTx(tx),
-		zsetTx: rzset.NewTx(tx),
+		hashTx: rhash.NewTx(dialect, tx),
+		keyTx:  rkey.NewTx(dialect, tx),
+		listTx: rlist.NewTx(dialect, tx),
+		setTx:  rset.NewTx(dialect, tx),
+		strTx:  rstring.NewTx(dialect, tx),
+		zsetTx: rzset.NewTx(dialect, tx),
 	}
 }
 
@@ -406,4 +400,15 @@ func applyOptions(opts Options, custom *Options) *Options {
 		opts.Logger = custom.Logger
 	}
 	return &opts
+}
+
+// newSQLOptions creates SQL options from options.
+// Infers the SQL dialect from the driver name.
+func newSQLOptions(opts *Options) *sqlx.Options {
+	return &sqlx.Options{
+		Dialect:  sqlx.InferDialect(opts.DriverName),
+		Pragma:   opts.Pragma,
+		Timeout:  opts.Timeout,
+		ReadOnly: opts.readOnly,
+	}
 }

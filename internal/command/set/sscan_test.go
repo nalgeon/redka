@@ -1,12 +1,13 @@
 package set
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
 	"github.com/nalgeon/redka/internal/rset"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestSScanParse(t *testing.T) {
@@ -103,50 +104,53 @@ func TestSScanParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseSScan, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.key)
-				testx.AssertEqual(t, cmd.cursor, test.cursor)
-				testx.AssertEqual(t, cmd.match, test.match)
-				testx.AssertEqual(t, cmd.count, test.count)
+				be.Equal(t, cmd.key, test.key)
+				be.Equal(t, cmd.cursor, test.cursor)
+				be.Equal(t, cmd.match, test.match)
+				be.Equal(t, cmd.count, test.count)
 			} else {
-				testx.AssertEqual(t, cmd, SScan{})
+				be.Equal(t, cmd, SScan{})
 			}
 		})
 	}
 }
 
 func TestSScanExec(t *testing.T) {
-	db, red := getDB(t)
-	defer db.Close()
-	_, _ = db.Set().Add("key", "m11", "m12", "m21", "m22", "m31")
+	red := getRedka(t)
+	_, _ = red.Set().Add("key", "m11", "m12", "m21", "m22", "m31")
 
 	t.Run("sscan all", func(t *testing.T) {
+		var cursor int
 		{
 			cmd := redis.MustParse(ParseSScan, "sscan key 0")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 5)
-			testx.AssertEqual(t, sres.Items[0], core.Value("m11"))
-			testx.AssertEqual(t, sres.Items[4], core.Value("m31"))
-			testx.AssertEqual(t, conn.Out(), "2,5,5,m11,m12,m21,m22,m31")
+			be.True(t, sres.Cursor > 0)
+			be.Equal(t, len(sres.Items), 5)
+			be.Equal(t, sres.Items[0], core.Value("m11"))
+			be.Equal(t, sres.Items[4], core.Value("m31"))
+			wantOut := fmt.Sprintf("2,%d,5,m11,m12,m21,m22,m31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
-			cmd := redis.MustParse(ParseSScan, "sscan key 5")
+			next := fmt.Sprintf("sscan key %d", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 	t.Run("sscan pattern", func(t *testing.T) {
@@ -154,72 +158,83 @@ func TestSScanExec(t *testing.T) {
 		conn := redis.NewFakeConn()
 
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
+		be.Err(t, err, nil)
 
 		sres := res.(rset.ScanResult)
-		testx.AssertEqual(t, sres.Cursor, 4)
-		testx.AssertEqual(t, len(sres.Items), 2)
-		testx.AssertEqual(t, sres.Items[0].String(), "m21")
-		testx.AssertEqual(t, sres.Items[1].String(), "m22")
-		testx.AssertEqual(t, conn.Out(), "2,4,2,m21,m22")
+		be.True(t, sres.Cursor > 0)
+		be.Equal(t, len(sres.Items), 2)
+		be.Equal(t, sres.Items[0].String(), "m21")
+		be.Equal(t, sres.Items[1].String(), "m22")
+		wantOut := fmt.Sprintf("2,%d,2,m21,m22", sres.Cursor)
+		be.Equal(t, conn.Out(), wantOut)
 	})
 	t.Run("sscan count", func(t *testing.T) {
+		var cursor int
 		{
 			// page 1
 			cmd := redis.MustParse(ParseSScan, "sscan key 0 match * count 2")
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 2)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].String(), "m11")
-			testx.AssertEqual(t, sres.Items[1].String(), "m12")
-			testx.AssertEqual(t, conn.Out(), "2,2,2,m11,m12")
+			be.True(t, sres.Cursor > 0)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].String(), "m11")
+			be.Equal(t, sres.Items[1].String(), "m12")
+			wantOut := fmt.Sprintf("2,%d,2,m11,m12", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 2
-			cmd := redis.MustParse(ParseSScan, "sscan key 2 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 4)
-			testx.AssertEqual(t, len(sres.Items), 2)
-			testx.AssertEqual(t, sres.Items[0].String(), "m21")
-			testx.AssertEqual(t, sres.Items[1].String(), "m22")
-			testx.AssertEqual(t, conn.Out(), "2,4,2,m21,m22")
+			be.True(t, sres.Cursor > cursor)
+			be.Equal(t, len(sres.Items), 2)
+			be.Equal(t, sres.Items[0].String(), "m21")
+			be.Equal(t, sres.Items[1].String(), "m22")
+			wantOut := fmt.Sprintf("2,%d,2,m21,m22", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// page 3
-			cmd := redis.MustParse(ParseSScan, "sscan key 4 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 5)
-			testx.AssertEqual(t, len(sres.Items), 1)
-			testx.AssertEqual(t, sres.Items[0].String(), "m31")
-			testx.AssertEqual(t, conn.Out(), "2,5,1,m31")
+			be.True(t, sres.Cursor > cursor)
+			be.Equal(t, len(sres.Items), 1)
+			be.Equal(t, sres.Items[0].String(), "m31")
+			wantOut := fmt.Sprintf("2,%d,1,m31", sres.Cursor)
+			be.Equal(t, conn.Out(), wantOut)
+			cursor = sres.Cursor
 		}
 		{
 			// no more pages
-			cmd := redis.MustParse(ParseSScan, "sscan key 5 match * count 2")
+			next := fmt.Sprintf("sscan key %d match * count 2", cursor)
+			cmd := redis.MustParse(ParseSScan, next)
 			conn := redis.NewFakeConn()
 
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
+			be.Err(t, err, nil)
 
 			sres := res.(rset.ScanResult)
-			testx.AssertEqual(t, sres.Cursor, 0)
-			testx.AssertEqual(t, len(sres.Items), 0)
-			testx.AssertEqual(t, conn.Out(), "2,0,0")
+			be.Equal(t, sres.Cursor, 0)
+			be.Equal(t, len(sres.Items), 0)
+			be.Equal(t, conn.Out(), "2,0,0")
 		}
 	})
 }

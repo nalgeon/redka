@@ -2,109 +2,53 @@ package rkey
 
 import (
 	"database/sql"
-	"strings"
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
 )
 
-const (
-	sqlCount = `
-	select count(id) from rkey
-	where key in (:keys) and (etime is null or etime > ?)`
-
-	sqlDelete = `
-	delete from rkey
-	where key in (:keys) and (etime is null or etime > ?)`
-
-	sqlDeleteAll = `
-	delete from rkey;
-	vacuum;
-	pragma integrity_check;`
-
-	sqlDeleteAllExpired = `
-	delete from rkey
-	where etime <= ?`
-
-	sqlDeleteNExpired = `
-	delete from rkey
-	where rowid in (
-		select rowid from rkey
-		where etime <= ?
-		limit ?
-	)`
-
-	sqlExpire = `
-	update rkey set
-		version = version + 1,
-		etime = ?
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlGet = `
-	select id, key, type, version, etime, mtime
-	from rkey
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlKeys = `
-	select id, key, type, version, etime, mtime from rkey
-	where key glob ? and (etime is null or etime > ?)`
-
-	sqlLen = `
-	select count(*) from rkey`
-
-	sqlPersist = `
-	update rkey set
-		version = version + 1,
-		etime = null
-	where key = ? and (etime is null or etime > ?)`
-
-	sqlRandom = `
-	select id, key, type, version, etime, mtime from rkey
-	where etime is null or etime > ?
-	order by random() limit 1`
-
-	sqlRename = `
-	update or replace rkey set
-		id = old.id,
-		key = ?,
-		type = old.type,
-		version = old.version+1,
-		etime = old.etime,
-		mtime = ?
-	from (
-		select id, key, type, version, etime, mtime
-		from rkey
-		where key = ? and (etime is null or etime > ?)
-	) as old
-	where rkey.key = ? and (rkey.etime is null or rkey.etime > ?)`
-
-	sqlScan = `
-	select id, key, type, version, etime, mtime from rkey
-	where
-		id > ? and key glob ? and (type = ? or true)
-		and (etime is null or etime > ?)
-	order by id asc
-	limit ?`
-)
-
+// scanPageSize is the default number
+// of keys per page when scanning.
 const scanPageSize = 10
+
+// SQL queries for the key repository.
+type queries struct {
+	count            string
+	delete           string
+	deleteAll        string
+	deleteAllExpired string
+	deleteNExpired   string
+	expire           string
+	get              string
+	keys             string
+	len              string
+	persist          string
+	random           string
+	rename1          string
+	rename2          string
+	scan             string
+}
 
 // Tx is a key repository transaction.
 type Tx struct {
-	tx sqlx.Tx
+	dialect sqlx.Dialect
+	tx      sqlx.Tx
+	sql     *queries
 }
 
 // NewTx creates a key repository transaction
 // from a generic database transaction.
-func NewTx(tx sqlx.Tx) *Tx {
-	return &Tx{tx}
+func NewTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
+	sql := getSQL(dialect)
+	return &Tx{dialect: dialect, tx: tx, sql: sql}
 }
 
 // Count returns the number of existing keys among specified.
 func (tx *Tx) Count(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlCount, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.count, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 	var count int
 	err := tx.tx.QueryRow(query, args...).Scan(&count)
@@ -115,7 +59,8 @@ func (tx *Tx) Count(keys ...string) (int, error) {
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (tx *Tx) Delete(keys ...string) (int, error) {
 	now := time.Now().UnixMilli()
-	query, keyArgs := sqlx.ExpandIn(sqlDelete, ":keys", keys)
+	query, keyArgs := sqlx.ExpandIn(tx.sql.delete, ":keys", keys)
+	query = tx.dialect.Enumerate(query)
 	args := append(keyArgs, now)
 	res, err := tx.tx.Exec(query, args...)
 	if err != nil {
@@ -128,7 +73,7 @@ func (tx *Tx) Delete(keys ...string) (int, error) {
 // DeleteAll deletes all keys and their values, effectively resetting
 // the database. Should not be run inside a database transaction.
 func (tx *Tx) DeleteAll() error {
-	_, err := tx.tx.Exec(sqlDeleteAll)
+	_, err := tx.tx.Exec(tx.sql.deleteAll)
 	return err
 }
 
@@ -151,7 +96,7 @@ func (tx *Tx) Expire(key string, ttl time.Duration) error {
 // If the key does not exist, returns ErrNotFound.
 func (tx *Tx) ExpireAt(key string, at time.Time) error {
 	args := []any{at.UnixMilli(), key, time.Now().UnixMilli()}
-	res, err := tx.tx.Exec(sqlExpire, args...)
+	res, err := tx.tx.Exec(tx.sql.expire, args...)
 	if err != nil {
 		return err
 	}
@@ -167,7 +112,7 @@ func (tx *Tx) ExpireAt(key string, at time.Time) error {
 func (tx *Tx) Get(key string) (core.Key, error) {
 	args := []any{key, time.Now().UnixMilli()}
 	var k core.Key
-	err := tx.tx.QueryRow(sqlGet, args...).Scan(
+	err := tx.tx.QueryRow(tx.sql.get, args...).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
@@ -184,6 +129,7 @@ func (tx *Tx) Get(key string) (core.Key, error) {
 // Use this method only if you are sure that the number of keys is
 // limited. Otherwise, use the [Tx.Scan] or [Tx.Scanner] methods.
 func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
+	pattern = tx.dialect.GlobToLike(pattern)
 	args := []any{pattern, time.Now().UnixMilli()}
 	scan := func(rows *sql.Rows) (core.Key, error) {
 		var k core.Key
@@ -191,14 +137,14 @@ func (tx *Tx) Keys(pattern string) ([]core.Key, error) {
 		return k, err
 	}
 	var keys []core.Key
-	keys, err := sqlx.Select(tx.tx, sqlKeys, args, scan)
+	keys, err := sqlx.Select(tx.tx, tx.sql.keys, args, scan)
 	return keys, err
 }
 
 // Len returns the total number of keys, including expired ones.
 func (tx *Tx) Len() (int, error) {
 	var n int
-	err := tx.tx.QueryRow(sqlLen).Scan(&n)
+	err := tx.tx.QueryRow(tx.sql.len).Scan(&n)
 	if err != nil {
 		return 0, err
 	}
@@ -209,7 +155,7 @@ func (tx *Tx) Len() (int, error) {
 // If the key does not exist, returns ErrNotFound.
 func (tx *Tx) Persist(key string) error {
 	args := []any{key, time.Now().UnixMilli()}
-	res, err := tx.tx.Exec(sqlPersist, args...)
+	res, err := tx.tx.Exec(tx.sql.persist, args...)
 	if err != nil {
 		return err
 	}
@@ -225,7 +171,7 @@ func (tx *Tx) Persist(key string) error {
 func (tx *Tx) Random() (core.Key, error) {
 	now := time.Now().UnixMilli()
 	var k core.Key
-	err := tx.tx.QueryRow(sqlRandom, now).Scan(
+	err := tx.tx.QueryRow(tx.sql.random, now).Scan(
 		&k.ID, &k.Key, &k.Type, &k.Version, &k.ETime, &k.MTime,
 	)
 	if err == sql.ErrNoRows {
@@ -262,14 +208,18 @@ func (tx *Tx) Rename(key, newKey string) error {
 		return core.ErrKeyType
 	}
 
+	// Delete the new key if it exists.
+	if newK.Exists() {
+		_, err := tx.tx.Exec(tx.sql.rename1, newK.ID)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
-	args := []any{
-		newKey, now,
-		key, now,
-		key, now,
-	}
-	_, err = tx.tx.Exec(sqlRename, args...)
+	args := []any{newKey, now, key, now}
+	_, err = tx.tx.Exec(tx.sql.rename2, args...)
 	return err
 }
 
@@ -302,12 +252,8 @@ func (tx *Tx) RenameNotExists(key, newKey string) (bool, error) {
 
 	// Rename the old key to the new key.
 	now := time.Now().UnixMilli()
-	args := []any{
-		newKey, now,
-		key, now,
-		key, now,
-	}
-	_, err = tx.tx.Exec(sqlRename, args...)
+	args := []any{newKey, now, key, now}
+	_, err = tx.tx.Exec(tx.sql.rename2, args...)
 	return err == nil, err
 }
 
@@ -324,14 +270,14 @@ func (tx *Tx) Scan(cursor int, pattern string, ktype core.TypeID, count int) (Sc
 	if count == 0 {
 		count = scanPageSize
 	}
-	query := sqlScan
-	if ktype != core.TypeAny {
-		query = strings.Replace(query, "(type = ? or true)", "(type = ?)", 1)
-	}
+	query := tx.sql.scan
+	ktypeGuard := ktype == core.TypeAny
+	pattern = tx.dialect.GlobToLike(pattern)
 	args := []any{
 		cursor,
 		pattern,
 		int(ktype),
+		ktypeGuard,
 		time.Now().UnixMilli(),
 		count,
 	}
@@ -381,13 +327,25 @@ func (tx *Tx) deleteExpired(n int) (int, error) {
 	var res sql.Result
 	var err error
 	if n > 0 {
-		res, err = tx.tx.Exec(sqlDeleteNExpired, now, n)
+		res, err = tx.tx.Exec(tx.sql.deleteNExpired, now, n)
 	} else {
-		res, err = tx.tx.Exec(sqlDeleteAllExpired, now)
+		res, err = tx.tx.Exec(tx.sql.deleteAllExpired, now)
 	}
 	if err != nil {
 		return 0, err
 	}
 	count, _ := res.RowsAffected()
 	return int(count), err
+}
+
+// getSQL returns the SQL queries for the specified dialect.
+func getSQL(dialect sqlx.Dialect) *queries {
+	switch dialect {
+	case sqlx.DialectSqlite:
+		return &sqlite
+	case sqlx.DialectPostgres:
+		return &postgres
+	default:
+		return &queries{}
+	}
 }

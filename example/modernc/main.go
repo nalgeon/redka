@@ -16,15 +16,23 @@ func main() {
 	opts := redka.Options{
 		DriverName: "sqlite",
 	}
-	db, err := redka.Open("data.db", &opts)
+
+	// Open the database.
+	db, err := redka.Open("redka.db", &opts)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
+	// Set some values.
 	err = db.Str().Set("name", "alice")
 	slog.Info("set", "err", err)
+	err = db.Str().Set("age", 25)
+	slog.Info("set", "err", err)
 
-	count, err := db.Key().Count("name", "age", "city")
-	slog.Info("count", "count", count, "err", err)
+	// Read them back.
+	name, err := db.Str().Get("name")
+	slog.Info("get", "name", name, "err", err)
+	age, err := db.Str().Get("age")
+	slog.Info("get", "age", age, "err", err)
 }

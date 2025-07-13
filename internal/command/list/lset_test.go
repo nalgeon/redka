@@ -3,9 +3,9 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestLSetParse(t *testing.T) {
@@ -44,13 +44,13 @@ func TestLSetParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseLSet, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.index, test.want.index)
-				testx.AssertEqual(t, cmd.elem, test.want.elem)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.index, test.want.index)
+				be.Equal(t, cmd.elem, test.want.elem)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -58,72 +58,67 @@ func TestLSetParse(t *testing.T) {
 
 func TestLSetExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseLSet, "lset key 0 elem")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
+		be.Err(t, err, core.ErrNotFound)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
 	})
 	t.Run("set elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 1 upd")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "OK")
 
-		el1, _ := db.List().Get("key", 1)
-		testx.AssertEqual(t, el1.String(), "upd")
+		el1, _ := red.List().Get("key", 1)
+		be.Equal(t, el1.String(), "upd")
 	})
 	t.Run("negative index", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
-		_, _ = db.List().PushBack("key", "two")
-		_, _ = db.List().PushBack("key", "thr")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
+		_, _ = red.List().PushBack("key", "two")
+		_, _ = red.List().PushBack("key", "thr")
 
 		cmd := redis.MustParse(ParseLSet, "lset key -1 upd")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), "OK")
+		be.Err(t, err, nil)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), "OK")
 
-		el2, _ := db.List().Get("key", 2)
-		testx.AssertEqual(t, el2.String(), "upd")
+		el2, _ := red.List().Get("key", 2)
+		be.Equal(t, el2.String(), "upd")
 	})
 	t.Run("index out of bounds", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "elem")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "elem")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 1 upd")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
+		be.Err(t, err, core.ErrNotFound)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseLSet, "lset key 0 elem")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrNotFound)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
+		be.Err(t, err, core.ErrNotFound)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), redis.ErrOutOfRange.Error()+" (lset)")
 	})
 }

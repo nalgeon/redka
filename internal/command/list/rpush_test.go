@@ -3,9 +3,9 @@ package list
 import (
 	"testing"
 
+	"github.com/nalgeon/be"
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/redis"
-	"github.com/nalgeon/redka/internal/testx"
 )
 
 func TestRPushParse(t *testing.T) {
@@ -39,12 +39,12 @@ func TestRPushParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
 			cmd, err := redis.Parse(ParseRPush, test.cmd)
-			testx.AssertEqual(t, err, test.err)
+			be.Equal(t, err, test.err)
 			if err == nil {
-				testx.AssertEqual(t, cmd.key, test.want.key)
-				testx.AssertEqual(t, cmd.elem, test.want.elem)
+				be.Equal(t, cmd.key, test.want.key)
+				be.Equal(t, cmd.elem, test.want.elem)
 			} else {
-				testx.AssertEqual(t, cmd, test.want)
+				be.Equal(t, cmd, test.want)
 			}
 		})
 	}
@@ -52,70 +52,66 @@ func TestRPushParse(t *testing.T) {
 
 func TestRPushExec(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		cmd := redis.MustParse(ParseRPush, "rpush key elem")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 1)
-		testx.AssertEqual(t, conn.Out(), "1")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 1)
+		be.Equal(t, conn.Out(), "1")
 
-		elem, _ := db.List().Get("key", 0)
-		testx.AssertEqual(t, elem.String(), "elem")
+		elem, _ := red.List().Get("key", 0)
+		be.Equal(t, elem.String(), "elem")
 	})
 	t.Run("add elem", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_, _ = db.List().PushBack("key", "one")
+		red := getRedka(t)
+		_, _ = red.List().PushBack("key", "one")
 
 		cmd := redis.MustParse(ParseRPush, "rpush key two")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertNoErr(t, err)
-		testx.AssertEqual(t, res, 2)
-		testx.AssertEqual(t, conn.Out(), "2")
+		be.Err(t, err, nil)
+		be.Equal(t, res, 2)
+		be.Equal(t, conn.Out(), "2")
 
-		elem, _ := db.List().Get("key", 1)
-		testx.AssertEqual(t, elem.String(), "two")
+		elem, _ := red.List().Get("key", 1)
+		be.Equal(t, elem.String(), "two")
 	})
 	t.Run("add miltiple", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
+		red := getRedka(t)
 
 		{
 			cmd := redis.MustParse(ParseRPush, "rpush key one")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, 1)
-			testx.AssertEqual(t, conn.Out(), "1")
+			be.Err(t, err, nil)
+			be.Equal(t, res, 1)
+			be.Equal(t, conn.Out(), "1")
 		}
 		{
 			cmd := redis.MustParse(ParseRPush, "rpush key two")
 			conn := redis.NewFakeConn()
 			res, err := cmd.Run(conn, red)
-			testx.AssertNoErr(t, err)
-			testx.AssertEqual(t, res, 2)
-			testx.AssertEqual(t, conn.Out(), "2")
+			be.Err(t, err, nil)
+			be.Equal(t, res, 2)
+			be.Equal(t, conn.Out(), "2")
 		}
 
-		el0, _ := db.List().Get("key", 0)
-		testx.AssertEqual(t, el0.String(), "one")
-		el1, _ := db.List().Get("key", 1)
-		testx.AssertEqual(t, el1.String(), "two")
+		el0, _ := red.List().Get("key", 0)
+		be.Equal(t, el0.String(), "one")
+		el1, _ := red.List().Get("key", 1)
+		be.Equal(t, el1.String(), "two")
 	})
 	t.Run("key type mismatch", func(t *testing.T) {
-		db, red := getDB(t)
-		defer db.Close()
-		_ = db.Str().Set("key", "str")
+		red := getRedka(t)
+		_ = red.Str().Set("key", "str")
 
 		cmd := redis.MustParse(ParseRPush, "rpush key elem")
 		conn := redis.NewFakeConn()
 		res, err := cmd.Run(conn, red)
-		testx.AssertErr(t, err, core.ErrKeyType)
-		testx.AssertEqual(t, res, nil)
-		testx.AssertEqual(t, conn.Out(), core.ErrKeyType.Error()+" (rpush)")
+		be.Err(t, err, core.ErrKeyType)
+		be.Equal(t, res, nil)
+		be.Equal(t, conn.Out(), core.ErrKeyType.Error()+" (rpush)")
 	})
 }

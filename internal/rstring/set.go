@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/nalgeon/redka/internal/core"
-	"github.com/nalgeon/redka/internal/sqlx"
 )
 
 // SetOut is the output of the Set command.
@@ -85,24 +84,24 @@ func (c SetCmd) Run() (out SetOut, err error) {
 		var out SetOut
 		err := c.db.update(func(tx *Tx) error {
 			var err error
-			out, err = c.run(tx.tx)
+			out, err = c.run(tx)
 			return err
 		})
 		return out, err
 	}
 	if c.tx != nil {
-		return c.run(c.tx.tx)
+		return c.run(c.tx)
 	}
 	return SetOut{}, nil
 }
 
-func (c SetCmd) run(tx sqlx.Tx) (out SetOut, err error) {
+func (c SetCmd) run(tx *Tx) (out SetOut, err error) {
 	if !core.IsValueType(c.val) {
 		return SetOut{}, core.ErrValueType
 	}
 
 	// Get the previous value.
-	prev, err := get(tx, c.key)
+	prev, err := tx.get(c.key)
 	if err != nil && err != core.ErrNotFound {
 		return SetOut{}, err
 	}
@@ -125,9 +124,9 @@ func (c SetCmd) run(tx sqlx.Tx) (out SetOut, err error) {
 
 	// Set the value.
 	if c.keepTTL {
-		err = update(tx, c.key, c.val)
+		err = tx.update(c.key, c.val)
 	} else {
-		err = set(tx, c.key, c.val, c.at)
+		err = tx.set(c.key, c.val, c.at)
 	}
 
 	if err != nil {
