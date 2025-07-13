@@ -40,11 +40,13 @@ func New(net string, addr string, db *redka.DB) *Server {
 }
 
 // Start starts the server.
-func (s *Server) Start() error {
-	slog.Info("start redcon server", "addr", s.addr)
-	err := s.srv.ListenAndServe()
+// If ready chan is not nil, sends a nil value when the server
+// is ready to accept connections, or an error if it fails to start.
+func (s *Server) Start(ready chan error) error {
+	slog.Info("starting redcon server", "addr", s.addr)
+	err := s.srv.ListenServeAndSignal(ready)
 	if err != nil {
-		return fmt.Errorf("start redcon server: %w", err)
+		return fmt.Errorf("serve: %w", err)
 	}
 	return nil
 }
@@ -53,15 +55,15 @@ func (s *Server) Start() error {
 func (s *Server) Stop() error {
 	err := s.srv.Close()
 	if err != nil {
-		return fmt.Errorf("stop redcon server: %w", err)
+		return fmt.Errorf("server close: %w", err)
 	}
-	slog.Debug("close redcon server", "addr", s.addr)
+	slog.Debug("redcon server stopped", "addr", s.addr)
 
 	err = s.db.Close()
 	if err != nil {
-		return fmt.Errorf("close database: %w", err)
+		return fmt.Errorf("db close: %w", err)
 	}
-	slog.Debug("close database")
+	slog.Debug("database closed")
 
 	return nil
 }

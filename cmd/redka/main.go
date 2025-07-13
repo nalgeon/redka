@@ -91,19 +91,20 @@ func main() {
 	db := mustOpenDB(config, logger)
 
 	// Start application and debug servers.
-	errCh := make(chan error, 1)
-	srv := startServer(config, db, errCh)
-	debugSrv := startDebugServer(config, errCh)
-
-	// Wait for a shutdown signal or a startup error.
-	select {
-	case <-ctx.Done():
-		shutdown(srv, debugSrv)
-	case err := <-errCh:
+	ready := make(chan error, 1)
+	srv := startServer(config, db, ready)
+	debugSrv := startDebugServer(config, ready)
+	if err := <-ready; err != nil {
 		slog.Error("startup", "error", err)
 		shutdown(srv, debugSrv)
 		os.Exit(1)
 	}
+	slog.Info("redka started")
+
+	// Wait for a shutdown signal.
+	<-ctx.Done()
+	shutdown(srv, debugSrv)
+	slog.Info("redka stopped")
 }
 
 // mustReadConfig reads the configuration from
@@ -187,7 +188,7 @@ func inferDriverName(path string) string {
 }
 
 // startServer starts the application server.
-func startServer(config Config, db *redka.DB, errCh chan<- error) *server.Server {
+func startServer(config Config, db *redka.DB, ready chan error) *server.Server {
 	// Create the server.
 	var srv *server.Server
 	if config.Sock != "" {
@@ -198,8 +199,8 @@ func startServer(config Config, db *redka.DB, errCh chan<- error) *server.Server
 
 	// Start the server.
 	go func() {
-		if err := srv.Start(); err != nil {
-			errCh <- fmt.Errorf("start server: %w", err)
+		if err := srv.Start(ready); err != nil {
+			ready <- fmt.Errorf("start redcon server: %w", err)
 		}
 	}()
 
@@ -207,14 +208,14 @@ func startServer(config Config, db *redka.DB, errCh chan<- error) *server.Server
 }
 
 // startDebugServer starts the debug server.
-func startDebugServer(config Config, errCh chan<- error) *server.DebugServer {
+func startDebugServer(config Config, ready chan<- error) *server.DebugServer {
 	if !config.Verbose {
 		return nil
 	}
 	srv := server.NewDebug("localhost", debugPort)
 	go func() {
 		if err := srv.Start(); err != nil {
-			errCh <- fmt.Errorf("start debug server: %w", err)
+			ready <- fmt.Errorf("start debug server: %w", err)
 		}
 	}()
 	return srv
@@ -222,17 +223,17 @@ func startDebugServer(config Config, errCh chan<- error) *server.DebugServer {
 
 // shutdown stops the main server and the debug server.
 func shutdown(srv *server.Server, debugSrv *server.DebugServer) {
+	slog.Info("stopping redka")
+
 	// Stop the debug server.
 	if debugSrv != nil {
 		if err := debugSrv.Stop(); err != nil {
-			slog.Error("stop debug server", "error", err)
+			slog.Error("stopping debug server", "error", err)
 		}
-		slog.Info("stop debug server")
 	}
 
 	// Stop the main server.
 	if err := srv.Stop(); err != nil {
-		slog.Error("stop server", "error", err)
+		slog.Error("stopping redcon server", "error", err)
 	}
-	slog.Info("stop server")
 }

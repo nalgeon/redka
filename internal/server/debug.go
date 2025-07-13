@@ -32,10 +32,10 @@ func NewDebug(host string, port int) *DebugServer {
 
 // Start starts the debug server.
 func (s *DebugServer) Start() error {
-	slog.Info("start debug server", "addr", s.srv.Addr)
+	slog.Info("starting debug server", "addr", s.srv.Addr)
 	err := s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("start debug server: %w", err)
+		return fmt.Errorf("serve: %w", err)
 	}
 	return nil
 }
@@ -44,8 +44,8 @@ func (s *DebugServer) Start() error {
 func (s *DebugServer) Stop() error {
 	err := s.srv.Close()
 	if err != nil {
-		return fmt.Errorf("stop debug server: %w", err)
+		return fmt.Errorf("close: %w", err)
 	}
-	slog.Debug("close debug server", "addr", s.srv.Addr)
+	slog.Debug("debug server stopped", "addr", s.srv.Addr)
 	return nil
 }
