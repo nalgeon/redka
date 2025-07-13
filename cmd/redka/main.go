@@ -26,7 +26,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/mattn/go-sqlite3"
 	"github.com/nalgeon/redka"
-	"github.com/nalgeon/redka/internal/server"
+	"github.com/nalgeon/redka/redsrv"
 )
 
 // set by the build process
@@ -188,13 +188,13 @@ func inferDriverName(path string) string {
 }
 
 // startServer starts the application server.
-func startServer(config Config, db *redka.DB, ready chan error) *server.Server {
+func startServer(config Config, db *redka.DB, ready chan error) *redsrv.Server {
 	// Create the server.
-	var srv *server.Server
+	var srv *redsrv.Server
 	if config.Sock != "" {
-		srv = server.New("unix", config.Sock, db)
+		srv = redsrv.New("unix", config.Sock, db)
 	} else {
-		srv = server.New("tcp", config.Addr(), db)
+		srv = redsrv.New("tcp", config.Addr(), db)
 	}
 
 	// Start the server.
@@ -208,11 +208,11 @@ func startServer(config Config, db *redka.DB, ready chan error) *server.Server {
 }
 
 // startDebugServer starts the debug server.
-func startDebugServer(config Config, ready chan<- error) *server.DebugServer {
+func startDebugServer(config Config, ready chan<- error) *redsrv.DebugServer {
 	if !config.Verbose {
 		return nil
 	}
-	srv := server.NewDebug("localhost", debugPort)
+	srv := redsrv.NewDebug("localhost", debugPort)
 	go func() {
 		if err := srv.Start(); err != nil {
 			ready <- fmt.Errorf("start debug server: %w", err)
@@ -222,7 +222,7 @@ func startDebugServer(config Config, ready chan<- error) *server.DebugServer {
 }
 
 // shutdown stops the main server and the debug server.
-func shutdown(srv *server.Server, debugSrv *server.DebugServer) {
+func shutdown(srv *redsrv.Server, debugSrv *redsrv.DebugServer) {
 	slog.Info("stopping redka")
 
 	// Stop the debug server.

@@ -262,6 +262,11 @@ func (db *DB) ZSet() *rzset.DB {
 	return db.zsetDB
 }
 
+// Log returns the logger for the database.
+func (db *DB) Log() *slog.Logger {
+	return db.log
+}
+
 // Update executes a function within a writable transaction.
 func (db *DB) Update(f func(tx *Tx) error) error {
 	return db.act.Update(f)
