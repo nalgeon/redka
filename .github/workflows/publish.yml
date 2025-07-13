@@ -15,7 +15,6 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest]
                 include:
                     - os: ubuntu-latest
                       goos: linux
