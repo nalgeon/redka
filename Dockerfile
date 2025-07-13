@@ -8,10 +8,11 @@ RUN make build
 
 FROM alpine:latest
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main valkey-cli
+RUN ln -s /usr/bin/valkey-cli /usr/local/bin/redis-cli
 RUN mkdir /data
 VOLUME /data
 WORKDIR /data
 COPY --from=build /app/build/redka /usr/local/bin/redka
 HEALTHCHECK CMD valkey-cli PING || exit 1
 EXPOSE 6379
-CMD ["redka", "-h", "0.0.0.0", "-p", "6379", "redka.db"]
+ENTRYPOINT ["redka", "-h", "0.0.0.0", "-p", "6379"]
