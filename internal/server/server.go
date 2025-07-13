@@ -9,7 +9,13 @@ import (
 	"github.com/tidwall/redcon"
 )
 
-// Server represents a Redka server.
+// A Redis-compatible Redka server that uses the RESP protocol.
+// Works with a Redka database instance.
+//
+// To start the server, call [Server.Start] method and wait
+// for the ready channel to receive a nil value (success) or an error.
+//
+// To stop the server, call [Server.Stop] method.
 type Server struct {
 	net  string
 	addr string
@@ -17,7 +23,8 @@ type Server struct {
 	db   *redka.DB
 }
 
-// New creates a new Redka server.
+// New creates a new Redka server with the given
+// network, address and database. Does not start the server.
 func New(net string, addr string, db *redka.DB) *Server {
 	handler := createHandlers(db)
 	accept := func(conn redcon.Conn) bool {
@@ -51,7 +58,7 @@ func (s *Server) Start(ready chan error) error {
 	return nil
 }
 
-// Stop stops the server.
+// Stop stops the server and closes the database.
 func (s *Server) Stop() error {
 	err := s.srv.Close()
 	if err != nil {
