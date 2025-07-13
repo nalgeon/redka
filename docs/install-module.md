@@ -22,5 +22,5 @@ Or one of the following for PostgreSQL:
 Install a driver with `go get` like this:
 
 ```shell
-go get github.com/mattn/go-sqlite3
+go get github.com/ncruces/go-sqlite3
 ```

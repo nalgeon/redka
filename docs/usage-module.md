@@ -19,8 +19,8 @@ import (
 )
 
 func main() {
-    // Open or create the data.db file.
-    db, err := redka.Open("data.db", nil)
+    // Open or create the redka.db file.
+    db, err := redka.Open("redka.db", nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -36,7 +36,7 @@ To open an in-memory database that doesn't persist to disk, use the following pa
 
 ```go
 // All data is lost when the database is closed.
-redka.Open("file:/data.db?vfs=memdb")
+redka.Open("file:/redka.db?vfs=memdb", nil)
 ```
 
 ## Running commands

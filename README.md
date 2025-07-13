@@ -2,14 +2,14 @@
 
 Redka aims to reimplement the core parts of Redis with SQL, while remaining compatible with Redis API.
 
-Notable features:
+Highlights:
 
 -   Data doesn't have to fit in RAM.
 -   Supports ACID transactions.
 -   SQL views for easier analysis and reporting.
--   Works with both SQLite and PostgreSQL (coming v0.6.0) backends.
+-   Uses SQLite or PostgreSQL as a backend.
 -   Runs in-process (Go API) or as a standalone server.
--   Redis-compatible commands and wire protocol (RESP).
+-   Implements Redis commands and wire protocol (RESP).
 
 Redka is [functionally ready](docs/roadmap.md) for 1.0. Feel free to try it in non-critical production scenarios and provide feedback in the issues.
 
@@ -19,7 +19,7 @@ Here are some situations where Redka might be helpful:
 
 _Embedded cache for Go applications_. If your Go app already uses SQLite or just needs a simple, built-in key-value store, Redka is a natural fit. It gives you Redis-like features without the hassle of running a separate server. The cache persists across application restarts, and backup is as easy as copying a file.
 
-_Lightweight testing environment_. Your app uses Redis in production, but setting up a Redis server for local development or integration tests can be a hassle. Redka, when used with an in-memory SQLite database, gives you a fast alternative with complete isolation for each test run.
+_Lightweight testing environment_. Your app uses Redis in production, but setting up a Redis server for local development or integration tests can be a hassle. Redka with an in-memory database offers a fast alternative to test containers, providing full isolation for each test run.
 
 _Postgres-first data structures_. If you prefer to use PostgreSQL for everything but need Redis-like data structures (like lists and sorted sets), Redka can use your existing database as the backend. This way, you can manage both relational data and specialized data structures with the same tools and transactional guarantees.
 
@@ -42,9 +42,11 @@ Redka comes in two flavors:
 -   Standalone Redis-compatible server: [installation](docs/install-standalone.md), [usage](docs/usage-standalone.md).
 -   Go module for in-process use: [installation](docs/install-module.md), [usage](docs/usage-module.md).
 
+You can also run an [in-process Redka server](example/server/main.go) as a lightweight alternative to Redis test containers, or as a small-scale production instance.
+
 ## Storage
 
-Redka can use either SQLite or PostgreSQL as its backend. It stores data in a [SQL database](docs/persistence.md) with a simple schema and provides views for better introspection.
+Redka can use either SQLite or PostgreSQL as its backend. It stores data in a [relational database](docs/persistence.md) with a simple schema and provides views for better introspection.
 
 ## Performance
 
