@@ -14,9 +14,9 @@ INCRBY       DB.Str().Incr          Increments the integer value of a key by a n
 INCRBYFLOAT  DB.Str().IncrFloat     Increments the float value of a key by a number.
 MGET         DB.Str().GetMany       Returns the values of one or more keys.
 MSET         DB.Str().SetMany       Sets the values of one or more keys.
-PSETEX       DB.Str().SetExpires    Sets the value and expiration time (in ms) of a key.
+PSETEX       DB.Str().SetExpire     Sets the value and expiration time (in ms) of a key.
 SET          DB.Str().Set           Sets the value of a key.
-SETEX        DB.Str().SetExpires    Sets the value and expiration (in sec) time of a key.
+SETEX        DB.Str().SetExpire     Sets the value and expiration (in sec) time of a key.
 SETNX        DB.Str().SetWith       Sets the value of a key when the key doesn't exist.
 STRLEN       DB.Str().Get           Returns the length of a value in bytes.
 ```

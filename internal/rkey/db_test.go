@@ -103,8 +103,8 @@ func TestDeleteExpired(t *testing.T) {
 	t.Run("delete all", func(t *testing.T) {
 		db, kkey := getDB(t)
 
-		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
-		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
+		_ = db.Str().SetExpire("name", "alice", 1*time.Millisecond)
+		_ = db.Str().SetExpire("age", 25, 1*time.Millisecond)
 
 		time.Sleep(2 * time.Millisecond)
 		count, err := kkey.DeleteExpired(0)
@@ -117,8 +117,8 @@ func TestDeleteExpired(t *testing.T) {
 	t.Run("delete n", func(t *testing.T) {
 		db, kkey := getDB(t)
 
-		_ = db.Str().SetExpires("name", "alice", 1*time.Millisecond)
-		_ = db.Str().SetExpires("age", 25, 1*time.Millisecond)
+		_ = db.Str().SetExpire("name", "alice", 1*time.Millisecond)
+		_ = db.Str().SetExpire("age", 25, 1*time.Millisecond)
 
 		time.Sleep(2 * time.Millisecond)
 		count, err := kkey.DeleteExpired(1)

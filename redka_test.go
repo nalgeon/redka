@@ -150,7 +150,7 @@ func ExampleDB_Key() {
 	db, _ := redka.Open("file:/redka.db?vfs=memdb", nil)
 	defer func() { _ = db.Close() }()
 
-	_ = db.Str().SetExpires("name", "alice", 60*time.Second)
+	_ = db.Str().SetExpire("name", "alice", 60*time.Second)
 	_ = db.Str().Set("city", "paris")
 
 	key, _ := db.Key().Get("name")

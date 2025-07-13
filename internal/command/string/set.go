@@ -69,7 +69,7 @@ func ParseSet(b redis.BaseCmd) (Set, error) {
 func (cmd Set) Run(w redis.Writer, red redis.Redka) (any, error) {
 	if !cmd.ifNX && !cmd.ifXX && !cmd.get && !cmd.keepTTL && cmd.at.IsZero() {
 		// Simple SET without additional options (except ttl).
-		err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
+		err := red.Str().SetExpire(cmd.key, cmd.value, cmd.ttl)
 		if err != nil {
 			w.WriteError(cmd.Error(err))
 			return nil, err

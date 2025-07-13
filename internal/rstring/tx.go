@@ -133,13 +133,13 @@ func (tx *Tx) IncrFloat(key string, delta float64) (float64, error) {
 // Overwrites the value if the key already exists.
 // If the key exists but is not a string, returns ErrKeyType.
 func (tx *Tx) Set(key string, value any) error {
-	return tx.SetExpires(key, value, 0)
+	return tx.SetExpire(key, value, 0)
 }
 
-// SetExpires sets the key value with an optional expiration time (if ttl > 0).
+// SetExpire sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 // If the key exists but is not a string, returns ErrKeyType.
-func (tx *Tx) SetExpires(key string, value any, ttl time.Duration) error {
+func (tx *Tx) SetExpire(key string, value any, ttl time.Duration) error {
 	var at time.Time
 	if ttl > 0 {
 		at = time.Now().Add(ttl)

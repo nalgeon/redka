@@ -87,7 +87,7 @@ func TestExpireExec(t *testing.T) {
 
 	t.Run("update expire", func(t *testing.T) {
 		red := getRedka(t)
-		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
+		_ = red.Str().SetExpire("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(parse, "expire name 30")
 		conn := redis.NewFakeConn()

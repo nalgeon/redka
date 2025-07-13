@@ -82,12 +82,12 @@ func (d *DB) Set(key string, value any) error {
 	return err
 }
 
-// SetExpires sets the key value with an optional expiration time (if ttl > 0).
+// SetExpire sets the key value with an optional expiration time (if ttl > 0).
 // Overwrites the value and ttl if the key already exists.
 // If the key exists but is not a string, returns ErrKeyType.
-func (d *DB) SetExpires(key string, value any, ttl time.Duration) error {
+func (d *DB) SetExpire(key string, value any, ttl time.Duration) error {
 	err := d.update(func(tx *Tx) error {
-		return tx.SetExpires(key, value, ttl)
+		return tx.SetExpire(key, value, ttl)
 	})
 	return err
 }

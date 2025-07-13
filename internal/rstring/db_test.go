@@ -464,11 +464,11 @@ func TestSetExists(t *testing.T) {
 	})
 }
 
-func TestSetExpires(t *testing.T) {
+func TestSetExpire(t *testing.T) {
 	t.Run("no ttl", func(t *testing.T) {
 		db, str := getDB(t)
 
-		err := str.SetExpires("name", "alice", 0)
+		err := str.SetExpire("name", "alice", 0)
 		be.Err(t, err, nil)
 
 		val, _ := str.Get("name")
@@ -482,7 +482,7 @@ func TestSetExpires(t *testing.T) {
 
 		now := time.Now()
 		ttl := time.Second
-		err := str.SetExpires("name", "alice", ttl)
+		err := str.SetExpire("name", "alice", ttl)
 		be.Err(t, err, nil)
 
 		val, _ := str.Get("name")
@@ -496,7 +496,7 @@ func TestSetExpires(t *testing.T) {
 	t.Run("key type mismatch", func(t *testing.T) {
 		db, str := getDB(t)
 		_, _ = db.Hash().Set("person", "name", "alice")
-		err := str.SetExpires("person", "alice", time.Second)
+		err := str.SetExpire("person", "alice", time.Second)
 		be.Err(t, err, core.ErrKeyType)
 
 		_, err = str.Get("person")
@@ -601,7 +601,7 @@ func TestSetWithAt(t *testing.T) {
 func TestSetWithKeepTTL(t *testing.T) {
 	t.Run("delete ttl", func(t *testing.T) {
 		db, str := getDB(t)
-		_ = str.SetExpires("name", "alice", 60*time.Second)
+		_ = str.SetExpire("name", "alice", 60*time.Second)
 
 		_, err := str.SetWith("name", "bob").Run()
 		be.Err(t, err, nil)
@@ -615,7 +615,7 @@ func TestSetWithKeepTTL(t *testing.T) {
 	t.Run("keep ttl", func(t *testing.T) {
 		db, str := getDB(t)
 		ttl := 60 * time.Second
-		_ = str.SetExpires("name", "alice", ttl)
+		_ = str.SetExpire("name", "alice", ttl)
 
 		now := time.Now()
 		_, err := str.SetWith("name", "alice").KeepTTL().Run()

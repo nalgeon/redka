@@ -34,7 +34,7 @@ func ParseSetEX(b redis.BaseCmd, multi int) (SetEX, error) {
 }
 
 func (cmd SetEX) Run(w redis.Writer, red redis.Redka) (any, error) {
-	err := red.Str().SetExpires(cmd.key, cmd.value, cmd.ttl)
+	err := red.Str().SetExpire(cmd.key, cmd.value, cmd.ttl)
 	if err != nil {
 		w.WriteError(cmd.Error(err))
 		return nil, err

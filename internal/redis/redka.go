@@ -96,7 +96,7 @@ type RStr interface {
 	Incr(key string, delta int) (int, error)
 	IncrFloat(key string, delta float64) (float64, error)
 	Set(key string, value any) error
-	SetExpires(key string, value any, ttl time.Duration) error
+	SetExpire(key string, value any, ttl time.Duration) error
 	SetMany(items map[string]any) error
 	SetWith(key string, value any) rstring.SetCmd
 }

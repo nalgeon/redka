@@ -47,7 +47,7 @@ func TestTTLParse(t *testing.T) {
 func TestTTLExec(t *testing.T) {
 	t.Run("has ttl", func(t *testing.T) {
 		red := getRedka(t)
-		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
+		_ = red.Str().SetExpire("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(ParseTTL, "ttl name")
 		conn := redis.NewFakeConn()

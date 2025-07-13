@@ -104,7 +104,7 @@ func TestSetEXExec(t *testing.T) {
 
 	t.Run("change ttl", func(t *testing.T) {
 		red := getRedka(t)
-		_ = red.Str().SetExpires("name", "alice", 60*time.Second)
+		_ = red.Str().SetExpire("name", "alice", 60*time.Second)
 
 		cmd := redis.MustParse(parse, "setex name 10 bob")
 		conn := redis.NewFakeConn()
