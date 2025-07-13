@@ -124,11 +124,12 @@ func sqliteDataSource(path string, readOnly bool, pragma map[string]string) stri
 	params, _ := url.ParseQuery(query)
 
 	if source == ":memory:" {
-		// This is an in-memory database, it must have a shared cache.
-		// https://www.sqlite.org/sharedcache.html#shared_cache_and_in_memory_databases
-		ds = "file:redka"
-		params.Set("mode", "memory")
-		params.Set("cache", "shared")
+		// This is an in-memory database, so we must either enable shared cache
+		// (https://sqlite.org/sharedcache.html), which is discouraged,
+		// or use the memdb VFS (https://sqlite.org/src/file?name=src/memdb.c).
+		// https://github.com/ncruces/go-sqlite3/issues/94#issuecomment-2157679766
+		ds = "file:/redka.db"
+		params.Set("vfs", "memdb")
 	} else {
 		// This is a file-based database, it must have a "file:" prefix
 		// for setting parameters (https://www.sqlite.org/c3ref/open.html).

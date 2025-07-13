@@ -34,7 +34,7 @@ func TestDataSource_Sqlite(t *testing.T) {
 	t.Run("memory rw", func(t *testing.T) {
 		path := ":memory:"
 		ds := DataSource(path, false, &Options{Dialect: DialectSqlite})
-		want := "file:redka?_mutex=no&_txlock=immediate&cache=shared&mode=memory"
+		want := "file:/redka.db?_mutex=no&_txlock=immediate&vfs=memdb"
 		if ds != want {
 			t.Errorf("expected %s, got %s", want, ds)
 		}
@@ -42,7 +42,7 @@ func TestDataSource_Sqlite(t *testing.T) {
 	t.Run("memory ro", func(t *testing.T) {
 		path := ":memory:"
 		ds := DataSource(path, true, &Options{Dialect: DialectSqlite})
-		want := "file:redka?_mutex=no&cache=shared&mode=memory"
+		want := "file:/redka.db?_mutex=no&mode=ro&vfs=memdb"
 		if ds != want {
 			t.Errorf("expected %s, got %s", want, ds)
 		}
