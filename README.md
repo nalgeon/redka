@@ -17,11 +17,11 @@ Redka is [functionally ready](docs/roadmap.md) for 1.0. Feel free to try it in n
 
 Here are some situations where Redka might be helpful:
 
-_Embedded cache for Go applications_. If your Go app already uses SQLite or just needs a simple, built-in key-value store, Redka is a natural fit. It gives you Redis-like features without the hassle of running a separate server. The cache persists across application restarts, and backup is as easy as copying a file.
+_Embedded cache for Go applications_. If your Go app already uses SQLite or just needs a built-in key-value store, Redka is a natural fit. It gives you Redis-like features without the hassle of running a separate server. You're not limited to just get/set with expiration, of course — more advanced structures like lists, maps, and sets are also available.
 
 _Lightweight testing environment_. Your app uses Redis in production, but setting up a Redis server for local development or integration tests can be a hassle. Redka with an in-memory database offers a fast alternative to test containers, providing full isolation for each test run.
 
-_Postgres-first data structures_. If you prefer to use PostgreSQL for everything but need Redis-like data structures (like lists and sorted sets), Redka can use your existing database as the backend. This way, you can manage both relational data and specialized data structures with the same tools and transactional guarantees.
+_Postgres-first data structures_. If you prefer to use PostgreSQL for everything but need Redis-like data structures, Redka can use your existing database as the backend. This way, you can manage both relational data and specialized data structures with the same tools and transactional guarantees.
 
 ## Commands
 
