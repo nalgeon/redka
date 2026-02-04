@@ -22,7 +22,7 @@ jobs:
                     - os: macos-latest
                       goos: darwin
                       asset_name: redka_darwin_arm64.zip
-                    - os: macos-13
+                    - os: macos-14-large
                       goos: darwin
                       asset_name: redka_darwin_amd64.zip
         steps:
