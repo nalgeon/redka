@@ -19,7 +19,7 @@ RPOPLPUSH    DB.List().PopBackPushFront  Removes the last element and pushes it 
 RPUSH        DB.List().PushBack          Appends an element to a list.
 ```
 
-The following list-related commands are not planned for 1.0:
+The following list-related commands are not supported:
 
 ```
 BLMOVE  BLMPOP  BLPOP  BRPOP  BRPOPLPUSH  LMOVE  LMPOP

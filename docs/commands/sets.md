@@ -22,7 +22,7 @@ SUNION       DB.Set().Union         Returns the union of multiple sets.
 SUNIONSTORE  DB.Set().UnionStore    Stores the union of multiple sets.
 ```
 
-The following set-related commands are not planned for 1.0:
+The following set-related commands are not supported:
 
 ```
 SINTERCARD  SMISMEMBER

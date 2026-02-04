@@ -24,7 +24,7 @@ TTL        DB.Key().Get              Returns the expiration time in seconds of a
 TYPE       DB.Key().Get              Returns the type of value stored at a key.
 ```
 
-The following generic commands are not planned for 1.0:
+The following generic commands are not supported:
 
 ```
 COPY  DUMP  EXPIRETIME  MIGRATE  MOVE  OBJECT  PEXPIRETIME

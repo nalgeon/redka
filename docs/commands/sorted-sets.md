@@ -26,7 +26,7 @@ ZUNION            DB.ZSet().UnionWith     Returns the union of multiple sets.
 ZUNIONSTORE       DB.ZSet().UnionWith     Stores the union of multiple sets in a key.
 ```
 
-The following sorted set related commands are not planned for 1.0:
+The following sorted set related commands are not supported:
 
 ```
 BZMPOP  BZPOPMAX  BZPOPMIN  ZDIFF  ZDIFFSTORE  ZINTERCARD

@@ -21,7 +21,7 @@ SETNX        DB.Str().SetWith       Sets the value of a key when the key doesn't
 STRLEN       DB.Str().Get           Returns the length of a value in bytes.
 ```
 
-The following string-related commands are not planned for 1.0:
+The following string-related commands are not supported:
 
 ```
 APPEND  GETDEL  GETEX  GETRANGE  LCS  MSETNX  SETRANGE  SUBSTR

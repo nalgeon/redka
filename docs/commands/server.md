@@ -11,4 +11,4 @@ PING       -                     Returns the server's liveliness response.
 SELECT     -                     Changes the selected database (no-op).
 ```
 
-The rest of the server and connection management commands are not planned for 1.0.
+The rest of the server and connection management commands are not supported.

@@ -21,7 +21,7 @@ HSETNX        DB.Hash().SetNotExists  Sets the value of a field when it doesn't 
 HVALS         DB.Hash().Exists        Returns all values.
 ```
 
-The following hash-related commands are not planned for 1.0:
+The following hash-related commands are not supported:
 
 ```
 HRANDFIELD  HSTRLEN
