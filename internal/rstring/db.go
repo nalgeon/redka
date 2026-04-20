@@ -8,6 +8,7 @@ import (
 
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // DB is a database-backed string repository.
@@ -18,19 +19,22 @@ type DB struct {
 	ro      *sql.DB
 	rw      *sql.DB
 	update  func(f func(tx *Tx) error) error
+	store   storage.Storage
 }
 
 // New connects to the string repository.
 // Does not create the database schema.
-func New(db *sqlx.DB) *DB {
-	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
+func New(db *sqlx.DB, st storage.Storage) *DB {
+	actor := sqlx.NewTransactor(db, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+		return NewTx(d, st, t)
+	})
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update, store: st}
 }
 
 // Get returns the value of the key.
 // If the key does not exist or is not a string, returns ErrNotFound.
 func (d *DB) Get(key string) (core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Get(key)
 }
 
@@ -38,7 +42,7 @@ func (d *DB) Get(key string) (core.Value, error) {
 // Ignores keys that do not exist or not strings,
 // and does not return them in the map.
 func (d *DB) GetMany(keys ...string) (map[string]core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.GetMany(keys...)
 }
 

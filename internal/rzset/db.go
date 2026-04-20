@@ -6,6 +6,7 @@ import (
 	"database/sql"
 
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // DB is a database-backed sorted set repository.
@@ -23,13 +24,16 @@ type DB struct {
 	ro      *sql.DB
 	rw      *sql.DB
 	update  func(f func(tx *Tx) error) error
+	store   storage.Storage
 }
 
 // New connects to the sorted set repository.
 // Does not create the database schema.
-func New(db *sqlx.DB) *DB {
-	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
+func New(db *sqlx.DB, st storage.Storage) *DB {
+	actor := sqlx.NewTransactor(db, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+		return NewTx(d, st, t)
+	})
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update, store: st}
 }
 
 // Add adds or updates an element in a set.
@@ -65,7 +69,7 @@ func (d *DB) AddMany(key string, items map[any]float64) (int, error) {
 // min and max (inclusive). Exclusive ranges are not supported.
 // Returns 0 if the key does not exist or is not a set.
 func (d *DB) Count(key string, min, max float64) (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Count(key, min, max)
 }
 
@@ -94,7 +98,7 @@ func (d *DB) DeleteWith(key string) DeleteCmd {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.GetRank(key, elem)
 }
 
@@ -104,7 +108,7 @@ func (d *DB) GetRank(key string, elem any) (rank int, score float64, err error) 
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetRankRev(key string, elem any) (rank int, score float64, err error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.GetRankRev(key, elem)
 }
 
@@ -112,7 +116,7 @@ func (d *DB) GetRankRev(key string, elem any) (rank int, score float64, err erro
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a set, returns ErrNotFound.
 func (d *DB) GetScore(key string, elem any) (float64, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.GetScore(key, elem)
 }
 
@@ -148,7 +152,7 @@ func (d *DB) InterWith(keys ...string) InterCmd {
 // Len returns the number of elements in a set.
 // Returns 0 if the key does not exist or is not a set.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Len(key)
 }
 
@@ -158,13 +162,13 @@ func (d *DB) Len(key string) (int, error) {
 // Start and stop are 0-based, inclusive. Negative values are not supported.
 // If the key does not exist or is not a set, returns a nil slice.
 func (d *DB) Range(key string, start, stop int) ([]SetItem, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Range(key, start, stop)
 }
 
 // RangeWith ranges elements from a set with additional options.
 func (d *DB) RangeWith(key string) RangeCmd {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.RangeWith(key)
 }
 
@@ -175,7 +179,7 @@ func (d *DB) RangeWith(key string) RangeCmd {
 // If the key does not exist or is not a set, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Scan(key, cursor, pattern, count)
 }
 
@@ -185,7 +189,7 @@ func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult
 // or an error occurs. If the key does not exist or is not a set, stops immediately.
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Scanner(key, pattern, pageSize)
 }
 

@@ -1,7 +1,145 @@
-package rlist
+package postgres
 
-// SQLite queries for the list repository.
-var sqlite = queries{
+import (
+	"database/sql"
+	"strings"
+
+	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
+)
+
+type listStore struct{}
+
+func (listStore) DeleteEqual(tx sqlx.Tx, key string, elem []byte, now int64) (int64, error) {
+	res, err := tx.Exec(listSQL.delete, key, now, elem)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (listStore) DeleteBack(tx sqlx.Tx, key string, elem []byte, now int64, count int) (int64, error) {
+	res, err := tx.Exec(listSQL.deleteBack, key, now, elem, count)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (listStore) DeleteFront(tx sqlx.Tx, key string, elem []byte, now int64, count int) (int64, error) {
+	res, err := tx.Exec(listSQL.deleteFront, key, now, elem, count)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (listStore) Get(tx sqlx.Tx, key string, now int64, idx int, indexDesc bool) ([]byte, error) {
+	q := listSQL.get
+	if indexDesc {
+		q = strings.Replace(q, sqlx.Asc, sqlx.Desc, 1)
+	}
+	var val []byte
+	err := tx.QueryRow(q, key, now, idx).Scan(&val)
+	return val, err
+}
+
+func (listStore) InsertBump(tx sqlx.Tx, now int64, key string, now2 int64) (int, int, error) {
+	var keyID, n int
+	err := tx.QueryRow(listSQL.insert, now, key, now2).Scan(&keyID, &n)
+	return keyID, n, err
+}
+
+func (listStore) InsertAfter(tx sqlx.Tx, keyID int, pivot, elem []byte) error {
+	_, err := tx.Exec(listSQL.insertAfter, keyID, pivot, keyID, keyID, elem, keyID)
+	return err
+}
+
+func (listStore) InsertBefore(tx sqlx.Tx, keyID int, pivot, elem []byte) error {
+	_, err := tx.Exec(listSQL.insertBefore, keyID, pivot, keyID, keyID, elem, keyID)
+	return err
+}
+
+func (listStore) Len(tx sqlx.Tx, key string, now int64) (int, error) {
+	var n int
+	err := tx.QueryRow(listSQL.len, key, now).Scan(&n)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return n, err
+}
+
+func (listStore) PopBack(tx sqlx.Tx, key string, now int64) ([]byte, error) {
+	var val []byte
+	err := tx.QueryRow(listSQL.popBack, key, now).Scan(&val)
+	return val, err
+}
+
+func (listStore) PopFront(tx sqlx.Tx, key string, now int64) ([]byte, error) {
+	var val []byte
+	err := tx.QueryRow(listSQL.popFront, key, now).Scan(&val)
+	return val, err
+}
+
+func (listStore) PushUpsert(tx sqlx.Tx, key string, now int64) (int, int, error) {
+	var keyID, n int
+	err := tx.QueryRow(listSQL.push, key, now).Scan(&keyID, &n)
+	return keyID, n, err
+}
+
+func (listStore) PushBack(tx sqlx.Tx, keyID int, elem []byte) error {
+	_, err := tx.Exec(listSQL.pushBack, keyID, elem, keyID)
+	return err
+}
+
+func (listStore) PushFront(tx sqlx.Tx, keyID int, elem []byte) error {
+	_, err := tx.Exec(listSQL.pushFront, keyID, elem, keyID)
+	return err
+}
+
+func (listStore) Range(tx sqlx.Tx, key string, now int64, start, stop int) ([][]byte, error) {
+	args := []any{key, now, start, start, start, stop, stop, stop}
+	rows, err := tx.Query(listSQL.lrange, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out [][]byte
+	for rows.Next() {
+		var v []byte
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+func (listStore) Set(tx sqlx.Tx, key string, now int64, elem []byte, idx int, indexDesc bool) (int64, error) {
+	q := listSQL.set
+	if indexDesc {
+		q = strings.Replace(q, sqlx.Asc, sqlx.Desc, 1)
+	}
+	res, err := tx.Exec(q, key, now, elem, idx)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (listStore) Trim(tx sqlx.Tx, key string, now int64, start, stop int) (int64, error) {
+	args := []any{key, now, start, start, start, stop, stop, stop}
+	res, err := tx.Exec(listSQL.trim, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+var listSQL = struct {
+	delete, deleteBack, deleteFront, get, insert, insertAfter, insertBefore string
+	len, popBack, popFront, push, pushBack, pushFront, lrange, set, trim    string
+}{
 	delete: `
 	delete from rlist
 	where kid = (
@@ -223,3 +361,5 @@ var sqlite = queries{
 		kid = (select id from curkey)
 		and rowid not in (select rowid from remain)`,
 }
+
+var _ storage.ListStorage = listStore{}

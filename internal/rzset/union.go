@@ -1,12 +1,11 @@
 package rzset
 
 import (
-	"database/sql"
-	"slices"
-	"strings"
 	"time"
 
+	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // UnionCmd unions multiple sets.
@@ -43,13 +42,9 @@ func (c UnionCmd) Max() UnionCmd {
 }
 
 // Run returns the union of multiple sets.
-// The union consists of elements that exist in any of the given sets.
-// The score of each element is the aggregate of its scores in the given sets.
-// Ignores the keys that do not exist or are not sets.
-// If no keys exist, returns a nil slice.
 func (c UnionCmd) Run() ([]SetItem, error) {
 	if c.db != nil {
-		tx := NewTx(c.db.dialect, c.db.ro)
+		tx := NewTx(c.db.dialect, c.db.store, c.db.ro)
 		return c.run(tx)
 	}
 	if c.tx != nil {
@@ -59,13 +54,6 @@ func (c UnionCmd) Run() ([]SetItem, error) {
 }
 
 // Store unions multiple sets and stores the result in a new set.
-// Returns the number of elements in the resulting set.
-// If the destination key already exists, it is fully overwritten
-// (all old elements are removed and the new ones are inserted).
-// If the destination key already exists and is not a set, returns ErrKeyType.
-// Ignores the source keys that do not exist or are not sets.
-// If all of the source keys do not exist or are not sets, does nothing,
-// except deleting the destination key if it exists.
 func (c UnionCmd) Store() (int, error) {
 	if c.db != nil {
 		var count int
@@ -82,77 +70,29 @@ func (c UnionCmd) Store() (int, error) {
 	return 0, nil
 }
 
-// run returns the union of multiple sets.
 func (c UnionCmd) run(tx *Tx) ([]SetItem, error) {
-	// Prepare query arguments.
-	now := time.Now().UnixMilli()
-	query := tx.sql.union
-	if c.aggregate != sqlx.Sum {
-		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
-	}
-	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	query = tx.dialect.Enumerate(query)
-	args := append(keyArgs, now)
-
-	// Execute the query.
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(query, args...)
+	rows, err := tx.z.UnionRead(tx.tx, c.keys, time.Now().UnixMilli(), c.aggregate)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
-
-	// Build the resulting element-score slice.
-	var items []SetItem
-	for rows.Next() {
-		it, err := scanItem(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, it)
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return items, nil
+	return zElemsToSetItems(rows), nil
 }
 
-// store unions multiple sets and stores the result in a new set.
 func (c UnionCmd) store(tx *Tx) (int, error) {
-	now := time.Now().UnixMilli()
-
-	// Delete the destination key if it exists.
-	_, err := tx.tx.Exec(tx.sql.deleteAll1, c.dest, now)
-	if err != nil {
-		return 0, err
-	}
-	_, err = tx.tx.Exec(tx.sql.deleteAll2, c.dest, now)
-	if err != nil {
-		return 0, err
-	}
-
-	// Create the destination key.
-	var destID int
-	err = tx.tx.QueryRow(tx.sql.add1, c.dest, now).Scan(&destID)
+	n, err := tx.z.UnionWrite(tx.tx, c.dest, c.keys, time.Now().UnixMilli(), c.aggregate)
 	if err != nil {
 		return 0, tx.dialect.TypedError(err)
 	}
+	return n, nil
+}
 
-	// Union the source sets and store the result.
-	query := tx.sql.unionStore
-	if c.aggregate != sqlx.Sum {
-		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
+func zElemsToSetItems(zs []storage.ZSetElem) []SetItem {
+	if len(zs) == 0 {
+		return nil
 	}
-	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	query = tx.dialect.Enumerate(query)
-	args := slices.Concat([]any{destID}, keyArgs, []any{now})
-	res, err := tx.tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
+	out := make([]SetItem, len(zs))
+	for i, z := range zs {
+		out[i] = SetItem{Elem: core.Value(z.Elem), Score: z.Score}
 	}
-
-	// Return the number of elements in the resulting set.
-	n, _ := res.RowsAffected()
-	return int(n), nil
+	return out
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // DB is a database-backed hash repository.
@@ -18,13 +19,16 @@ type DB struct {
 	ro      *sql.DB
 	rw      *sql.DB
 	update  func(f func(tx *Tx) error) error
+	store   storage.Storage
 }
 
 // New connects to the hash repository.
 // Does not create the database schema.
-func New(db *sqlx.DB) *DB {
-	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
+func New(db *sqlx.DB, st storage.Storage) *DB {
+	actor := sqlx.NewTransactor(db, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+		return NewTx(d, st, t)
+	})
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update, store: st}
 }
 
 // Delete deletes one or more items from a hash.
@@ -44,14 +48,14 @@ func (d *DB) Delete(key string, fields ...string) (int, error) {
 // Exists checks if a field exists in a hash.
 // If the key does not exist or is not a hash, returns false.
 func (d *DB) Exists(key, field string) (bool, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Exists(key, field)
 }
 
 // Fields returns all fields in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (d *DB) Fields(key string) ([]string, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Fields(key)
 }
 
@@ -59,7 +63,7 @@ func (d *DB) Fields(key string) ([]string, error) {
 // If the element does not exist, returns ErrNotFound.
 // If the key does not exist or is not a hash, returns ErrNotFound.
 func (d *DB) Get(key, field string) (core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Get(key, field)
 }
 
@@ -67,7 +71,7 @@ func (d *DB) Get(key, field string) (core.Value, error) {
 // Ignores fields that do not exist and do not return them in the map.
 // If the key does not exist or is not a hash, returns an empty map.
 func (d *DB) GetMany(key string, fields ...string) (map[string]core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.GetMany(key, fields...)
 }
 
@@ -106,14 +110,14 @@ func (d *DB) IncrFloat(key, field string, delta float64) (float64, error) {
 // Items returns a map of all fields and values in a hash.
 // If the key does not exist or is not a hash, returns an empty map.
 func (d *DB) Items(key string) (map[string]core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Items(key)
 }
 
 // Len returns the number of fields in a hash.
 // If the key does not exist or is not a hash, returns 0.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Len(key)
 }
 
@@ -124,7 +128,7 @@ func (d *DB) Len(key string) (int, error) {
 // If the key does not exist or is not a hash, returns a nil slice.
 // Supports glob-style patterns. Set count = 0 for default page size.
 func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Scan(key, cursor, pattern, count)
 }
 
@@ -134,7 +138,7 @@ func (d *DB) Scan(key string, cursor int, pattern string, count int) (ScanResult
 // or an error occurs. If the key does not exist or is not a hash, stops immediately.
 // Supports glob-style patterns. Set pageSize = 0 for default page size.
 func (d *DB) Scanner(key, pattern string, pageSize int) *Scanner {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Scanner(key, pattern, pageSize)
 }
 
@@ -183,6 +187,6 @@ func (d *DB) SetNotExists(key, field string, value any) (bool, error) {
 // Values returns all values in a hash.
 // If the key does not exist or is not a hash, returns an empty slice.
 func (d *DB) Values(key string) ([]core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Values(key)
 }

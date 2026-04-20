@@ -1,9 +1,6 @@
 package rzset
 
 import (
-	"database/sql"
-	"slices"
-	"strings"
 	"time"
 
 	"github.com/nalgeon/redka/internal/sqlx"
@@ -43,12 +40,9 @@ func (c InterCmd) Max() InterCmd {
 }
 
 // Run returns the intersection of multiple sets.
-// The intersection consists of elements that exist in all given sets.
-// The score of each element is the aggregate of its scores in the given sets.
-// If any of the source keys do not exist or are not sets, returns an empty slice.
 func (c InterCmd) Run() ([]SetItem, error) {
 	if c.db != nil {
-		tx := NewTx(c.db.dialect, c.db.ro)
+		tx := NewTx(c.db.dialect, c.db.store, c.db.ro)
 		return c.run(tx)
 	}
 	if c.tx != nil {
@@ -58,12 +52,6 @@ func (c InterCmd) Run() ([]SetItem, error) {
 }
 
 // Store intersects multiple sets and stores the result in a new set.
-// Returns the number of elements in the resulting set.
-// If the destination key already exists, it is fully overwritten
-// (all old elements are removed and the new ones are inserted).
-// If the destination key already exists and is not a set, returns ErrKeyType.
-// If any of the source keys do not exist or are not sets, does nothing,
-// except deleting the destination key if it exists.
 func (c InterCmd) Store() (int, error) {
 	if c.db != nil {
 		var count int
@@ -80,80 +68,18 @@ func (c InterCmd) Store() (int, error) {
 	return 0, nil
 }
 
-// run returns the intersection of multiple sets.
 func (c InterCmd) run(tx *Tx) ([]SetItem, error) {
-	// Prepare query arguments.
-	query := tx.sql.inter
-	if c.aggregate != sqlx.Sum {
-		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
-	}
-	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	query = tx.dialect.Enumerate(query)
-	args := append(
-		keyArgs,                // keys
-		time.Now().UnixMilli(), // now
-		len(c.keys),            // nkeys
-	)
-
-	// Execute the query.
-	var rows *sql.Rows
-	rows, err := tx.tx.Query(query, args...)
+	rows, err := tx.z.InterRead(tx.tx, c.keys, time.Now().UnixMilli(), c.aggregate)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
-
-	// Build the resulting element-score slice.
-	var items []SetItem
-	for rows.Next() {
-		it, err := scanItem(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, it)
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return items, nil
+	return zElemsToSetItems(rows), nil
 }
 
-// store intersects multiple sets and stores the result in a new set.
 func (c InterCmd) store(tx *Tx) (int, error) {
-	now := time.Now().UnixMilli()
-
-	// Delete the destination key if it exists.
-	_, err := tx.tx.Exec(tx.sql.deleteAll1, c.dest, now)
-	if err != nil {
-		return 0, err
-	}
-	_, err = tx.tx.Exec(tx.sql.deleteAll2, c.dest, now)
-	if err != nil {
-		return 0, err
-	}
-
-	// Create the destination key.
-	var destID int
-	err = tx.tx.QueryRow(tx.sql.add1, c.dest, now).Scan(&destID)
+	n, err := tx.z.InterWrite(tx.tx, c.dest, c.keys, time.Now().UnixMilli(), c.aggregate)
 	if err != nil {
 		return 0, tx.dialect.TypedError(err)
 	}
-
-	// Intersect the source sets and store the result.
-	query := tx.sql.interStore
-	if c.aggregate != sqlx.Sum {
-		query = strings.Replace(query, sqlx.Sum, c.aggregate, 2)
-	}
-	query, keyArgs := sqlx.ExpandIn(query, ":keys", c.keys)
-	query = tx.dialect.Enumerate(query)
-	args := slices.Concat([]any{destID}, keyArgs, []any{now, len(c.keys)})
-	res, err := tx.tx.Exec(query, args...)
-	if err != nil {
-		return 0, err
-	}
-
-	// Return the number of elements in the resulting set.
-	n, _ := res.RowsAffected()
-	return int(n), nil
+	return n, nil
 }

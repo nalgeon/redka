@@ -7,6 +7,7 @@ import (
 
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // DB is a database-backed list repository.
@@ -17,13 +18,16 @@ type DB struct {
 	ro      *sql.DB
 	rw      *sql.DB
 	update  func(f func(tx *Tx) error) error
+	store   storage.Storage
 }
 
 // New connects to the list repository.
 // Does not create the database schema.
-func New(db *sqlx.DB) *DB {
-	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
+func New(db *sqlx.DB, st storage.Storage) *DB {
+	actor := sqlx.NewTransactor(db, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+		return NewTx(d, st, t)
+	})
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update, store: st}
 }
 
 // Delete deletes all occurrences of an element from a list.
@@ -73,7 +77,7 @@ func (d *DB) DeleteFront(key string, elem any, count int) (int, error) {
 // If the index is out of bounds, returns ErrNotFound.
 // If the key does not exist or is not a list, returns ErrNotFound.
 func (d *DB) Get(key string, idx int) (core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Get(key, idx)
 }
 
@@ -108,7 +112,7 @@ func (d *DB) InsertBefore(key string, pivot, elem any) (int, error) {
 // Len returns the number of elements in a list.
 // If the key does not exist or is not a list, returns 0.
 func (d *DB) Len(key string) (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Len(key)
 }
 
@@ -183,7 +187,7 @@ func (d *DB) PushFront(key string, elem any) (int, error) {
 // (-1 is the last element, -2 is the second last, etc.)
 // If the key does not exist or is not a list, returns an empty slice.
 func (d *DB) Range(key string, start, stop int) ([]core.Value, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Range(key, start, stop)
 }
 

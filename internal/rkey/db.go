@@ -8,6 +8,7 @@ import (
 
 	"github.com/nalgeon/redka/internal/core"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
 )
 
 // DB is a database-backed key repository.
@@ -19,45 +20,48 @@ type DB struct {
 	ro      *sql.DB
 	rw      *sql.DB
 	update  func(f func(tx *Tx) error) error
+	store   storage.Storage
 }
 
 // New creates a new database-backed key repository.
 // Does not create the database schema.
-func New(db *sqlx.DB) *DB {
-	actor := sqlx.NewTransactor(db, NewTx)
-	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update}
+func New(db *sqlx.DB, st storage.Storage) *DB {
+	actor := sqlx.NewTransactor(db, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+		return NewTx(d, st, t)
+	})
+	return &DB{dialect: db.Dialect, ro: db.RO, rw: db.RW, update: actor.Update, store: st}
 }
 
 // Count returns the number of existing keys among specified.
 func (d *DB) Count(keys ...string) (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Count(keys...)
 }
 
 // Delete deletes keys and their values, regardless of the type.
 // Returns the number of deleted keys. Non-existing keys are ignored.
 func (d *DB) Delete(keys ...string) (int, error) {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.Delete(keys...)
 }
 
 // DeleteAll deletes all keys and their values, effectively resetting
 // the database. Should not be run inside a database transaction.
 func (d *DB) DeleteAll() error {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.DeleteAll()
 }
 
 // DeleteExpired deletes keys with expired TTL, but no more than n keys.
 // If n = 0, deletes all expired keys.
 func (d *DB) DeleteExpired(n int) (count int, err error) {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.deleteExpired(n)
 }
 
 // Exists reports whether the key exists.
 func (d *DB) Exists(key string) (bool, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Exists(key)
 }
 
@@ -65,7 +69,7 @@ func (d *DB) Exists(key string) (bool, error) {
 // After the ttl passes, the key is expired and no longer exists.
 // If the key does not exist, returns ErrNotFound.
 func (d *DB) Expire(key string, ttl time.Duration) error {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.Expire(key, ttl)
 }
 
@@ -73,14 +77,14 @@ func (d *DB) Expire(key string, ttl time.Duration) error {
 // the key is expired and no longer exists.
 // If the key does not exist, returns ErrNotFound.
 func (d *DB) ExpireAt(key string, at time.Time) error {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.ExpireAt(key, at)
 }
 
 // Get returns a specific key with all associated details.
 // If the key does not exist, returns ErrNotFound.
 func (d *DB) Get(key string) (core.Key, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Get(key)
 }
 
@@ -92,27 +96,27 @@ func (d *DB) Get(key string) (core.Key, error) {
 // Use this method only if you are sure that the number of keys is
 // limited. Otherwise, use the [DB.Scan] or [DB.Scanner] methods.
 func (d *DB) Keys(pattern string) ([]core.Key, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Keys(pattern)
 }
 
 // Len returns the total number of keys, including expired ones.
 func (d *DB) Len() (int, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Len()
 }
 
 // Persist removes the expiration time for the key.
 // If the key does not exist, returns ErrNotFound.
 func (d *DB) Persist(key string) error {
-	tx := NewTx(d.dialect, d.rw)
+	tx := NewTx(d.dialect, d.store, d.rw)
 	return tx.Persist(key)
 }
 
 // Random returns a random key.
 // If there are no keys, returns ErrNotFound.
 func (d *DB) Random() (core.Key, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Random()
 }
 
@@ -150,7 +154,7 @@ func (d *DB) RenameNotExists(key, newKey string) (bool, error) {
 //   - ktype to filter keys by type (TypeAny = any type).
 //   - count to limit the number of keys returned (0 = default).
 func (d *DB) Scan(cursor int, pattern string, ktype core.TypeID, count int) (ScanResult, error) {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return tx.Scan(cursor, pattern, ktype, count)
 }
 
@@ -164,6 +168,6 @@ func (d *DB) Scan(cursor int, pattern string, ktype core.TypeID, count int) (Sca
 //   - ktype to filter keys by type (TypeAny = any type).
 //   - pageSize to limit the number of keys fetched at once (0 = default).
 func (d *DB) Scanner(pattern string, ktype core.TypeID, pageSize int) *Scanner {
-	tx := NewTx(d.dialect, d.ro)
+	tx := NewTx(d.dialect, d.store, d.ro)
 	return newScanner(tx, pattern, ktype, pageSize)
 }

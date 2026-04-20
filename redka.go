@@ -36,6 +36,9 @@ import (
 	"github.com/nalgeon/redka/internal/rstring"
 	"github.com/nalgeon/redka/internal/rzset"
 	"github.com/nalgeon/redka/internal/sqlx"
+	"github.com/nalgeon/redka/internal/storage"
+	"github.com/nalgeon/redka/internal/storage/postgres"
+	"github.com/nalgeon/redka/internal/storage/sqlite"
 )
 
 // A TypeID identifies the type of the key and thus
@@ -196,17 +199,32 @@ func OpenReadDB(db *sql.DB, opts *Options) (*DB, error) {
 	return new(sdb, opts)
 }
 
+// newStorage returns the SQL backend for the given dialect.
+func newStorage(d sqlx.Dialect) storage.Storage {
+	switch d {
+	case sqlx.DialectPostgres:
+		return postgres.New()
+	case sqlx.DialectSqlite:
+		return sqlite.New()
+	default:
+		return sqlite.New()
+	}
+}
+
 // new creates a new database.
 func new(sdb *sqlx.DB, opts *Options) (*DB, error) {
+	st := newStorage(sdb.Dialect)
 	rdb := &DB{
-		sdb:      sdb,
-		act:      sqlx.NewTransactor(sdb, newTx),
-		hashDB:   rhash.New(sdb),
-		keyDB:    rkey.New(sdb),
-		listDB:   rlist.New(sdb),
-		setDB:    rset.New(sdb),
-		stringDB: rstring.New(sdb),
-		zsetDB:   rzset.New(sdb),
+		sdb: sdb,
+		act: sqlx.NewTransactor(sdb, func(d sqlx.Dialect, t sqlx.Tx) *Tx {
+			return newTx(st, d, t)
+		}),
+		hashDB:   rhash.New(sdb, st),
+		keyDB:    rkey.New(sdb, st),
+		listDB:   rlist.New(sdb, st),
+		setDB:    rset.New(sdb, st),
+		stringDB: rstring.New(sdb, st),
+		zsetDB:   rzset.New(sdb, st),
 		log:      opts.Logger,
 	}
 	if !opts.readOnly {
@@ -345,14 +363,14 @@ type Tx struct {
 }
 
 // newTx creates a new database transaction.
-func newTx(dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
+func newTx(st storage.Storage, dialect sqlx.Dialect, tx sqlx.Tx) *Tx {
 	return &Tx{tx: tx,
-		hashTx: rhash.NewTx(dialect, tx),
-		keyTx:  rkey.NewTx(dialect, tx),
-		listTx: rlist.NewTx(dialect, tx),
-		setTx:  rset.NewTx(dialect, tx),
-		strTx:  rstring.NewTx(dialect, tx),
-		zsetTx: rzset.NewTx(dialect, tx),
+		hashTx: rhash.NewTx(dialect, st, tx),
+		keyTx:  rkey.NewTx(dialect, st, tx),
+		listTx: rlist.NewTx(dialect, st, tx),
+		setTx:  rset.NewTx(dialect, st, tx),
+		strTx:  rstring.NewTx(dialect, st, tx),
+		zsetTx: rzset.NewTx(dialect, st, tx),
 	}
 }
 
