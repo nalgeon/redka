@@ -203,6 +203,9 @@ func (tx *Tx) Range(key string, start, stop int) ([]core.Value, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(raw) == 0 {
+		return nil, nil
+	}
 	out := make([]core.Value, len(raw))
 	for i, b := range raw {
 		out[i] = core.Value(b)
